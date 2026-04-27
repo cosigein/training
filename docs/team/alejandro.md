@@ -7,10 +7,10 @@
 ## ⚡ TLDR — esto es lo que tenés mañana en 5 líneas
 
 1. **Sos frontend lead.** 4 portales (admin, manager, alumno, kiosko) · ~32 pantallas · empezás por las **14 pantallas P0** listadas más abajo en este doc (sección "Priorización P0/P1/P2"). Si llegamos justos, recortamos P2 primero, nunca P0.
-2. **Esta noche:** instalá Node 20 LTS. Aceptá la invite del repo. **NO clones el repo, NO instales nada del proyecto, NO crees `apps/web`.** Lo hacemos juntos mañana.
-3. **Mañana 09:00:** kickoff de 1h. Después (10:00-13:00) scaffolding compartido. Setup de Vite + Tailwind 4 + tokens del §0.3 lo hacemos en pantalla compartida.
+2. **Llegá al kickoff con Node 20 LTS instalado y la invite del repo aceptada.** **NO clones el repo, NO instales nada del proyecto, NO crees `apps/web`.** Lo hacemos juntos mañana en el scaffolding compartido. Si te falta algo, se instala en los primeros 15 min.
+3. **Martes 28/04 09:00:** kickoff de 1h (lectura silenciosa + Q&A). Después (10:00-13:00) scaffolding compartido entre los 4. Setup de Vite + Tailwind 4 + tokens del §0.3 en pantalla compartida.
 4. **Coordinación clave (te ahorra dos semanas de drift):** los tipos TypeScript backend↔frontend van en un package compartido `packages/api-types/` (Jesús lo expone, vos los importás). Los `data-testid` los ponés vos con la convención de `CONTRIBUTING.md` para que Joel pueda usarlos en E2E.
-5. **No sos bombero.** Si tenés dudas de dominio (qué es una "convocatoria", cómo es físicamente la cabina del camión), están en el "Glosario rápido del dominio" más abajo. Y pedile a Antonio una foto/video del kiosko cuando llegues mañana.
+5. **No sos bombero.** Si tenés dudas de dominio (qué es una "convocatoria", cómo es físicamente la cabina del camión), están en el "Glosario rápido del dominio" más abajo. Pedile a Antonio una foto/video del kiosko al llegar mañana.
 
 ---
 
@@ -62,10 +62,10 @@
 
 ## Resolución de la contradicción §0.2 ↔ §0.12
 
-- **§0.2** dice "no crees apps/web por adelantado". Eso aplica a **antes del kickoff** (esta noche del lunes). Correcto.
+- **§0.2** dice "no crees apps/web por adelantado". Eso aplica a **antes del scaffolding compartido del kickoff**. Correcto.
 - **§0.12** habla de tu primer hito serio (jueves 30/04). Para entonces YA hicimos el scaffolding juntos en el kickoff — la estructura existe.
 
-Resumen: **lunes a la noche, NO toques nada**. Martes 28/04 por la mañana, durante el scaffolding compartido, nace `apps/web/` con todo el equipo en pantalla. Desde ahí, vos lo manejás.
+Resumen: **antes del kickoff, NO toques nada del proyecto**. Martes 28/04 por la mañana, durante el scaffolding compartido, nace `apps/web/` con todo el equipo en pantalla. Desde ahí, vos lo manejás.
 
 ---
 
@@ -80,7 +80,7 @@ Resumen: **lunes a la noche, NO toques nada**. Martes 28/04 por la mañana, dura
 > - Acceso al repo `cosigein/training` aceptado (Antonio te invita)
 > - Haber leído este documento + el README del repo + escaneo del paper maestro
 >
-> Si alguno está en duda, escribilo a Antonio antes del lunes a la noche.
+> Si te falta alguna, **no hay drama** — los instalamos en los primeros 15 min del kickoff.
 
 ## 0.1 Stack y versiones (propuesta a fijar el día 1)
 

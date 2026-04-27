@@ -101,23 +101,25 @@ El trabajo del sprint está distribuido en **issues de GitHub** en este repo. Ca
 
 **🇪🇸 Estas son las preguntas que detectamos al simular cómo lo lee cada miembro del equipo. Si todavía tenés dudas después, preguntale a Antonio.**
 
-### "¿Tengo que instalar algo esta noche del lunes?"
+### "¿Qué tengo que tener instalado al llegar al kickoff?"
 
-Solo 3 cosas, y NO incluye clonar ni `npm install`:
+Solo 3 cosas, y NO incluye clonar el repo ni `npm install`:
 - Node 20 LTS (`node --version` debe imprimir v20.x.x).
 - Docker Desktop (debe arrancar).
-- Aceptar la invitación al repo en GitHub.
+- Aceptar la invitación al repo en GitHub (te llega cuando Antonio te invite).
 
-**No clones el repo. No instales dependencias. No crees carpetas.** Eso lo hacemos juntos en el kickoff del martes para que los 4 quedemos sincronizados.
+Si llegás mañana sin alguno de estos, **no hay drama**: en los primeros 15 minutos del kickoff los instalamos juntos. El kickoff arranca a las 09:00, dura 1 hora, y después scaffolding compartido — durante ese tiempo se nivela el setup.
 
-### "¿Tengo que leer el paper maestro entero esta noche?"
+**No clones el repo, no instales dependencias del proyecto, no crees carpetas.** El scaffolding lo hacemos los 4 en pantalla compartida para que nadie quede con una versión distinta.
 
-**No.** Cada doc de rol te dice exactamente qué leer del paper esta noche (típicamente: glosario + invariantes + sección de tu área = ~30 minutos). El silent reading del kickoff cubre el resto.
+### "¿Tengo que leer el paper maestro entero antes de venir?"
+
+**No.** El paper son ~3500 líneas. La lectura silenciosa de 30 minutos durante el kickoff es lo único obligatorio del día 1: cada uno lee solo las secciones que aplican a su rol (tu doc individual te dice cuáles). El resto se consulta como referencia cuando aparezca una duda concreta durante el sprint.
 
 ### "¿Qué pasa si me bloquea algo y no hay chat del equipo todavía?"
 
-El chat lo crea Antonio el lunes 27/04 por la noche o el martes 28/04 por la mañana. Hasta que exista:
-- DM directo a Antonio (su número está en tu DM personal, te lo manda el lunes).
+El chat del equipo lo crea Antonio antes del kickoff (puede ser la víspera o la misma mañana). Hasta que exista:
+- DM directo a Antonio en tu canal personal con él.
 - O esperá al kickoff de las 09:00 — tenemos una hora juntos para resolver dudas.
 
 ### "¿Y si Antonio se demora la mañana del kickoff?"

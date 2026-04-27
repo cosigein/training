@@ -7,10 +7,10 @@
 ## ⚡ TLDR — esto es lo que tenés mañana en 5 líneas
 
 1. **Sos backend lead.** Construís api + worker + packages internos (domain, normalization, detection, scoring, ranking) + schema Prisma + auth.
-2. **Esta noche:** instalá Node 20 LTS + Docker Desktop. Aceptá la invite del repo. **NO clones el repo, NO corras `pnpm install`.** El scaffolding lo hacemos juntos mañana.
-3. **Mañana 09:00:** kickoff de 1h. Después (10:00-13:00) scaffolding compartido entre los 4. Tu primer PR: `chore/setup-jesus`.
+2. **Llegá al kickoff con Node 20 LTS + Docker Desktop instalados** y la invite del repo aceptada. **NO clones el repo, NO corras `pnpm install` antes.** Si te falta algo, lo instalamos en los primeros 15 min del kickoff.
+3. **Martes 28/04 09:00:** kickoff de 1h (lectura silenciosa + Q&A). Después (10:00-13:00) scaffolding compartido entre los 4. Tu primer PR: `chore/setup-jesus`.
 4. **Tu primer hito serio (miércoles 29/04):** health endpoints + schema base + migración `20260428_HHMM_init_base_models` aplicada. Detalle en §0.10.
-5. **Lectura obligatoria del paper esta noche:** glosario + §3 (9 invariantes) + §5 (modelo de datos). 30 minutos. Nada más.
+5. **Lectura silenciosa durante el kickoff** (la dirige Antonio, ~30 min): leé glosario del paper + §3 (9 invariantes) + §5 (modelo de datos). El resto del paper se consulta cuando dudes durante el sprint.
 
 ---
 
@@ -55,7 +55,7 @@
 | **enrollment** | Inscripción de un Student a UNA convocatoria. Un humano puede tener varias enrollments (varias convocatorias). |
 | **attempt** | Un intento de evaluación = un alumno + una ruta + una sesión. Tiene una nota 0-10. |
 
-> **Lo que tenés que leer del paper esta noche (lunes):** SOLO el glosario del paper (§0) + las 9 invariantes (§3) + el §5 que cubre el modelo de datos. Total 30 minutos. **NO leas el resto** — el silent reading del kickoff lo cubre. Vení mañana con preguntas, no con el paper digerido.
+> **Lo que vas a leer del paper durante el silent reading del kickoff (martes 09:00, lo dirige Antonio):** el glosario del paper (§0) + las 9 invariantes (§3) + el §5 (modelo de datos). 30 minutos guiados. **No hace falta que leas nada antes.** El paper es referencia para consultar durante el sprint, no lectura previa obligatoria.
 
 ---
 
@@ -63,15 +63,14 @@
 
 > **Importante (estado real al 27/04/2026):** este repo (`cosigein/training`) está recién creado y solo contiene los documentos del proyecto. **No hay código todavía.** El scaffolding inicial (package.json, docker-compose, estructura de carpetas, dependencias instaladas) lo levantamos **el martes 28/04 durante el kickoff con todo el equipo en pantalla compartida**. Las versiones, estructura de carpetas y `.env.example` que se describen en este §0 son la **propuesta técnica de partida** que vamos a materializar ese día — no comandos para correr la noche del lunes.
 >
-> **Lo que sí necesitás tener listo para el martes:**
+> **Lo que sí conviene traer al kickoff (martes 28/04 09:00):**
 >
-> - Node 20 LTS instalado en tu máquina (`node --version` debe imprimir v20.x.x)
+> - Node 20 LTS instalado en tu laptop (`node --version` debe imprimir v20.x.x)
 > - Docker Desktop instalado y arrancando bien
 > - Git configurado con tu usuario de GitHub
 > - Acceso al repo `cosigein/training` aceptado (Antonio te invita)
-> - Haber leído este documento + el README del repo
 >
-> Si tenés cualquiera de los 4 anteriores en duda, escribilo a Antonio antes del lunes a la noche.
+> Si te falta alguna, **no hay drama** — los instalamos en los primeros 15 min del kickoff. El plan de la mañana absorbe esto sin problema.
 
 ## 0.1 Versiones exactas de dependencias (propuesta a confirmar el día 1)
 

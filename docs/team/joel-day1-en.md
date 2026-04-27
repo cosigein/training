@@ -6,12 +6,12 @@
 
 ---
 
-## ⚡ TLDR — what tomorrow looks like in 5 lines
+## ⚡ TLDR — what your day-1 looks like in 5 lines
 
 1. **Your role:** QA + simulator + E2E tests + seed data + CI/CD. You don't write product features — you make sure they work and that we ship.
-2. **Tonight (Monday):** install Node 20 LTS + Docker Desktop. Accept the GitHub invite. **DO NOT clone the repo, DO NOT install anything else.** That's it.
-3. **Tomorrow 09:00 in the office:** 1h kickoff with the team. Then we set up the project scaffolding together (the 4 of us, screen-shared) until ~13:00.
-4. **Your first task (afternoon):** bootstrap Playwright in the new `e2e/` workspace, write 1 smoke test, open a PR. Antonio will guide you. ~3 hours of work, very doable.
+2. **Bring to the kickoff:** Node 20 LTS + Docker Desktop installed on your laptop, GitHub invite accepted. **Don't clone the repo, don't run any project commands beforehand.** If you arrive without these, no drama — we install in the first 15 min of the kickoff.
+3. **Tuesday 28/04 09:00 in the office:** 1h kickoff with the team (silent reading + Q&A). Then 10:00–13:00 we set up the project scaffolding together (the 4 of us, screen-shared).
+4. **Your first task (afternoon):** bootstrap Playwright in the new `e2e/` workspace, write 1 smoke test, open a PR. Antonio guides you. ~3 hours of work, very doable.
 5. **You don't speak Spanish — that's expected and OK.** This doc + the README in English at the top + your full role doc (`joel-en.md`) are in English. Antonio translates anything else you need.
 
 ---
@@ -110,31 +110,29 @@ If something here surprises you, ping Antonio before Tuesday morning.
 
 ---
 
-## What to do BEFORE Tuesday morning
+## What you should bring to the kickoff
 
 Three small things. None of them require the project to exist.
 
 ```
-   ☐ Install Node 20 LTS on your laptop
+   ☐ Node 20 LTS installed on your laptop
         node --version  → must print v20.x.x
         (use nvm if you juggle Node versions)
 
-   ☐ Install Docker Desktop (you'll need it for Postgres + Redis later)
+   ☐ Docker Desktop installed (you'll need it for Postgres + Redis later)
         docker --version
         docker compose version
 
-   ☐ Make sure your GitHub account is added to cosigein/training
+   ☐ GitHub account added to cosigein/training
         Antonio sends the invite — accept it.
         Confirm you can see https://github.com/cosigein/training
-
-   That's it. Don't clone, don't install dependencies, don't write code.
-   The four of us set up the scaffolding TOGETHER on Tuesday morning so
-   nobody ends up with a slightly different version of anything.
 ```
 
-## Logistics — confirm with Antonio Monday evening
+If you arrive without one of these, **no drama**: we install during the first 15 min of the kickoff. The day plan absorbs it. **Don't clone the repo, don't install project dependencies, don't write code.** The four of us scaffold together on Tuesday morning so nobody ends up with a slightly different version.
 
-The day-1 doc can't put these on paper because they vary by office and contract setup. **Ask Antonio in DM tonight** so you don't arrive lost tomorrow:
+## Logistics — what Antonio gives you
+
+These vary by office and contract, so this doc can't list them. Antonio will send them by DM **before you arrive on Tuesday morning** (most likely Monday evening or Tuesday at dawn):
 
 ```
    ☐ Office address (or remote-work confirmation)
@@ -148,7 +146,7 @@ The day-1 doc can't put these on paper because they vary by office and contract 
    ☐ Lunch — does the team eat together day 1? Where?
 ```
 
-> If Antonio doesn't reply by midnight, default plan: arrive at 08:45 to whatever address he gave you, ring the bell, ask reception, and have his phone number ready.
+> If you arrive at the office without this info, default plan: ring the bell at the building, ask reception, and have Antonio's phone number ready (he sends it in the same DM).
 
 ---
 
