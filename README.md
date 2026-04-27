@@ -1,26 +1,25 @@
 # Training
 
+## ⚡ ¿Quién sos? — abre tu doc en 5 segundos
+
+| Si sos / If you are | Abrí ESTE archivo / Open THIS file |
+|---|---|
+| **Antonio** | [`docs/team/antonio.md`](docs/team/antonio.md) (ES) |
+| **Jesús** | [`docs/team/jesus.md`](docs/team/jesus.md) (ES) |
+| **Alejandro** | [`docs/team/alejandro.md`](docs/team/alejandro.md) (ES) |
+| **Joel** | [`docs/team/joel-day1-en.md`](docs/team/joel-day1-en.md) — **start here, EN** |
+| Anyone else | This repo is confidential. Stop reading. |
+
+**Kickoff / When we start:** martes 28 de abril de 2026, 09:00 (Europe/Madrid).
+**Demo CMadrid:** lunes 11 de mayo de 2026.
+
+---
+
 🇪🇸 Sistema de evaluación de candidatos a conductor de camión de bomberos para CMadrid (oposición pública).
 🇬🇧 *Evaluation system for fire-truck driver candidates at CMadrid (Spanish public competitive examination).*
 
 > **Estado del repo:** recién creado. Aquí viven los **documentos del proyecto**. El código aún no se ha subido — eso ocurre durante el sprint, en este mismo repo.
 > *Repo state: just created. Only project documents live here. Code lands during the sprint.*
-
----
-
-## ⚡ ¿Acabás de entrar al repo? — 30 segundos
-
-| Si sos / If you are | Abrí ESTE archivo / Open THIS file | Idioma |
-|---|---|---|
-| **Antonio** | [`docs/team/antonio.md`](docs/team/antonio.md) | ES |
-| **Jesús** | [`docs/team/jesus.md`](docs/team/jesus.md) | ES |
-| **Alejandro** | [`docs/team/alejandro.md`](docs/team/alejandro.md) | ES |
-| **Joel** | [`docs/team/joel-day1-en.md`](docs/team/joel-day1-en.md) — **start here, EN** | EN |
-| Anyone else | Don't read further. This repo is confidential. | — |
-
-**Cuándo arrancamos / When we start:** martes 28 de abril de 2026, 09:00 (Europe/Madrid). Kickoff de 1 hora con todo el equipo en la oficina.
-
-**Demo CMadrid:** lunes 11 de mayo de 2026.
 
 ---
 
@@ -129,7 +128,7 @@ Plan de contingencia (si Antonio no está a las 09:15 y nadie sabe nada de él):
 1. **No empieces a codear nada.** El kickoff existe para alinearnos.
 2. **Cada uno relee su doc de rol con calma** (~30 min).
 3. **Hablan entre los 3:** repasen quién hace qué la primera semana, qué dependencias tienen entre ustedes, qué dudas comunes.
-4. **Si Antonio sigue sin aparecer a las 10:30**, llamen a su teléfono. Si no contesta, escalan a Dirección (`__COMPLETAR-CONTACTO-DIRECCION__`).
+4. **Si Antonio sigue sin aparecer a las 10:30**, llamen a su teléfono (Antonio se los pasa por DM antes del martes). Si no contesta, escalan a Dirección por el canal que Antonio les indique.
 5. **Si todo eso falla**, el equipo sigue las instrucciones de su doc individual hasta tener noticias. Mejor avanzar lento que parar.
 
 ### "¿Quién decide cuando hay un conflicto técnico entre Jesús y Alejandro?"
@@ -156,46 +155,4 @@ Este repo es **privado**. Los datos de CMadrid son confidenciales bajo NDA. No c
 
 **Si tenés cualquier duda el día 1, preguntá a Antonio. No pierdas tiempo intentando descifrar algo solo.**
 
----
-
-## ☑️ Pendientes para Antonio antes del kickoff (HOY lunes 27/04)
-
-> Esta lista es interna. Antonio: si todos estos están ✅ a las 23:00 del lunes, mañana arrancamos sin titubeos. Si alguno está ❌, escalalo a Dirección.
-
-```
-   ☐ Pedir GitHub usernames de Jesús, Alejandro, Joel
-       e invitarlos a cosigein/training como collaborators
-
-   ☐ Crear espacio del equipo (Slack / Discord / Teams — tu elección)
-       y mandarles el link de invitación a los 3
-
-   ☐ Mandar a cada uno el link al repo + path a su doc:
-       Jesús    → docs/team/jesus.md
-       Alejandro → docs/team/alejandro.md
-       Joel     → docs/team/joel-day1-en.md  (PRIMERO, EN)
-
-   ☐ Confirmar logística para Joel:
-       - Dirección de la oficina
-       - Cómo entrar al edificio (recepción, código, timbre)
-       - Wifi del local (SSID + password)
-       - NDA / paperwork — ¿se firma martes mañana o ya está?
-       - Tu número de teléfono por si algo
-
-   ☐ Mandar a CMadrid:
-       - Documento Ejecutivo (PDF)
-       - Propuesta Comercial (PDF)
-       y proponer llamada de 15-30 min en la semana
-
-   ☐ Conseguir al menos 1 fixture real de Webfleet
-       (payload anonimizado o, en su defecto, contacto técnico de Bridgestone)
-
-   ☐ Decidir VPS staging (proveedor) — Hetzner CX22 si no hay infra existente
-
-   ☐ Reunión de 30 min con Dirección
-       (puntos en docs/MEMO-DIRECCION-INTERNO.md §9)
-
-   ☐ Configurar 1 Project board en GitHub con los 5 issues abiertos
-       y asignar cada issue al GitHub username correspondiente
-```
-
-**Una vez todo lo de arriba esté ✅, mañana 09:00 conducís el kickoff con tranquilidad.**
+> *Antonio: tu checklist personal pre-kickoff vive en [`docs/team/antonio.md` §12](docs/team/antonio.md). El resto del equipo no necesita verlo.*

@@ -69,6 +69,16 @@ Resumen: **antes del kickoff, NO toques nada del proyecto**. Martes 28/04 por la
 
 ---
 
+## Decisiones de producto que cerramos en el Q&A del kickoff (09:30)
+
+Estas son preguntas que hace falta resolver antes de que tengas que pintar pantallas con datos reales (semana 1 tarde):
+
+1. **Identificación en ranking público (M5, A2):** ¿se muestran nombres y apellidos completos, dorsales/IDs anónimos, o iniciales? Decisión legal de CMadrid; Antonio la trae cerrada al kickoff o la decide en Q&A si no llegó.
+2. **Foto/video del kiosko físico (cabina del camión):** Antonio te enseña una foto al menos durante el café del kickoff. Sin verlo no se puede decidir orientación, anclaje ni jerarquía visual. Si no hay foto, asumís un fixture razonable y se ajusta cuando llegue.
+3. **D5 cierre — botón "Confirmar":** ¿lo deshabilitás en frontend si `auth.user.id === closing_admin_id` o lo dejás y dejás que el backend devuelva 403? Decisión rápida en Q&A — recomendación: frontend defensivo + backend como red de seguridad.
+
+---
+
 # 0. Cómo arrancás el día 1 (design system + estados + setup)
 
 > **Importante (estado real al 27/04/2026):** este repo (`cosigein/training`) está recién creado y solo contiene los documentos del proyecto. **No hay código todavía.** Las versiones, estructura de carpetas, tokens y componentes que aparecen en este §0 son **la propuesta de partida** — la materializamos juntos durante el kickoff del MARTES 28/04. No instales ni configures nada de forma unilateral antes del kickoff.

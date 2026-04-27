@@ -59,6 +59,18 @@
 
 ---
 
+## Coordinación temporal con Antonio (cuándo recibís qué)
+
+| Cuándo | Qué te entrega Antonio |
+|---|---|
+| **Día 1 (martes 28/04)** | Acceso de lectura al repo `dobackv2` (DobackSoft V3) si necesitás portar `StabilityProcessor` desde ahí. Antonio te lo activa durante el scaffolding compartido. |
+| **Día 3 (jueves 30/04)** | Versión 0 (mock estable) de `@training/ingestion-webfleet` con el shape congelado: `{ events_count, raw_samples_count, data_freshness, fetched_at }`. Te alcanza para empezar `apps/worker/src/jobs/webfleetSync.ts`. |
+| **Día 7 (lunes 04/05)** | Versión real de `@training/ingestion-webfleet` operando contra el sandbox de CMadrid (con tilde resuelto, quota Redis en marcha, circuit breaker activo). |
+
+**Si Antonio se retrasa con Webfleet:** el `apps/worker/src/jobs/webfleetSync.ts` y el `processAttempt` se desarrollan contra el mock del día 3. Tu cierre y ranking NO bloquean por Webfleet — el `data_freshness: 'missing'` está contemplado en la lógica de scoring.
+
+---
+
 # 0. Cómo arrancás el día 1 (setup operativo)
 
 > **Importante (estado real al 27/04/2026):** este repo (`cosigein/training`) está recién creado y solo contiene los documentos del proyecto. **No hay código todavía.** El scaffolding inicial (package.json, docker-compose, estructura de carpetas, dependencias instaladas) lo levantamos **el martes 28/04 durante el kickoff con todo el equipo en pantalla compartida**. Las versiones, estructura de carpetas y `.env.example` que se describen en este §0 son la **propuesta técnica de partida** que vamos a materializar ese día — no comandos para correr la noche del lunes.
@@ -518,7 +530,8 @@ JUEVES (DÍA 3) 30/04
 VIERNES (DÍA 4) 01/05 — FESTIVO (Día del Trabajador)
 - Sin trabajo planificado.
 
-[fin de semana — descanso]
+[SÁBADO 02/05 + DOMINGO 03/05 — fin de semana, descanso]
+[NO HAY DÍA 5 ni DÍA 6 — son festivo + fin de semana]
 
 
 SEMANA 2 — NORMALIZATION, DETECTION, SCORING, CIERRE

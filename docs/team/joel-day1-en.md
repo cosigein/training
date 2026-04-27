@@ -16,8 +16,6 @@
 
 ---
 
----
-
 ## Read this first — the people you'll meet on day 1
 
 | Name | Role | Languages | How to talk to them |
@@ -128,7 +126,7 @@ Three small things. None of them require the project to exist.
         Confirm you can see https://github.com/cosigein/training
 ```
 
-If you arrive without one of these, **no drama**: we install during the first 15 min of the kickoff. The day plan absorbs it. **Don't clone the repo, don't install project dependencies, don't write code.** The four of us scaffold together on Tuesday morning so nobody ends up with a slightly different version.
+If you arrive without one of these, we install during the first 15 min of the kickoff. **Don't clone the repo, don't install project dependencies, don't write code.** The four of us scaffold together on Tuesday morning so nobody ends up with a slightly different version.
 
 ## Logistics — what Antonio gives you
 
@@ -178,18 +176,26 @@ These vary by office and contract, so this doc can't list them. Antonio will sen
 
    14:30 - 16:00   YOUR FIRST CONCRETE TASK
    ─────────────────────────────────────────
-   • Add Playwright to the repo as a top-level e2e/ workspace.
-   • Write ONE smoke test: load the placeholder index page that
-     Alejandro pushes during the morning scaffolding session.
+   The pre-agreed contract with Alejandro (decided in OWNERS.md):
+     - URL: `http://localhost:5173/` (Vite default)
+     - Selector: `data-testid="app-root"` on the root component
+       (Alejandro adds this to his placeholder page during the
+       morning scaffolding session)
 
-     IMPORTANT: agree with Alejandro DURING the kickoff what URL
-     and what test selector you'll use. Specifically:
-       - URL: `http://localhost:5173/` (Vite default)
-       - Selector: `data-testid="app-root"` on the root component.
-     Without that contract, you write nothing this afternoon.
+   Open TWO separate PRs to keep reviews fast:
 
-   • Open a PR: `chore(qa-e2e-bootstrap)` — Playwright + first smoke test.
-   • Tag Antonio for review.
+   • PR1 — `feat/qa-e2e-bootstrap`
+       Adds the `e2e/` workspace + Playwright + the first smoke test.
+       Touches ONLY `e2e/`. Needs 1 review (anyone). Mergeable today.
+
+   • PR2 — `chore/cross-ci-bootstrap` (later in the afternoon)
+       Adds `.github/workflows/ci.yml` + minor edits to root
+       `package.json` to wire pnpm scripts. Touches CI + root
+       package.json → 2 reviews required (Antonio mandatory).
+       If Antonio is busy with CMadrid, this lands tomorrow.
+
+   This split protects you: PR1 unblocks the rest of the team's
+   testability today regardless of Antonio's availability.
 
    16:00 - 17:00   GITHUB ACTIONS — first workflow
    ────────────────────────────────────────────────

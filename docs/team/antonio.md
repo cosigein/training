@@ -60,7 +60,7 @@
 | Squash merge | Por defecto en todos los PRs |
 | `data-testid` | `<portal>-<pantalla>-<elemento>` — ver CONTRIBUTING §5.quater |
 | Tipos compartidos backend↔frontend | Package `packages/api-types/` (Jesús lo expone, Alejandro y Joel consumen) |
-| VPS staging | __PENDIENTE — decidir HOY antes del kickoff__ (sugerencia: Hetzner CX22 si no hay infra existente) |
+| VPS staging | **Hetzner CX22** (Ubuntu 22.04, 2 vCPU / 4GB / 40GB · ~6€/mes) — provisionado por Antonio el jueves 30/04 antes del despliegue automático |
 | Plan B screencast demo | Vos lo grabás el sábado 09/05 por la tarde tras tortura kiosko (45 min, 3 takes) |
 
 ---
@@ -346,12 +346,20 @@ SEMANA 1 — INFRAESTRUCTURA
 MARTES (DÍA 1) 28/04 — KICKOFF
 09:00  Reunión kickoff con todo el equipo. Lectura silenciosa
        del paper maestro. Q&A. Resolución de dudas.
-10:30  Repo cosigein/training ya está creado: confirmar accesos
-       de Jesús/Alejandro/Joel y permisos.
+10:00  Café + buffer + setup individual:
+       - Quien no tenga Node 20 / Docker / GitHub access, los instala.
+       - Antonio crea el chat del equipo si no estaba creado.
+       - Confirmar permisos de cada uno en el repo.
 11:00  Scaffolding mínimo del repo en vivo con todo el equipo
        (estructura de carpetas, package.json, docker-compose dev).
        NO se hace por separado: lo hacemos juntos para que
        todos compartan la base.
+~13:00 Comida.
+14:30  Cada uno arranca con su primer commit asignado:
+       - Jesús: rama chore/setup-jesus + scaffolding apps/api
+       - Alejandro: rama chore/setup-alejandro + apps/web base
+       - Joel: rama feat/qa-e2e-bootstrap (PR1)
+       - Antonio: rama chore/cross-... según necesidad
 
 MIÉRCOLES (DÍA 2) 29/04
 - Investigar fixtures Webfleet reales del cliente.
