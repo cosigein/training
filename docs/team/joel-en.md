@@ -674,7 +674,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: ./scripts/deploy-staging.sh   # SSH to dobacksoft-vps
+      - run: ./scripts/deploy-staging.sh   # SSH to staging VPS
       - run: npm run smoke-tests
       - name: Notify
         run: ...   # Slack / email / whatever

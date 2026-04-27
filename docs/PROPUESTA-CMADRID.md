@@ -264,7 +264,7 @@ El sistema soporta el flujo completo de recurso administrativo en oposición:
 
    Si durante la convocatoria se detecta un BUG (no un cambio
    de criterio):
-     · CMadrid + DobackSoft documentan el bug.
+     · CMadrid + el equipo proveedor documentan el bug.
      · Se reprocesan los intentos afectados con la lógica
        correcta, manteniendo la versión documentada del cambio.
      · El audit log refleja el reproceso con su justificación.
@@ -608,9 +608,9 @@ Equipo dedicado al proyecto Training durante el sprint y la operación posterior
      - +15 años en desarrollo de software
      - Especialización en arquitectura de sistemas y plataformas SaaS
      - Experiencia previa con clientes del sector público y privado
-     - Autor del sistema DobackSoft (plataforma de telemetría
-       vehicular de la que parten los aprendizajes técnicos
-       aplicados a Training)
+     - Experiencia construyendo sistemas de telemetría vehicular en
+       producción, base sobre la que se apoyan las decisiones técnicas
+       de Training
 ```
 
 ### Jesús — Responsable de backend
@@ -690,13 +690,14 @@ Equipo dedicado al proyecto Training durante el sprint y la operación posterior
 
    ▶ Conocimiento previo del dominio
      Antonio (director técnico) ha trabajado durante el último año
-     con datos reales del cuerpo de bomberos de Madrid en el contexto
-     del proyecto DobackSoft Fleet, lo que reduce sustancialmente la
-     curva de aprendizaje del problema.
+     con datos reales del cuerpo de bomberos de Madrid, lo que reduce
+     sustancialmente la curva de aprendizaje del problema.
 
    ▶ Complejidad acotada
-     Quitamos lo que no aplica al caso de uso (telemetría general,
-     IA, geofencing complejo) y nos enfocamos en lo que sí.
+     Training se centra en lo que aplica al caso de uso de oposición
+     pública. Se evita scope adyacente (telemetría general, módulos
+     de IA, geofencing complejo) que no aporta a la demo del 11/05
+     ni al cutover de Fase 2.
 
    ▶ Decisiones legales previstas desde el diseño
      LPACAP, GDPR y derecho de recurso administrativo entran en

@@ -553,7 +553,8 @@ Cualquier PR (tuyo o del equipo) que rompa una de estas se rechaza:
 ```
    ☑ Repo `cosigein/training` creado (ya está)
    ☐ Invitar a Jesús/Alejandro/Joel al repo (necesitás sus usernames de GitHub)
-   ☐ Bloquear backlog de DobackSoft Fleet (decir a tu jefe: "estoy en Training 14 días")
+   ☐ Coordinar con tu Dirección la cobertura de tu agenda durante el sprint
+        (esa conversación NO va en este repo — se cierra por email/llamada interna)
    ☐ Confirmar a CMadrid fecha de demo (lunes 11/05/2026)
    ☐ Conseguir fixtures Webfleet realistas (al menos 1 ejemplo de payload)
    ☐ Mandar HOY al equipo el link al repo + sus docs individuales

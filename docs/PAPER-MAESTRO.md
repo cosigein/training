@@ -44,36 +44,32 @@
 
 ## 1.1 Lo más importante que tenés que saber
 
-Antonio Hermoso lleva un año construyendo solo un sistema llamado **DobackSoft V3**: una plataforma de telemetría vehicular con 12+ módulos. El cliente real es **CMadrid Bomberos** (Comunidad de Madrid). Pagan por UN módulo: **Training** (evaluación de candidatos a conductor de camión de bomberos).
-
-El resto de los módulos son scope sin nadie que pague.
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  DOBACKSOFT V3 (lo que existe HOY)                           │
-│                                                              │
-│  · 92 modelos en base de datos                               │
-│  · 12+ módulos: Telemetría, Estabilidad, IA, Geofences,     │
-│    Operaciones, Reportes, Admin, TRAINING, etc.              │
-│  · Backend Node.js + Express + Prisma + Postgres + Redis     │
-│  · Frontend React + Vite + Tailwind + MUI                    │
-│  · 1 cliente que paga: CMadrid                               │
-│  · Equipo: 1 persona (Antonio)                               │
-└──────────────────────────────────────────────────────────────┘
-```
-
-**El problema:** mantener 12 módulos con 1 persona para servir 1 módulo a 1 cliente es insostenible. Hay que cortar.
-
-## 1.2 La decisión que ya está tomada
+**Training** es un sistema **automático de evaluación competitiva** para candidatos a conductor de camión de bomberos en oposición pública española. Cliente: **CMadrid** (Cuerpo de Bomberos de la Comunidad de Madrid). Vive en un **repositorio nuevo y autónomo** (`cosigein/training`) y no se acopla a ningún producto previo.
 
 ```
    ┌──────────────────────────────────────────────────────┐
-   │   ★ Sacamos el módulo Training del monolito          │
-   │   ★ Lo construimos en un REPO NUEVO                  │
-   │   ★ Reusamos lo validado del actual                  │
-   │   ★ Tiramos el resto                                 │
-   │   ★ Ahora somos 4: Antonio, Jesús, Alejandro, Joel   │
-   │   ★ 14 días hasta demo con cliente: 11/05/2026       │
+   │  TRAINING — sistema nuevo y autónomo                 │
+   │                                                      │
+   │  · Repositorio: cosigein/training (privado)          │
+   │  · Cliente: CMadrid Bomberos (Comunidad de Madrid)   │
+   │  · Modelo: oposición pública (no examen escolar)     │
+   │  · Equipo: 4 personas (Antonio, Jesús, Alejandro,    │
+   │    Joel) trabajando desde Córdoba                    │
+   │  · 14 días hasta demo: 11/05/2026                    │
+   │                                                      │
+   └──────────────────────────────────────────────────────┘
+```
+
+## 1.2 Forma del proyecto
+
+```
+   ┌──────────────────────────────────────────────────────┐
+   │   ★ Repositorio nuevo, código nuevo                  │
+   │   ★ Stack: TypeScript + Node 20 + Prisma + Postgres │
+   │     + Redis + BullMQ + React 18 + Vite + Tailwind    │
+   │   ★ Equipo de 4: Antonio, Jesús, Alejandro, Joel     │
+   │   ★ Demo CMadrid: lunes 11/05/2026                   │
+   │   ★ Producción: octubre 2026                         │
    └──────────────────────────────────────────────────────┘
 ```
 
@@ -247,19 +243,19 @@ Cada vuelta del proceso para un candidato y una ruta = un **ATTEMPT** (intento).
    │       · Worker (procesamiento async + ranking nocturno)      │
    │       · Web (React SPA con 4 portales)                       │
    │                                                              │
-   │   ★ Reusa lo validado de DobackSoft V3:                      │
-   │       · Schema Prisma de Training (11 modelos base)          │
-   │       · Detector de eventos (StabilityProcessor)             │
+   │   ★ Núcleo de dominio (escrito en este sprint):              │
+   │       · Schema Prisma de Training (modelos base)             │
+   │       · Detector de eventos (en packages/detection puro)     │
    │       · Cliente Webfleet (con sus gotchas conocidos)         │
    │                                                              │
-   │   ★ Tira lo que no aplica de DobackSoft V3:                  │
-   │       · IA / RAG / FleetMind                                 │
+   │   ★ Lo que NO entra en el scope:                             │
+   │       · IA / RAG                                             │
    │       · Geofencing complejo                                  │
    │       · Map-matching (Valhalla, TomTom)                      │
    │       · Command Center                                       │
-   │       · Cron jobs operativos                                 │
+   │       · Cron jobs operativos genéricos                       │
    │                                                              │
-   │   ★ Añade conceptos NUEVOS de v5:                            │
+   │   ★ Conceptos clave del modelo de oposición:                 │
    │       · Convocatoria (con plazas, fecha cierre, ruta princ.) │
    │       · Ranking (snapshot diario + ranking final)            │
    │       · Cierre de convocatoria (proceso administrativo)      │
@@ -497,7 +493,7 @@ Se generan **snapshots diarios** durante la convocatoria. Al cierre se genera el
                     │
                     ▼
            ┌─────────────────┐
-           │   DETECTION     │  StabilityProcessor PURO
+           │   DETECTION     │  Detector de eventos PURO
            │   (puro)        │
            └────────┬────────┘
                     │
@@ -3154,17 +3150,17 @@ DÍA  TAREA
 
 ## 13.1 Decisiones heredadas v1-v4 (vigentes)
 
-## D1 — DB compartida o separada con DobackSoft actual
+## D1 — Base de datos del proyecto
 
-**DECISIÓN: DB nueva, separada.**
+**DECISIÓN: DB exclusiva de Training, separada de cualquier sistema previo.**
 
 ## D2 — Retención de samples crudos
 
 **DECISIÓN: 12 meses. Configurable por organización en V2.**
 
-## D3 — DobackSoft Fleet
+## D3 — Reservada
 
-**DECISIÓN: Deprecación formal. Fin de vida 2026-10-27.**
+> Decisión retirada del scope de este repo. Cualquier discusión sobre proyectos adyacentes a Training se cierra fuera de este repositorio.
 
 ## D4 — Lector RFID
 
@@ -3172,7 +3168,7 @@ DÍA  TAREA
 
 ## D5 — Formato de archivos del sensor
 
-**DECISIÓN: Formato actual de DobackSoft V3.**
+**DECISIÓN: Formato del sensor Doback Elite (formato propio, definido en §6).**
 
 ## D6 — Hosting del repo
 
@@ -3679,7 +3675,8 @@ El kiosko opera offline (D-kiosko). Si crea attempts sin conexión, no puede lee
    ☐ Crear repo "training" en GitHub
    ☐ Configurar permisos
    ☐ Comunicar a CMadrid fecha de demo (11/05/2026)
-   ☐ Bloquear backlog DobackSoft Fleet
+   ☐ Coordinar con Dirección la cobertura de tu agenda durante el sprint
+       (esa conversación no se documenta en este repo)
    ☐ Mandar este paper a Jesús, Alejandro, Joel 24h antes
    ☐ Preparar reunión kickoff lunes 9:00 AM
    ☐ Conseguir fixtures Webfleet realistas
@@ -3691,7 +3688,7 @@ El kiosko opera offline (D-kiosko). Si crea attempts sin conexión, no puede lee
 ```
    ☐ Leer paper completo (especialmente §1-§6, §8, Anexo C)
    ☐ Identificar las 7 invariantes y entenderlas
-   ☐ Tener acceso al schema actual + StabilityProcessor
+   ☐ Tener acceso a las referencias técnicas que Antonio le indique en el kickoff
    ☐ Tener acceso a fixtures reales del sensor
    ☐ Confirmar dedicación 100% durante 14 días
 ```
@@ -4045,12 +4042,9 @@ Tras la segunda ronda adversarial (judgment-day), los jueces detectaron findings
 
 **No son fuente de verdad operativa.**
 
-- Plan Maestro CMadrid v3.0 — `~/Desktop/dobacksoft-plan-maestro-cmadrid.pdf`
-- Plan.md (Jesús) — Migración a Flask. Rechazado.
-- Roadmap.md (Jesús) — Rechazado junto con el plan Flask.
-- Documento Arquitectural Frontend (Alejandro) — Stack Vue rechazado, contenido de producto absorbido en §9.
-- Paper Maestro v1 / v2 / v3 / v4 — Iteraciones previas, superadas por v5.
-- Documento ejecutivo v1 / v2 — Iteraciones del documento de negocio, superadas por v3 ejecutivo (modelo oposición).
+- Iteraciones previas del paper técnico (v1-v5) — superadas por v6.
+- Iteraciones previas del documento ejecutivo (v1-v3) — superadas por v4 (modelo oposición).
+- Cualquier propuesta técnica anterior al sprint Training — superada por las decisiones D1-D25 de §13.
 
 ---
 
@@ -4277,7 +4271,6 @@ Tras la segunda ronda adversarial (judgment-day), los jueces detectaron findings
 | **Auditoría** | Solicitud formal del alumno para revisar un intento. Derecho del candidato. Frecuencia esperada <1%. |
 | **Reevaluación** | Attempt nuevo con `parent_attempt_id`. Se genera tras una auditoría confirmada. El original NO se modifica. |
 | **CMadrid** | Cuerpo de bomberos de la Comunidad de Madrid. Cliente. |
-| **DobackSoft** | Sistema actual de telemetría del que extraemos Training. |
 | **Doback Elite** | Dispositivo propio instalado en cada camión. Sensor inercial + GPS propio. |
 | **Webfleet** | Plataforma de gestión de flotas de Bridgestone (antes TomTom Telematics). Aporta GPS + KPIs de comportamiento + eventos. |
 | **Kiosko** | El dispositivo (tablet/PC) instalado en la cabina del camión. Pantalla simple, RFID. |

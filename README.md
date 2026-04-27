@@ -59,10 +59,9 @@ OWNERS.md                            ← quién aprueba qué archivo (LEER antes
 
 docs/
 ├── 📘 RESUMEN-EJECUTIVO.md           ← visión del proyecto en 10 min · Dirección/stakeholders
-├── 📕 PAPER-MAESTRO.md               ← referencia técnica completa (~3500 líneas)
+├── 📕 PAPER-MAESTRO.md               ← referencia técnica completa (~4300 líneas)
 ├── 📗 DOCUMENTO-EJECUTIVO.md         ← visión funcional no técnica (cliente + gestión)
 ├── 📙 PROPUESTA-CMADRID.md           ← descripción del servicio para CMadrid (SLA, GDPR, escrow)
-├── 📓 MEMO-DIRECCION-INTERNO.md      ← visión interna · solo Dirección · NO compartir
 ├── 📔 OPERATIONS.md                  ← incidentes, rollback, secretos, DR, soporte post-cutover
 └── team/
     ├── antonio.md                    ← qué hace Antonio en el sprint
@@ -77,7 +76,7 @@ docs/
 | Si sos / Si necesitás | Empezá por | Después, si querés profundidad |
 |---|---|---|
 | **Miembro del equipo** | Tu doc en `docs/team/` | `OWNERS.md` + `CONTRIBUTING.md` antes de tu primer PR |
-| **Dirección / stakeholder** | `docs/RESUMEN-EJECUTIVO.md` (10 min) | `docs/MEMO-DIRECCION-INTERNO.md` (15 min) si necesitás detalle interno |
+| **Dirección / stakeholder** | `docs/RESUMEN-EJECUTIVO.md` (10 min) | Conversaciones internas de empresa (cobertura de agenda, contratos, RC, etc.) se cierran fuera de este repositorio. |
 | **Cliente CMadrid** | `docs/DOCUMENTO-EJECUTIVO.md` | `docs/PROPUESTA-CMADRID.md` para SLA, GDPR, escrow |
 | **Auditor / nuevo en el repo** | `docs/RESUMEN-EJECUTIVO.md` + este README | `docs/PAPER-MAESTRO.md` solo cuando dudes de algo concreto |
 

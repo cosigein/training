@@ -225,23 +225,17 @@ Lun 11/05   REUNIÓN CMADRID — DEMO en Madrid
 
 # 8. Riesgos identificados y plan de contingencia
 
-## 8.1 — DobackSoft V3 sin director técnico durante 74 días
-
-> **El riesgo más caro del proyecto.** Mientras el director técnico está dedicado a Training (sprint + Fase 2), DobackSoft V3 — el producto madre, fuente de caja actual, en pleno cutover de Pipeline Audit Phase 2 — se queda sin dirección técnica del 28/04 al ~12/07.
-
-Recomendación de partida: designar un suplente interino con autoridad de decisión técnica para V3 durante esos 74 días. Decisión que requiere a Dirección antes del jueves 30 de abril.
-
-## 8.2 — Riesgos legales con mitigación actual
+## 8.1 — Riesgos legales con mitigación actual
 
 | Riesgo | Mitigación actual | Acción pendiente |
 |---|---|---|
 | Recurso administrativo de un candidato impugnando un cierre | Versionado inmutable de las reglas + acta PDF firmada con SHA256 + audit log completo + revisión humana significativa al cierre (cumplimiento GDPR art. 22) | Validación con asesor legal de CMadrid antes del cutover |
-| Responsabilidad civil si el sistema falla durante una convocatoria | Pendiente confirmar póliza RC profesional vigente | Decisión de Dirección antes del cutover de Fase 3 (octubre 2026) |
+| Responsabilidad civil si el sistema falla durante una convocatoria | Pendiente confirmar cobertura adecuada con la empresa | Acción a coordinar antes del cutover real |
 | Acuerdo escrito con Bridgestone (Webfleet) | Pendiente verificar contrato existente o negociar | Cerrar acuerdo escrito antes del cutover real |
 | Cumplimiento GDPR (somos Data Processor de datos sensibles) | DPA estándar + cláusulas de protección de datos en contrato con CMadrid | DPO de CMadrid debe firmar el documento de protección antes del cutover |
 | Bus factor del equipo | Cuatro personas con plan documentado, code escrow para CMadrid | Plan de reemplazo si Antonio o Jesús caen |
 
-## 8.3 — Riesgos operativos no obvios
+## 8.2 — Riesgos operativos no obvios
 
 - **Webfleet sandbox de CMadrid probablemente no existe.** Las flotas públicas españolas con Webfleet (Bridgestone) típicamente solo tienen producción con datos reales, no sandbox separado. Si esto se confirma esta semana, hay bloqueo legal de NDA + GDPR antes del lunes 04 de mayo, y el sprint perdería la integración real durante una semana entera. Plan de mitigación: negociar export anonimizado de un período histórico para usar como fixture.
 - **Equipo de cuatro personas sin redundancia real.** El plan de contingencia documenta qué hacer si cae cada persona durante 3-5 días o durante 1-2 semanas, pero no elimina el riesgo de bus factor.

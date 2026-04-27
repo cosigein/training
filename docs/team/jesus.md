@@ -36,7 +36,7 @@
 - [5. Schema Prisma — modelos críticos](#5-schema-prisma--modelos-críticos)
 - [6. Endpoints API — catálogo](#6-endpoints-api--catálogo)
 - [7. Lógica del cierre (3 pasos)](#7-lógica-del-cierre-3-pasos)
-- [8. Lo que copiás del actual (DobackSoft)](#8-lo-que-copiás-del-actual-dobacksoft)
+- [8. Patrones de implementación de referencia](#8-patrones-de-implementación-de-referencia)
 - [9. Coordinación con el equipo](#9-coordinación-con-el-equipo)
 - [10. Glosario y siglas](#10-glosario-y-siglas)
 
@@ -47,8 +47,6 @@
 | Término | Significado |
 |---|---|
 | **Paper Maestro v6** | Sexta iteración del paper técnico de Training. La "v6" hace referencia a la versión del paper, no del producto. |
-| **DobackSoft V3 / DobackSoft Fleet** | El producto principal de la empresa (telemetría vehicular para flotas). Antonio te puede dar acceso al repo `dobackv2` si necesitás referenciarlo (ver §8). Training es un sistema NUEVO, no una extensión de DobackSoft V3. |
-| **StabilityProcessor** | Componente backend de DobackSoft V3 que convierte muestras en eventos. Lo extraemos a un package puro `packages/detection` para reutilizar en Training (§8). Antonio te muestra dónde vive el día 1 si necesitás. |
 | **Doback Elite** | Dispositivo físico (sensor + GPS) instalado en cada camión. Producto propio. |
 | **Webfleet** | Plataforma externa de Bridgestone que CMadrid tiene contratada. Antonio escribe el package que la consume (`packages/ingestion/webfleet/`). |
 | **D1, D2, ..., D25** | Decisiones firmes del paper maestro. Las 25 están listadas en `docs/PAPER-MAESTRO.md` con su justificación. Buscá `### D` en el paper para encontrarlas. No se reabren durante el sprint. |
@@ -65,7 +63,6 @@
 
 | Cuándo | Qué te entrega Antonio |
 |---|---|
-| **Día 1 (martes 28/04)** | Acceso de lectura al repo `dobackv2` (DobackSoft V3) si necesitás portar `StabilityProcessor` desde ahí. Antonio te lo activa durante el scaffolding compartido. |
 | **Día 3 (jueves 30/04)** | Versión 0 (mock estable) de `@training/ingestion-webfleet` con el shape congelado: `{ events_count, raw_samples_count, data_freshness, fetched_at }`. Te alcanza para empezar `apps/worker/src/jobs/webfleetSync.ts`. |
 | **Día 7 (lunes 04/05)** | Versión real de `@training/ingestion-webfleet` operando contra el sandbox de CMadrid (con tilde resuelto, quota Redis en marcha, circuit breaker activo). |
 
@@ -342,8 +339,8 @@ logger.info('attempt.closed', {
 
    Spanish vs English en código:
      - Modelos de dominio: nombre en español si es término legal/contractual
-       (Convocatoria, Enrollment, Attempt — sí, Attempt en inglés porque
-       lo heredamos de DobackSoft V3)
+       (Convocatoria, Enrollment). Attempt en inglés es decisión deliberada
+       (más conciso, lo usás un millón de veces).
      - Tipos técnicos: en inglés (RankingInput, ValidationError)
      - Comentarios: español si aplica al dominio, inglés si es técnico
 ```
@@ -547,7 +544,7 @@ LUNES (DÍA 7) 04/05
   - data_quality calculation
   - flag de gaps
 - Tests determinísticos con fixtures.
-- Empezar packages/detection (extracción StabilityProcessor a paquete puro).
+- Empezar packages/detection (detector de eventos como paquete puro).
 
 MARTES (DÍA 8) 05/05
 - Terminar packages/detection — REFACTORIZAR a PURO (sin Prisma, sin red).
@@ -1535,20 +1532,20 @@ PENDING_TECHNICAL_REVIEW si:
 
 ---
 
-# 8. Lo que copiás del actual (no reescribís)
+# 8. Patrones de implementación de referencia
 
-| FUENTE en `dobackv2/` | DESTINO en `training/` |
+Algunos patrones técnicos que usás vienen del estado del arte de la empresa. Antonio te orienta el día 1 sobre **qué patrones aplicar** y **cómo se ven en producción**:
+
+| Patrón | Dónde aplicarlo en Training |
 |---|---|
-| `prisma/schema.prisma` (11 modelos training) | `prisma/schema.prisma` + ajustes v6 |
-| `backend/src/services/StabilityProcessor*` | `packages/detection/` (refactor a PURO sin Prisma) |
-| Lógica saneamiento (si dispersa) | `packages/normalization/` (CONSOLIDAR) |
-| `backend/src/middleware/requireOrg.ts` | `apps/api/src/middleware/` |
-| Patrón JWT httpOnly + CSRF | `apps/api/src/middleware/` |
-| Parser archivos del sensor | `packages/ingestion/parser/` |
+| Schema Prisma con `Convocatoria`, `Enrollment`, `Attempt`, `Event` y relaciones inversas explícitas | `prisma/schema.prisma` (ver §5 de este doc) |
+| Detección de eventos a partir de muestras (algoritmo puro, sin Prisma ni red) | `packages/detection/` |
+| Normalización y saneamiento de datos antes de procesar | `packages/normalization/` |
+| `requireOrg` middleware multi-tenant | `apps/api/src/middleware/` |
+| JWT httpOnly + CSRF (csrf-csrf) + bcrypt | `apps/api/src/middleware/` |
+| Parser de archivos del sensor (formato del cliente) | `packages/ingestion/parser/` |
 
-**Lo que NO copiás:** Cron jobs Fleet, WS servers Fleet, FleetMind/RAG, workers KPIs Fleet, Geofencing.
-
-**Regla:** cada archivo que traés requiere justificación en el PR. Si en la semana 1 más del 50% del código viene del actual, paramos y revisamos.
+**Regla del sprint:** Training es un sistema **nuevo y autónomo**. Cada archivo se escribe pensando en este proyecto, no en heredar deuda de otros sitios. Si te encontrás copiando algo a ciegas, parás y lo discutimos.
 
 ---
 
@@ -1617,9 +1614,8 @@ Alejandro consume tus endpoints. **Reglas de comunicación:**
 **No se reabren durante el sprint. Si querés discutirlas, hacelo ANTES del kickoff.**
 
 ```
-   D1: DB nueva separada (no compartida con DobackSoft actual)
+   D1: DB nueva y separada para Training (no se reutiliza ningún esquema previo)
    D2: 12 meses retención de samples
-   D3: DobackSoft Fleet en deprecación, fin de vida 2026-10-27
    D4: RFID = USB-HID emulando teclado
    D5: Formato actual del sensor (no inventar)
    D7: Routing cutover por header de cohorte
