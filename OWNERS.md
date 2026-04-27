@@ -109,16 +109,14 @@ Si tu cambio rompe algo de otra persona (renombrar un endpoint, cambiar shape de
 
 ---
 
-## Endpoint freeze diario (regla del sprint) — automatizado
+## Endpoint freeze diario
 
-Cada noche, automáticamente, se commitea `docs/api-snapshot.md` con el listado de endpoints estables (path, método, request/response shape).
+Cada noche, un job en CI commitea automáticamente `docs/api-snapshot.md` con el listado de endpoints estables (path, método, request/response shape).
 
-- **Joel** monta el job desde el día 2: cron en CI que extrae los endpoints desde el código de `apps/api/` (anotaciones JSDoc o decorador equivalente) y los serializa a Markdown. **Cero esfuerzo manual de Jesús.**
+- **Joel** monta y mantiene el cron desde el día 2: extrae los endpoints desde el código de `apps/api/` (anotaciones JSDoc o decorador) y los serializa a Markdown.
 - Si el snapshot cambia respecto al día anterior, se mergea como commit `chore(qa): api-snapshot YYYY-MM-DD` y se postea el diff en el chat del equipo.
-- Alejandro y Joel solo escriben código contra ese snapshot.
+- Alejandro y Joel solo escriben código contra el snapshot vigente.
 - Cambios deliberados durante el día = PR de Jesús + aviso explícito en chat con `@Alejandro @Joel`.
-
-> **Por qué automatizado:** un snapshot manual exige 1-2 horas/noche de Jesús. Si va atrasado con backend (lo va a estar en algún momento), lo primero que salta es el snapshot, y el equipo codea a ciegas. La automatización elimina ese riesgo.
 
 ---
 

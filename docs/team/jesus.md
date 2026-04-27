@@ -1582,7 +1582,7 @@ Alejandro consume tus endpoints. **Reglas de comunicación:**
 
 - Joel hace los tests E2E que llaman a TUS endpoints. Si rompés un endpoint, avisale.
 - Joel hace los datos seed. Vos le decís qué datos necesita el sistema (cuántos enrollments, cuántos attempts cerrados, etc.).
-- Joel automatiza el `docs/api-snapshot.md` desde tu código — vos no tenés que hacerlo manualmente cada noche. Confirmá con él el día 1 que las anotaciones JSDoc/decorador que él necesita están en tu plan.
+- El `docs/api-snapshot.md` se genera automático cada noche desde tu código vía un cron de CI que monta Joel. Confirmá con él el día 1 qué anotaciones JSDoc/decorador necesita en tu plan.
 
 ---
 

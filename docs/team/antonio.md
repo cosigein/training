@@ -124,9 +124,9 @@ training/
     └── webfleetSync.ts              ← TU CÓDIGO (orquestación BullMQ)
 ```
 
-> **¿Por qué el simulador es tuyo y no de Joel?** El simulador es **la pieza más vendible del producto** el día de la demo. Si lo lleva Joel (que arrancó hace 3 días, no habla español, y tiene que hacer también seed + E2E + CI), llegamos a la demo con la versión más frágil y vos no la conocés bien. Decisión consciente: vos lo construís porque vos lo vendés.
-
 **Jesús no toca esto. Vos no tocás el resto del backend.**
+
+> **El simulador es la pieza diferencial del producto en la demo.** Lo construís vos porque lo presentás vos.
 
 ---
 

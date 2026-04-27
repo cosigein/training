@@ -135,13 +135,12 @@ Si tu cambio rompe algo de otra persona (renombrar un endpoint, cambiar shape de
 
 **No permitido:** mergear y "ya verá el otro mañana cuando le rompa". Bloquea al equipo y consume horas que no tenemos.
 
-## 5.ter Endpoint freeze diario — automatizado
+## 5.ter Endpoint freeze diario
 
-Cada noche, automáticamente, **Joel monta un job de CI** que extrae los endpoints estables de `apps/api/` (vía anotaciones JSDoc o decorador) y los commitea a `docs/api-snapshot.md`.
+Cada noche, un job en CI extrae los endpoints estables de `apps/api/` (vía anotaciones JSDoc o decorador) y commitea `docs/api-snapshot.md` con el diff posteado en el chat del equipo.
 
-- Cero esfuerzo manual de Jesús — el snapshot se genera solo desde el código.
-- Diff diario posteado en el chat del equipo automáticamente.
-- Alejandro y Joel solo escriben código contra ese snapshot.
+- Joel monta y mantiene el cron desde el día 2.
+- Alejandro y Joel solo escriben código contra el snapshot vigente.
 - Cambios deliberados durante el día = PR de Jesús + aviso en chat con `@Alejandro @Joel`.
 
 ## 5.quater Convención `data-testid` (Alejandro pone, Joel usa)

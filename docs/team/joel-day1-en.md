@@ -10,7 +10,7 @@
 
 ## ⚡ TLDR — what your day-1 looks like in 5 lines
 
-1. **Your role:** QA + E2E tests + seed data + CI/CD. You make sure the system works and that we ship. (The scoring simulator was originally on your scope but now belongs to Antonio — keeps your scope realistic and the most-vendable piece with the team lead.)
+1. **Your role:** QA + E2E tests + seed data + CI/CD. You make sure the system works and that we ship.
 2. **Bring to the kickoff:** Node 20 LTS + Docker Desktop installed on your laptop, GitHub invite accepted. **Don't clone the repo, don't run any project commands beforehand.** If you arrive without these, no drama — we install in the first 15 min of the kickoff.
 3. **Tuesday 28/04 09:00 in the office:** 1h kickoff with the team (silent reading + Q&A). Then 10:00–13:00 we set up the project scaffolding together (the 4 of us, screen-shared).
 4. **Your first task (afternoon):** bootstrap Playwright in the new `e2e/` workspace, write 1 smoke test, open a PR. Antonio guides you. ~3 hours of work, very doable.
