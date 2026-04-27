@@ -25,10 +25,11 @@
 
 ## Contexto en una pantalla
 
-- **Cliente:** CMadrid (cuerpo de bomberos de la Comunidad de Madrid).
+- **Cliente:** CMadrid (cuerpo de bomberos de la Comunidad de Madrid). Está en Madrid.
+- **Equipo:** 4 personas trabajando desde **Córdoba** (Andalucía). El equipo viaja a Madrid solo para la demo del 11/05.
 - **Modelo:** oposición pública. Los candidatos compiten por un número fijo de plazas. La decisión APTO / NO APTO se emite al **cierre de la convocatoria**, según ranking final.
 - **Sprint:** 14 días. Demo con CMadrid el lunes **11 de mayo de 2026**.
-- **Equipo:** 4 personas — Antonio (director técnico), Jesús (backend), Alejandro (frontend), Joel (simulador + QA).
+- **Roles:** Antonio (director técnico), Jesús (backend), Alejandro (frontend), Joel (simulador + QA).
 - **Stack:** TypeScript + Node 20 + Express + Prisma 6 + PostgreSQL 17 + Redis + BullMQ + React 18 + Vite + Tailwind 4 + Zustand + React Query.
 
 ---

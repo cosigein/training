@@ -1,6 +1,8 @@
 # Joel — Welcome & Day 1
 
-## You're starting work on Training (Madrid). This is your day 1 guide.
+## You're starting work on Training. This is your day 1 guide.
+
+> **Where you are:** the team office is in **Córdoba, Andalusia (southern Spain)**. The client (CMadrid) is the **Madrid Region Fire Department** — they're 400 km north. We travel to Madrid only for the client demo on **Monday 11 May**. Day-to-day work, kickoff, daily standups, scaffolding — all happen here in Córdoba.
 
 > **Reality check (written 27 April 2026):** the repo `cosigein/training` was created today and only contains documents — no code, no scaffolding, no CI yet. The 14-day sprint **starts Tuesday 28 April** with a kickoff at 09:00 where the four of us set up the project together. Don't try to install or clone anything alone before then.
 
@@ -79,8 +81,10 @@ The codebase will mix Spanish and English. The Spanish words are domain terms �
    Today, evaluation is done by a human instructor watching from the
    passenger seat — slow, subjective, hard to defend in court.
    Training replaces that with sensors + automated scoring + a ranking.
-   Our client is the Madrid Region Fire Department; ~265 candidates
-   compete each year for a fixed number of spots.
+   Our client (CMadrid) is the Madrid Region Fire Department; ~265
+   candidates compete each year for a fixed number of spots.
+   We work from Córdoba — the client lives in Madrid, we travel only
+   for the demo on May 11.
 ```
 
 That's it. Everything else builds on this.
