@@ -61,7 +61,7 @@ OWNERS.md                        ← quién aprueba qué archivo (LEER antes del
 docs/
 ├── PAPER-MAESTRO.md             ← referencia técnica completa (todo el equipo)
 ├── DOCUMENTO-EJECUTIVO.md       ← visión ejecutiva no técnica (cliente + gestión)
-├── PROPUESTA-COMERCIAL.md       ← propuesta para CMadrid (no compartir aún)
+├── PROPUESTA-CMADRID.md         ← descripción del servicio para CMadrid (SLA, GDPR, escrow)
 ├── MEMO-DIRECCION-INTERNO.md    ← caso de negocio (interno, solo Dirección)
 └── team/
     ├── antonio.md               ← qué hace Antonio en estos 14 días

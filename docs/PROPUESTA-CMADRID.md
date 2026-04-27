@@ -1,13 +1,13 @@
 # Training
 ## Sistema de evaluación competitiva para conductores de camión de bomberos
 
-### Propuesta para CMadrid · Cuerpo de Bomberos de la Comunidad de Madrid
+### Descripción del servicio para CMadrid · Cuerpo de Bomberos de la Comunidad de Madrid
 
 ---
 
 | | |
 |---|---|
-| **Documento** | Propuesta comercial |
+| **Documento** | Descripción del servicio y términos operativos |
 | **Cliente** | CMadrid · Cuerpo de Bomberos de la Comunidad de Madrid |
 | **Versión** | 1.0 — abril de 2026 |
 | **Demo en vivo** | Lunes 11 de mayo de 2026 |
@@ -416,56 +416,9 @@ Esta es una conversación operativa de **1-2 reuniones**, no un proyecto en sí 
 
 ---
 
-## 8.bis Inversión, SLA y términos contractuales
+## 8.bis Términos del servicio: SLA, continuidad, formación, hardware
 
-> **Nota:** las cifras concretas (importes, porcentajes de penalización, plazos exactos) se acordarán en la reunión del 11 de mayo. Los modelos descritos aquí son la propuesta de partida.
-
-### 8.bis.1 Modelo económico propuesto
-
-Tres componentes, separados por claridad:
-
-```
-   1. SETUP INICIAL (pago único)
-      Cubre el sprint de construcción + integración con Webfleet de CMadrid +
-      formación del equipo de admins e instructores + traspaso documental.
-
-      Esquema de hitos propuesto (alineado con normativa de contratación
-      pública española — pago contra entregable verificable):
-        Hito 1 (~30%): firma del contrato.
-        Hito 2 (~30%): demo aceptada por CMadrid (lunes 11/05/2026).
-        Hito 3 (~25%): cutover validado de la primera convocatoria real.
-        Hito 4 (~15%): primera convocatoria cerrada con acta firmada.
-
-      Modelo alternativo (menor preferencia por contratación pública):
-        50% al kickoff, 50% tras el cutover validado.
-
-   2. SUSCRIPCIÓN MENSUAL (mantenimiento + operación)
-      Incluye:
-        - Mantenimiento del backend, frontend, base de datos.
-        - Sync con Webfleet y Doback Elite operativos.
-        - Actualizaciones de seguridad y dependencias.
-        - Backups diarios + verificación + retención según política GDPR.
-        - Soporte técnico en horario laboral (ver SLA abajo).
-        - Cron de ranking diario, generación de actas, generación de exports GDPR.
-
-   3. POR CONVOCATORIA REAL CERRADA (variable)
-      Importe acordado por convocatoria efectivamente cerrada en producción.
-      Cubre el coste variable de cuota Webfleet + storage de raw_samples
-      durante 12 meses + generación del acta firmada cualificada.
-
-   4. SOPORTE EXTENDIDO PARA DÍA DE CIERRE FORMAL (variable, opcional)
-      Para los días de cierre formal de cada convocatoria real:
-        - Presencia on-site o stand-by garantizado del equipo.
-        - Cobertura ampliada vs el horario laboral estándar.
-      Tarifa por convocatoria, acordada en contrato.
-
-   Las cifras concretas se proponen en negociación bilateral antes
-   de la firma del contrato.
-```
-
-**Por qué este modelo:** separa el coste fijo (mantenimiento del sistema) del coste variable (uso real). CMadrid paga proporcional al volumen real de candidatos evaluados.
-
-### 8.bis.2 SLA — Service Level Agreement
+### 8.bis.1 SLA — Service Level Agreement
 
 ```
    ┌──────────────────────────────────────────────────────────────┐
@@ -498,15 +451,10 @@ Tres componentes, separados por claridad:
    │   RPO (Recovery Point Objective): < 1 hora                   │
    │   RTO (Recovery Time Objective):  < 4 horas                  │
    │                                                              │
-   │   Penalizaciones:                                            │
-   │     - Si la disponibilidad mensual cae por debajo del SLA,   │
-   │       se aplica un descuento proporcional sobre la cuota     │
-   │       mensual (% a acordar bilateralmente).                  │
-   │                                                              │
    └──────────────────────────────────────────────────────────────┘
 ```
 
-### 8.bis.3 Continuidad del equipo y del sistema
+### 8.bis.2 Continuidad del equipo y del sistema
 
 Una preocupación legítima: ¿qué pasa si el equipo se va?
 
@@ -544,9 +492,9 @@ Una preocupación legítima: ¿qué pasa si el equipo se va?
        - 60 días de soporte de transición
 ```
 
-### 8.bis.4 Formación del equipo de CMadrid
+### 8.bis.3 Formación del equipo de CMadrid
 
-Durante Fase 2 (mayo–julio 2026), formación incluida en el setup inicial:
+Durante Fase 2 (mayo–julio 2026):
 
 ```
    ▶ Sesión para administradores (4h)
@@ -572,7 +520,7 @@ Durante Fase 2 (mayo–julio 2026), formación incluida en el setup inicial:
      a dudas operativas de admins e instructores via Slack o email.
 ```
 
-### 8.bis.5 Hardware Doback Elite — logística e instalación
+### 8.bis.4 Hardware Doback Elite — logística e instalación
 
 El sistema usa un dispositivo propio (**Doback Elite**) instalado en cada camión. Aclaramos quién hace qué para evitar bloqueos operativos.
 
@@ -616,14 +564,12 @@ El sistema usa un dispositivo propio (**Doback Elite**) instalado en cada camió
 
 ---
 
-### 8.bis.6 Términos contractuales clave
+### 8.bis.5 Términos contractuales clave
 
 ```
    ▶ Propiedad del código
      CMadrid recibe licencia de uso perpetua e irrevocable del código
-     desarrollado para el proyecto Training. La titularidad intelectual
-     queda según se acuerde en el contrato (modelos posibles: licencia
-     de uso, copropiedad, transferencia íntegra).
+     desarrollado para el proyecto Training.
 
    ▶ Propiedad de los datos
      Los datos de los candidatos son íntegramente de CMadrid. Nosotros
@@ -632,25 +578,16 @@ El sistema usa un dispositivo propio (**Doback Elite**) instalado en cada camió
      a terceros.
 
    ▶ Confidencialidad
-     NDA mutuo desde el inicio del contrato. Datos personales de
-     candidatos sometidos a estrictas medidas de seguridad acordes al
-     Reglamento Europeo de Protección de Datos.
+     NDA mutuo. Datos personales de candidatos sometidos a estrictas
+     medidas de seguridad acordes al Reglamento Europeo de Protección
+     de Datos.
 
-   ▶ Plazos contractuales
+   ▶ Plazos
      - Sprint inicial (este sprint): cerrado, fecha fija 11 de mayo.
      - Fase 2 + cutover: hasta julio 2026.
-     - Suscripción: anual con renovación automática salvo aviso 60 días
-       antes de vencimiento.
-     - Salida: 60 días de preaviso mínimo desde cualquier parte.
 
    ▶ Resolución de disputas
      Mediación en primera instancia. Jurisdicción: tribunales de Madrid.
-
-   ▶ Aspectos pendientes de negociación bilateral
-     - Importes concretos (los tres componentes del modelo)
-     - Porcentajes de penalización por incumplimiento de SLA
-     - Cláusulas específicas de propiedad intelectual
-     - Garantías adicionales si CMadrid las requiere
 ```
 
 ---
