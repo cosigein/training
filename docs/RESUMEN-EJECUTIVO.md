@@ -155,10 +155,10 @@ Esta separación de responsabilidades es **crítica desde el punto de vista lega
 
 | Rol | Persona | Qué construye | Idioma |
 |---|---|---|---|
-| Director técnico · enlace con cliente · Webfleet ingestion | **Antonio Hermoso** | Integración con Webfleet · arquitectura · única voz hacia CMadrid | Español |
-| Backend completo | **Jesús** | API + worker + schema Prisma + autenticación + cierre de convocatoria | Español |
-| Frontend completo | **Alejandro** | Cuatro portales (admin, manager, alumno, kiosko) · ~32 pantallas · design system | Español |
-| Simulador + QA + tests E2E + seed data + CI/CD | **Joel** | Pruebas automáticas · datos de demo · simulador de cambios de regla | Inglés |
+| Director técnico · enlace con cliente · Webfleet · Simulador (UI + endpoint) | **Antonio Hermoso** | Integración con Webfleet · arquitectura · única voz hacia CMadrid · pieza diferencial del producto (simulador de reglas) | Español |
+| Backend completo | **Jesús** | API + worker + schema Prisma + autenticación + cierre de convocatoria · función pura `simulate()` | Español |
+| Frontend completo | **Alejandro** | Cuatro portales (admin, manager, alumno, kiosko) · ~32 pantallas · design system · componentes base que reutiliza Antonio en simulador | Español |
+| QA + tests E2E + seed data + CI/CD | **Joel** | Pruebas automáticas · datos de demo · pipeline CI/CD · pruebas E2E sobre el simulador (Antonio escribe el simulador, Joel lo testea) | Inglés |
 
 > El equipo trabaja desde **Córdoba** (Andalucía). El cliente, CMadrid, está en Madrid (400 km al norte). Solo viajamos a Madrid para la demo del 11 de mayo.
 

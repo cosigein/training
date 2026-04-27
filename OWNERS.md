@@ -17,7 +17,10 @@
 | `packages/ingestion/webfleet/` | **Antonio** | Solo Antonio edita |
 | `apps/web/` (todo el frontend) | **Alejandro** | Alejandro edita; Joel toca solo `data-testid` con su convención |
 | `apps/web/src/styles/tokens.css` · design system | **Alejandro** | Alejandro decide |
-| `apps/api/` salvo `routes/health` | **Jesús** | Jesús edita |
+| `apps/web/src/pages/admin/ScoringSimulator.tsx` | **Antonio** | Antonio edita; Alejandro le entrega componentes base; Joel escribe E2E test #7 contra esta pantalla |
+| `apps/api/src/routes/scoring.simulate.ts` | **Antonio** | Antonio edita; consume `packages/scoring/simulate()` de Jesús |
+| `docs/SIMULATOR-USER-GUIDE.md` | **Antonio** | Doc para admin CMadrid (español, 1-2 páginas) |
+| `apps/api/` resto (salvo `routes/health`) | **Jesús** | Jesús edita |
 | `apps/worker/src/jobs/webfleetSync.ts` | **Antonio** (define el contrato) + **Jesús** (orquesta BullMQ) | Antonio define qué llama, Jesús cómo se programa |
 | `e2e/` (Playwright tests) | **Joel** | Joel edita |
 | `seed/` · `scripts/seed.ts` | **Joel** | Joel edita; Jesús revisa coherencia con schema |
@@ -106,13 +109,16 @@ Si tu cambio rompe algo de otra persona (renombrar un endpoint, cambiar shape de
 
 ---
 
-## Endpoint freeze diario (regla del sprint)
+## Endpoint freeze diario (regla del sprint) — automatizado
 
-Cada noche, antes de irse, **Jesús pushea** un archivo `docs/api-snapshot.md` con el listado de endpoints estables (path, método, request/response shape).
+Cada noche, automáticamente, se commitea `docs/api-snapshot.md` con el listado de endpoints estables (path, método, request/response shape).
 
+- **Joel** monta el job desde el día 2: cron en CI que extrae los endpoints desde el código de `apps/api/` (anotaciones JSDoc o decorador equivalente) y los serializa a Markdown. **Cero esfuerzo manual de Jesús.**
+- Si el snapshot cambia respecto al día anterior, se mergea como commit `chore(qa): api-snapshot YYYY-MM-DD` y se postea el diff en el chat del equipo.
 - Alejandro y Joel solo escriben código contra ese snapshot.
-- Cambios al día siguiente = PR + aviso explícito en el chat con `@Alejandro @Joel`.
-- Si Jesús no actualiza el snapshot, el snapshot anterior sigue siendo el contrato — Alejandro/Joel pueden hacer revert si los rompen sin aviso.
+- Cambios deliberados durante el día = PR de Jesús + aviso explícito en chat con `@Alejandro @Joel`.
+
+> **Por qué automatizado:** un snapshot manual exige 1-2 horas/noche de Jesús. Si va atrasado con backend (lo va a estar en algún momento), lo primero que salta es el snapshot, y el equipo codea a ciegas. La automatización elimina ese riesgo.
 
 ---
 

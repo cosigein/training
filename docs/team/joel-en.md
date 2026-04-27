@@ -10,10 +10,10 @@
 
 | | |
 |---|---|
-| **Your role** | Scoring Simulator (sole owner) + QA + E2E Tests + Seed Data + CI/CD |
+| **Your role** | QA + E2E Tests + Seed Data + CI/CD |
 | **Your tech lead** | Antonio (technical director) |
 | **Your peers** | Jesús (backend) · Alejandro (frontend) |
-| **Your main issue** | [#5 — Simulator + QA + E2E + Seed Data + CI/CD](https://github.com/cosigein/training/issues/5) |
+| **Your main issue** | [#5 — QA + E2E + Seed Data + CI/CD](https://github.com/cosigein/training/issues/5) |
 | **Shared issues** | [#1 — Day-1 scaffolding](https://github.com/cosigein/training/issues/1) · [#6 — Sprint conventions](https://github.com/cosigein/training/issues/6) |
 | **Master document** | `docs/PAPER-MAESTRO.md` (in Spanish — full reference when in doubt) |
 
@@ -26,33 +26,31 @@
    Testing the system from outside forces you to understand
    how it's used, not just how it's built.
 
-   Your role is high-leverage:
+   Your role is high-leverage on FOUR fronts:
 
-   1. SIMULATOR end-to-end (SOLE OWNER)
-      It's the most marketable piece for the CMadrid client.
-      It lets users test rule changes WITHOUT touching production.
-
-   2. E2E TESTS (Playwright)
+   1. E2E TESTS (Playwright)
       The first thing teams sacrifice when no one owns it.
       You're that owner.
+
+   2. CI/CD
+      Setup that automates everything. Every push to main → staging.
+      Includes the daily endpoint snapshot (auto-generated, not
+      manually pushed by Jesús).
 
    3. REALISTIC SEED DATA
       Critical for the demo to feel credible.
       Not "Test User 01" — data that looks real.
 
-   4. CI/CD
-      Setup that automates everything. Every push to main → staging.
-
-   5. DEMO READINESS
-      Every Friday you tell me what works and what doesn't.
-
-   6. DAY 13 — KIOSK TORTURE
-      You lead the deliberate attack on the kiosk.
+   4. DEMO READINESS + KIOSK TORTURE (day 12)
+      Every Friday you update DEMO-READINESS.md.
+      Day 12 (Saturday) you lead the deliberate attack on the kiosk.
 
    What you do NOT do this sprint:
    - Domain logic (that's Jesús)
    - User-facing screens (that's Alejandro)
    - Webfleet (that's Antonio)
+   - The scoring simulator (originally yours, now Antonio's —
+     see §6 below for context)
 ```
 
 ---
@@ -78,26 +76,12 @@
 
 ---
 
-# 3. Your territory — the simulator is your flagship
+# 3. Your territory — QA, tests, seed data and CI/CD
 
-The simulator spans backend and frontend. Your job is to **integrate the pieces and own it end-to-end**:
+Your code lives in three folders. The simulator (originally on your scope) was reassigned to Antonio — you write the **E2E tests for it** but not the simulator itself.
 
 ```
 training/
-├── apps/api/src/routes/
-│   └── scoring.simulate.ts       ← YOUR CODE (endpoint)
-│                                    Jesús writes the core logic,
-│                                    you integrate it.
-│
-├── packages/scoring/
-│   └── simulate.ts               ← YOUR CODE (pure logic)
-│                                    Day 11 you pair with Jesús.
-│
-├── apps/web/src/pages/admin/
-│   └── ScoringSimulator.tsx      ← YOUR CODE (screen D12)
-│                                    Alejandro helps with reusable
-│                                    UI components.
-│
 ├── seed/
 │   ├── students.ts
 │   ├── enrollments.ts
@@ -206,14 +190,12 @@ DAY 9  (Wed 06/05) E2E Test #5: ranking computes and renders in manager UI.
                    Seed data v4 enriched: variants for simulation.
 
 DAY 10 (Thu 07/05) E2E Test #6: audit request + reevaluation flow.
-                   Pair with Jesús: simulator logic
-                   (packages/scoring/simulate.ts).
-                   Start SIMULATOR screen (D12) with Alejandro.
+                   Support Antonio with the simulator screen integration
+                   (only on the test side — Antonio writes UI, you write
+                   the E2E tests against it).
 
-DAY 11 (Fri 08/05) SIMULATOR end-to-end complete + user docs
-                   (`docs/SIMULATOR-USER-GUIDE.md`, in Spanish).
-                   E2E Test #7: simulator with threshold change,
-                   ranking visually re-orders.
+DAY 11 (Fri 08/05) E2E Test #7: simulator with threshold change,
+                   ranking visually re-orders. Antonio's code, your tests.
                    E2E Test #8: full kiosk flow (idle → RFID → active → close).
                    FULL pass of Annex C checklist from the master paper.
                    Document what does NOT work and why
@@ -235,161 +217,35 @@ DAY 14 (Mon 11/05) CMADRID MEETING — the demo.
 
 ---
 
-# 6. THE SIMULATOR — your flagship piece
+# 6. The simulator — context (you don't own it anymore, Antonio does)
 
-## 6.1 Why it matters
+The scoring simulator was originally on your scope. **It now belongs to Antonio.** Reasoning: it's the most-vendable piece of the product on demo day, so the team lead who pitches it should also own it. Decision taken on 28/04 before kickoff.
 
-Changing rules has impact. And in this competitive examination model, the impact is DOUBLE: it changes individual scores **AND** reorders the entire ranking.
+## 6.1 What changes for you
 
-The simulator answers questions like:
-- "What if I raise the speed-overrun threshold from 10 to 15 km/h?"
-- "What if I lower the weight of the 'route' family?"
-- "How many candidates would change spots?"
+You DO NOT write:
+- The pure function `simulate()` in `packages/scoring/` — that's Jesús (was already his).
+- The API endpoint `POST /scoring/simulate` — that's now Antonio.
+- The UI screen D12 — that's now Antonio with Alejandro's UI components.
+- The user guide `docs/SIMULATOR-USER-GUIDE.md` — that's now Antonio (in Spanish).
 
-Without simulator → the client changes and prays. With simulator → they see impact first.
+You DO write:
+- **E2E test #7** — verifies that changing a threshold reorders the ranking visually. Antonio's code, your tests.
+- **Seed data v4** — variants for simulation (different rule sets, different attempt populations) so the simulator has realistic input on demo day.
 
-## 6.2 How it works
+## 6.2 How to support Antonio with this
 
-**Input:**
-- `convocatoria_id` (which convocation to simulate)
-- `criteria_overrides` (which thresholds/weights to change)
+The simulator needs realistic data to demo well. That's where you help:
 
-**Process:**
+- Day 8–9: prepare seed data v4 with at least 3 variant rule sets and 30+ closed attempts per variant.
+- Day 10: when Antonio integrates the UI, you write the E2E test against the placeholder.
+- Day 11: when the simulator is end-to-end, you run E2E test #7 and document any flakiness in `DEMO-READINESS.md`.
 
-```
-   1. Take all CLOSED attempts of that convocation.
-   2. For each attempt:
-      Recompute the score with modified rules.
-      (Pure logic — does NOT touch anything in production.)
-   3. Build a SIMULATED ranking with the new scores.
-   4. Compare ORIGINAL vs SIMULATED ranking.
-   5. Identify candidates who CROSS the cut-off (in/out).
-```
+If the simulator is unstable on Friday 08/05, you're the first to notice and the first to flag it.
 
-**Output:**
+## 6.3 If you have ideas for the simulator UX
 
-```typescript
-{
-  attempts_simulated: [
-    { attempt_id, original_score, simulated_score, diff }
-  ],
-  ranking_original: [
-    { enrollment_id, puesto, nota_media, dentro_del_corte }
-  ],
-  ranking_simulado: [
-    { enrollment_id, puesto, nota_media, dentro_del_corte }
-  ],
-  candidatos_que_cruzan_corte: [
-    { enrollment_id, name, direction: 'enters'|'exits',
-      original_position, simulated_position }
-  ],
-  summary: {
-    affected_attempts: int,
-    avg_score_diff: float,
-    decisions_that_would_change: int
-  }
-}
-```
-
-> **Note about Spanish field names**: the schema and API field names are in Spanish (the project's working language) and will not be translated. They are domain-specific terms that match the Spanish public-examination vocabulary CMadrid uses. Treat them as proper nouns: `puesto` = position, `nota_media` = average score, `dentro_del_corte` = within the cut-off, `candidatos_que_cruzan_corte` = candidates who cross the cut-off line, `convocatoria` = convocation/exam call.
-
-## 6.3 Endpoint
-
-```
-POST /scoring/simulate
-
-Body: {
-  convocatoria_id: string,
-  criteria_overrides: {
-    family: 'estabilidad' | 'velocidad' | 'ruta' | 'conduccion',
-    rule_id: string,
-    threshold?: number,
-    weight?: number
-  }[]
-}
-
-Auth: ADMIN
-
-Response: the object described above.
-```
-
-**Who does what:**
-- **Jesús** writes `packages/scoring/simulate.ts` (pure function `simulate(attempts, overrides) → newScores`).
-- **You** write the endpoint `apps/api/src/routes/scoring.simulate.ts` that calls that function + builds the new ranking + compares with the original.
-
-## 6.4 Screen D12 — Simulator
-
-| Frontend ownership | Your role |
-|---|---|
-| You own this screen | Alejandro helps with base UI components (`<ScoreBreakdown>`, layouts) |
-
-```
-   ┌──────────────────────────────────────────────────────┐
-   │ Scoring Simulator · Convocation 2026-A               │
-   ├──────────────────────────────────────────────────────┤
-   │                                                      │
-   │ Base version: [v2.1 (active) ▾]                      │
-   │ Apply to:     [Convocation 2026-A ▾]                 │
-   │                                                      │
-   │ Modify rules:                                        │
-   │ ┌──────────────────────────────────────────────┐    │
-   │ │ Family    Rule               Original  New  │    │
-   │ │──────────────────────────────────────────────│    │
-   │ │ Stability harsh-brake threshold  8.0    10.0│    │
-   │ │ Stability harsh-brake weight     0.4     0.4│    │
-   │ │ Speed     overrun threshold     10kh   10kh │    │
-   │ │ Speed     overrun weight         0.3     0.3│    │
-   │ │ Route     deviation max         100m   100m │    │
-   │ └──────────────────────────────────────────────┘    │
-   │                                                      │
-   │ [SIMULATE]                                           │
-   │                                                      │
-   │ ──────────────────────────────────                   │
-   │                                                      │
-   │ RESULT (87 simulated attempts):                      │
-   │                                                      │
-   │ ┌─────────────────────────────────────────────┐     │
-   │ │ SCORE IMPACT                                │     │
-   │ │  Affected attempts: 87                      │     │
-   │ │  Avg score difference: +0.45 pts            │     │
-   │ │                                             │     │
-   │ │ RANKING IMPACT                              │     │
-   │ │  Candidates CROSSING the cut-off:           │     │
-   │ │   → 5 enter (moved up in position)          │     │
-   │ │   → 5 exit (moved down in position)         │     │
-   │ │                                             │     │
-   │ │  Top-50 movements:                          │     │
-   │ │   - Biggest rise: Pedro M. (+12 positions)  │     │
-   │ │   - Biggest fall: Laura B. (-8 positions)   │     │
-   │ │                                             │     │
-   │ │ [VIEW FULL LIST]   [EXPORT CSV]             │     │
-   │ │                                             │     │
-   │ │ ⚠ Activating the new version does NOT      │     │
-   │ │   reprocess already-closed attempts.        │     │
-   │ │   It only affects future ones.              │     │
-   │ │                                             │     │
-   │ │ [DISCARD]   [SAVE AS NEW VERSION]           │     │
-   │ └─────────────────────────────────────────────┘     │
-   │                                                      │
-   └──────────────────────────────────────────────────────┘
-```
-
-**This is the most marketable piece for the CMadrid client.** Polish it.
-
-## 6.5 SIMULATOR-USER-GUIDE.md
-
-Short documentation (1-2 pages) **for the CMadrid admin** explaining how to use the simulator. Tone: clear, jargon-free, with examples. **Write it in Spanish** (the client's language).
-
-```
-   Structure:
-   1. What the simulator is for (1 paragraph)
-   2. How to open the simulator (step-by-step)
-   3. How to modify a rule
-   4. How to read the result (score impact + ranking impact)
-   5. How to save a new version (and what happens next)
-   6. What the simulator does NOT do (doesn't touch production,
-      doesn't reprocess closed attempts, isn't a prediction)
-```
+You're welcome to propose. Antonio decides. Don't write code on his territory unless he asks — your value is on QA, not on duplicating his work.
 
 ---
 

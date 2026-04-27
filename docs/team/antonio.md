@@ -104,9 +104,27 @@ training/
 │           ├── circuitBreaker.ts    cuotas, retries
 │           └── tests/               fixtures + tests determinísticos
 │
+├── apps/api/src/routes/
+│   └── scoring.simulate.ts          ← TU CÓDIGO · endpoint del simulador
+│                                       Jesús expone packages/scoring/simulate()
+│                                       puro; vos escribís el wrapper HTTP
+│                                       + comparación rankings + diff
+│
+├── apps/web/src/pages/admin/
+│   └── ScoringSimulator.tsx         ← TU CÓDIGO · pantalla D12
+│                                       Alejandro te pasa componentes base
+│                                       (<ScoreBreakdown>, layouts).
+│                                       Joel escribe los E2E.
+│
+├── docs/
+│   └── SIMULATOR-USER-GUIDE.md      ← TU DOCUMENTO · 1-2 páginas en español
+│                                       para el admin de CMadrid
+│
 └── apps/worker/src/jobs/
     └── webfleetSync.ts              ← TU CÓDIGO (orquestación BullMQ)
 ```
+
+> **¿Por qué el simulador es tuyo y no de Joel?** El simulador es **la pieza más vendible del producto** el día de la demo. Si lo lleva Joel (que arrancó hace 3 días, no habla español, y tiene que hacer también seed + E2E + CI), llegamos a la demo con la versión más frágil y vos no la conocés bien. Decisión consciente: vos lo construís porque vos lo vendés.
 
 **Jesús no toca esto. Vos no tocás el resto del backend.**
 
@@ -452,15 +470,29 @@ MIÉRCOLES (DÍA 9) 06/05
   - Quota 80%/97%
 - Soporte ad-hoc al equipo.
 
-JUEVES (DÍA 10) 07/05
-- Documentación cliente (PDF resumen de la demo, 1 página).
-- Enviar resumen a CMadrid.
-- Soporte ad-hoc.
+JUEVES (DÍA 10) 07/05 — empieza el SIMULADOR
+- Mañana (4h): endpoint POST /scoring/simulate
+    · Jesús ya tiene `packages/scoring/simulate()` puro listo (lo entregó día 9).
+    · Vos hacés el wrapper HTTP: cargar attempts cerrados de la convocatoria,
+      llamar a simulate(), construir nuevo ranking, comparar con original,
+      identificar candidatos que cruzan corte.
+- Tarde (3h): pantalla D12 ScoringSimulator.tsx
+    · Alejandro te entrega componentes base (<ScoreBreakdown>, layouts) por la mañana.
+    · Vos hacés form de override + tabla de resultado + diff.
+- Documentación cliente (PDF resumen de la demo, 1 página) — la dejás
+  para mañana viernes.
 
-VIERNES (DÍA 11) 08/05
-- Backup completo de la DB de staging.
-- Validación end-to-end con datos reales.
-- Verificar que demo está al 90%.
+VIERNES (DÍA 11) 08/05 — pulir SIMULADOR + cierre de semana
+- Mañana (4h): pulido del simulador.
+    · Joel corre E2E test #7 contra tu pantalla. Cualquier bug que aparezca,
+      lo arreglás vos.
+    · Escribís docs/SIMULATOR-USER-GUIDE.md (1-2 páginas, español, para
+      admin CMadrid).
+- Tarde:
+    · Documentación cliente (PDF resumen demo, 1 página) — enviar a CMadrid.
+    · Backup completo de la DB de staging.
+    · Validación end-to-end con datos reales.
+    · Verificar que demo está al 90%.
 - 17:30 — RETROSPECTIVA SEMANA 2 + PRE-DEMO (45 min, todo el equipo)
     · Estado real de los entregables vs DoD de cada issue.
     · ¿Qué cortamos del scope si llegamos justos?
@@ -551,18 +583,32 @@ Cualquier PR (tuyo o del equipo) que rompa una de estas se rechaza:
 # 12. Antes del kickoff — checklist tuya (HOY, lunes 27/04)
 
 ```
+   COMUNICACIÓN INTERNA
    ☑ Repo `cosigein/training` creado (ya está)
    ☐ Invitar a Jesús/Alejandro/Joel al repo (necesitás sus usernames de GitHub)
-   ☐ Coordinar con tu Dirección la cobertura de tu agenda durante el sprint
-        (esa conversación NO va en este repo — se cierra por email/llamada interna)
-   ☐ Confirmar a CMadrid fecha de demo (lunes 11/05/2026)
-   ☐ Conseguir fixtures Webfleet realistas (al menos 1 ejemplo de payload)
+   ☐ Crear espacio Slack/Discord/Teams para el equipo (a tu elección)
+        y pasarle el link a los 3
    ☐ Mandar HOY al equipo el link al repo + sus docs individuales
         (Jesús → docs/team/jesus.md, Alejandro → docs/team/alejandro.md,
          Joel → docs/team/joel-day1-en.md PRIMERO, después joel-en.md)
-   ☐ Crear espacio Slack/Discord/Teams para el equipo (a tu elección)
-        y pasarle el link a los 3
+   ☐ Mañana 08:00: pedir reacción ✅ al chat de cada uno con su TLDR leído
+
+   COMUNICACIÓN EXTERNA — los 2 emails que cambian la semana
+   ☐ HOY · email a CMadrid: confirmar 11/05 en agenda + pedir export
+        anonimizado de período histórico de Webfleet (no esperar a la
+        reunión de la semana — Webfleet es bloqueante para día 7)
+   ☐ HOY · email a Bridgestone: pedir confirmación informal del uso
+        comercial de Webfleet API (la formal puede esperar)
+
+   COMUNICACIÓN EMPRESA
+   ☐ Coordinar con tu Dirección la cobertura de tu agenda durante el sprint
+        (esa conversación NO va en este repo — se cierra por email/llamada interna)
+
+   PREPARACIÓN OPERATIVA
+   ☐ Conseguir fixtures Webfleet realistas (al menos 1 ejemplo de payload)
    ☐ Preparar la agenda del kickoff (1 hora) — borrador abajo
+   ☐ Practicar en voz alta una vez la frase del "permiso para equivocarse"
+        (está en tu Guion-Kickoff-ES)
 ```
 
 ## Reunión kickoff (Día 1, MARTES 28/04, 09:00)

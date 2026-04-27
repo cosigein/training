@@ -135,13 +135,14 @@ Si tu cambio rompe algo de otra persona (renombrar un endpoint, cambiar shape de
 
 **No permitido:** mergear y "ya verá el otro mañana cuando le rompa". Bloquea al equipo y consume horas que no tenemos.
 
-## 5.ter Endpoint freeze diario
+## 5.ter Endpoint freeze diario — automatizado
 
-Cada noche, antes de irse, **Jesús pushea** `docs/api-snapshot.md` con el listado de endpoints estables (path, método, request/response shape).
+Cada noche, automáticamente, **Joel monta un job de CI** que extrae los endpoints estables de `apps/api/` (vía anotaciones JSDoc o decorador) y los commitea a `docs/api-snapshot.md`.
 
+- Cero esfuerzo manual de Jesús — el snapshot se genera solo desde el código.
+- Diff diario posteado en el chat del equipo automáticamente.
 - Alejandro y Joel solo escriben código contra ese snapshot.
-- Cambios al día siguiente = PR + aviso explícito en el chat con `@Alejandro @Joel`.
-- Si Jesús no actualiza el snapshot, el snapshot anterior sigue siendo el contrato.
+- Cambios deliberados durante el día = PR de Jesús + aviso en chat con `@Alejandro @Joel`.
 
 ## 5.quater Convención `data-testid` (Alejandro pone, Joel usa)
 
@@ -221,7 +222,7 @@ Formato: `YYYYMMDD_HHMM_<verbo>_<modelo>` — ejemplo: `20260428_1100_init_base_
 | **No commits to `main`** — always PR. |
 | **Daily** at 09:30 sharp (CET). 15 min. You speak last, in English, 3 sentences. |
 | **Data-testid** convention: `<portal>-<screen>-<element>`. Alejandro puts them; you use them in E2E. |
-| **Endpoint freeze**: Jesús pushes `docs/api-snapshot.md` each night. Only test against that snapshot. |
+| **Endpoint freeze**: `docs/api-snapshot.md` is auto-generated nightly by your CI job (Joel owns the cron). Only test against the snapshot. |
 | **Breaking changes**: if you break someone else's code, you coordinate the fix in the same PR. Don't push & forget. |
 | **Owners**: see `OWNERS.md` — every shared file has one approver. |
 | **Issues**: tag your work with `role:joel`. Track sub-tasks as a checklist inside the issue. |
