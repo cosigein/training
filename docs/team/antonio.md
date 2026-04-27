@@ -155,8 +155,7 @@ Aclará esto antes del kickoff con tu jefe (si tenés uno por encima):
 ```
    ▶ ¿Reportás horas? ¿A quién? ¿Con qué cadencia?
    ▶ ¿Hay un comité de dirección que quiera updates?
-   ▶ ¿El presupuesto/alcance lo aprobás vos solo o pasa por alguien?
-   ▶ ¿Quién factura a CMadrid?
+   ▶ ¿Las decisiones de alcance las tomás vos solo o pasa por alguien?
 ```
 
 Si la respuesta es "soy yo y no tengo a quien reportar", **anotalo igual**. La transparencia interna evita conversaciones incómodas después.
