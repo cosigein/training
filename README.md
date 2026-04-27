@@ -1,52 +1,88 @@
 # Training
 
-> **Sistema de evaluación competitiva para conductores de camión de bomberos · CMadrid**
-> Sprint 14 días · Demo lunes 11 de mayo de 2026 · Equipo en Córdoba
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│   Sistema de evaluación competitiva                              │
+│   para conductores de camión de bomberos                         │
+│                                                                  │
+│   Cliente:   CMadrid · Cuerpo de Bomberos de la Comunidad        │
+│              de Madrid                                           │
+│                                                                  │
+│   Equipo:    4 personas · Córdoba (Andalucía)                    │
+│   Sprint:    14 días · martes 28/04/2026 → lunes 11/05/2026      │
+│   Demo:      lunes 11 de mayo · CMadrid · Madrid                 │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+```
 
 🇪🇸 Sistema de evaluación de candidatos a conductor de camión de bomberos para CMadrid (oposición pública).
 🇬🇧 *Evaluation system for fire-truck driver candidates at CMadrid (Spanish public competitive examination).*
 
+> **Estado del repositorio:** los documentos del proyecto viven aquí. El código se construye durante el sprint, en este mismo repo. *Repo state: project documents live here, code lands during the sprint.*
+
 ---
 
-## ⚡ ¿Quién sos? — abre tu doc en 5 segundos
+## ⚡ Quick start — abre tu doc en 5 segundos
 
-| Si sos / If you are | Abrí ESTE archivo / Open THIS file |
-|---|---|
-| **Antonio** | [`docs/team/antonio.md`](docs/team/antonio.md) (ES) |
-| **Jesús** | [`docs/team/jesus.md`](docs/team/jesus.md) (ES) |
-| **Alejandro** | [`docs/team/alejandro.md`](docs/team/alejandro.md) (ES) |
-| **Joel** | [`docs/team/joel-day1-en.md`](docs/team/joel-day1-en.md) — **start here, EN** |
-| **Dirección · Stakeholder · Cliente** | [`docs/RESUMEN-EJECUTIVO.md`](docs/RESUMEN-EJECUTIVO.md) — visión del proyecto en 10 minutos |
-| Anyone else | This repo is confidential. Stop reading. |
-
-**Kickoff:** martes 28 de abril de 2026, 09:00 (Europe/Madrid).
-**Demo CMadrid:** lunes 11 de mayo de 2026.
-
-> **Estado del repo:** recién creado. Aquí viven los **documentos del proyecto**. El código aún no se ha subido — eso ocurre durante el sprint, en este mismo repo.
+| Si sos / If you are | Abrí ESTE archivo / Open THIS file | Idioma |
+|:---|:---|:---:|
+| **Antonio** · director técnico | [`docs/team/antonio.md`](docs/team/antonio.md) | 🇪🇸 |
+| **Jesús** · backend | [`docs/team/jesus.md`](docs/team/jesus.md) | 🇪🇸 |
+| **Alejandro** · frontend | [`docs/team/alejandro.md`](docs/team/alejandro.md) | 🇪🇸 |
+| **Joel** · simulator + QA | [`docs/team/joel-day1-en.md`](docs/team/joel-day1-en.md) — **start here** | 🇬🇧 |
+| **Dirección · Stakeholder · Cliente** | [`docs/RESUMEN-EJECUTIVO.md`](docs/RESUMEN-EJECUTIVO.md) — visión del proyecto en 10 minutos | 🇪🇸 |
+| Anyone else | This repo is confidential. Stop reading. | — |
 
 ---
 
 ## Tabla de contenidos
 
-1. [Contexto en una pantalla](#contexto-en-una-pantalla)
+1. [Qué es Training](#qué-es-training)
 2. [Documentos disponibles](#documentos-disponibles)
-3. [Después del doc de tu rol — qué leer y qué issue trackeás](#después-del-doc-de-tu-rol--qué-leer-y-qué-issue-trackeás)
-4. [Cómo trabajamos](#cómo-trabajamos-regla-corta)
-5. [Próximos pasos](#próximos-pasos-orden-cronológico)
-6. [Issues y seguimiento](#issues-y-seguimiento)
-7. [FAQ del día 1](#faq-del-día-1--preguntas-que-probablemente-vas-a-tener)
-8. [Confidencialidad](#confidencialidad)
+3. [Mapa de docs por audiencia](#mapa-de-docs-por-audiencia)
+4. [Después del doc de tu rol — qué leer y qué issue trackeás](#después-del-doc-de-tu-rol--qué-leer-y-qué-issue-trackeás)
+5. [Cómo trabajamos](#cómo-trabajamos-regla-corta)
+6. [Próximos pasos](#próximos-pasos-orden-cronológico)
+7. [Issues y seguimiento](#issues-y-seguimiento)
+8. [FAQ del día 1](#faq-del-día-1--preguntas-que-probablemente-vas-a-tener)
+9. [Confidencialidad](#confidencialidad)
 
 ---
 
-## Contexto en una pantalla
+## Qué es Training
 
-- **Cliente:** CMadrid (cuerpo de bomberos de la Comunidad de Madrid). Está en Madrid.
-- **Equipo:** 4 personas trabajando desde **Córdoba** (Andalucía). El equipo viaja a Madrid solo para la demo del 11/05.
-- **Modelo:** oposición pública. Los candidatos compiten por un número fijo de plazas. La decisión APTO / NO APTO se emite al **cierre de la convocatoria**, según ranking final + plazas disponibles. Cumple GDPR art. 22 (revisión humana significativa).
-- **Sprint:** 14 días naturales · 9 días laborables (festivo Día del Trabajador 01/05). Demo con CMadrid el lunes **11 de mayo de 2026** en Madrid.
-- **Roles:** Antonio (director técnico · enlace cliente · Webfleet), Jesús (backend), Alejandro (frontend), Joel (simulador + QA + CI/CD).
-- **Stack:** TypeScript + Node 20 + Express + Prisma 6 + PostgreSQL 17 + Redis + BullMQ + React 18 + Vite + Tailwind 4 + Zustand + React Query + Playwright.
+Training es un sistema **automático y autónomo** de evaluación competitiva para candidatos a conductor de camión de bomberos en oposición pública española. Reemplaza la evaluación tradicional —subjetiva, ejercida por un instructor humano observando desde el copiloto— por sensores físicos en el camión, scoring algorítmico y un ranking acumulado con trazabilidad legal.
+
+```
+   ┌──────────────────────────────────────────────────────┐
+   │                                                      │
+   │   El alumno conduce una ruta real                    │
+   │            ↓                                         │
+   │   Sensores (Doback Elite + Webfleet) capturan        │
+   │            ↓                                         │
+   │   El sistema calcula NOTA de la ruta (0–10)          │
+   │            ↓                                         │
+   │   La nota actualiza el RANKING de la convocatoria    │
+   │            ↓                                         │
+   │   Al cierre de la convocatoria, CMadrid emite        │
+   │   APTO / NO APTO según ranking + plazas disponibles  │
+   │                                                      │
+   └──────────────────────────────────────────────────────┘
+```
+
+**Punto clave legal:** el sistema NO decide automáticamente APTO / NO APTO. CMadrid lo decide al cierre formal de cada convocatoria con doble validación administrativa. Esto cumple **GDPR art. 22** (revisión humana significativa).
+
+### Contexto en una pantalla
+
+| | |
+|:---|:---|
+| **Cliente** | CMadrid (cuerpo de bomberos de la Comunidad de Madrid) |
+| **Modelo** | Oposición pública · ranking + plazas fijas · decisión al cierre |
+| **Equipo** | 4 personas trabajando desde Córdoba (Andalucía) |
+| **Sprint** | 14 días naturales · 9 días laborables (festivo 01/05) |
+| **Demo** | Lunes 11 de mayo de 2026 en Madrid (Antonio viaja) |
+| **Stack** | TypeScript · Node 20 · Express · Prisma 6 · PostgreSQL 17 · Redis · BullMQ · React 18 · Vite · Tailwind 4 · Zustand · React Query · Playwright |
 
 ---
 
@@ -58,7 +94,7 @@ CONTRIBUTING.md                      ← branches, PRs, conventions, DoR/DoD
 OWNERS.md                            ← quién aprueba qué archivo (LEER antes del primer PR)
 
 docs/
-├── 📘 RESUMEN-EJECUTIVO.md           ← visión del proyecto en 10 min · Dirección/stakeholders
+├── 📘 RESUMEN-EJECUTIVO.md           ← visión del proyecto en 10 min · stakeholders
 ├── 📕 PAPER-MAESTRO.md               ← referencia técnica completa (~4300 líneas)
 ├── 📗 DOCUMENTO-EJECUTIVO.md         ← visión funcional no técnica (cliente + gestión)
 ├── 📙 PROPUESTA-CMADRID.md           ← descripción del servicio para CMadrid (SLA, GDPR, escrow)
@@ -71,21 +107,23 @@ docs/
     └── joel-en.md                    ← Joel: rol completo (EN)
 ```
 
-### Mapa de docs por audiencia
+---
+
+## Mapa de docs por audiencia
 
 | Si sos / Si necesitás | Empezá por | Después, si querés profundidad |
-|---|---|---|
+|:---|:---|:---|
 | **Miembro del equipo** | Tu doc en `docs/team/` | `OWNERS.md` + `CONTRIBUTING.md` antes de tu primer PR |
-| **Dirección / stakeholder** | `docs/RESUMEN-EJECUTIVO.md` (10 min) | Conversaciones internas de empresa (cobertura de agenda, contratos, RC, etc.) se cierran fuera de este repositorio. |
+| **Dirección · Stakeholder** | `docs/RESUMEN-EJECUTIVO.md` (10 min) | Conversaciones internas de empresa (cobertura de agenda, RC, contratos) se cierran fuera de este repositorio. |
 | **Cliente CMadrid** | `docs/DOCUMENTO-EJECUTIVO.md` | `docs/PROPUESTA-CMADRID.md` para SLA, GDPR, escrow |
-| **Auditor / nuevo en el repo** | `docs/RESUMEN-EJECUTIVO.md` + este README | `docs/PAPER-MAESTRO.md` solo cuando dudes de algo concreto |
+| **Auditor · Nuevo en el repo** | `docs/RESUMEN-EJECUTIVO.md` + este README | `docs/PAPER-MAESTRO.md` solo cuando dudes de algo concreto |
 
 ---
 
 ## Después del doc de tu rol — qué leer y qué issue trackeás
 
 | Si sos | Tu issue principal | Issues compartidos | Después de tu doc, leé |
-|---|---|---|---|
+|:---|:---|:---|:---|
 | **Antonio** | [#2 Webfleet ingestion](https://github.com/cosigein/training/issues/2) | [#1](https://github.com/cosigein/training/issues/1) · [#6](https://github.com/cosigein/training/issues/6) | [`docs/PAPER-MAESTRO.md`](docs/PAPER-MAESTRO.md) — completo |
 | **Jesús** | [#3 Backend completo](https://github.com/cosigein/training/issues/3) | [#1](https://github.com/cosigein/training/issues/1) · [#6](https://github.com/cosigein/training/issues/6) | [`docs/PAPER-MAESTRO.md`](docs/PAPER-MAESTRO.md) (§Backend + §Modelo de datos) — solo si tenés tiempo |
 | **Alejandro** | [#4 Frontend completo](https://github.com/cosigein/training/issues/4) | [#1](https://github.com/cosigein/training/issues/1) · [#6](https://github.com/cosigein/training/issues/6) | [`docs/PAPER-MAESTRO.md`](docs/PAPER-MAESTRO.md) (§Frontend + §Decisiones de UI) — solo si tenés tiempo |
@@ -95,26 +133,39 @@ docs/
 >
 > Si descubrís trabajo que no cabe en tu issue principal, **abrís un issue nuevo** con la label `role:<vos>` y lo enlazás. No hacés trabajo invisible.
 >
-> El **paper maestro** es la referencia técnica completa (~3500 líneas). No hace falta leerlo entero el día 1; usalo como fuente de verdad cuando tengas dudas. *The master paper is in Spanish — Joel: Antonio will translate any specific section you need.*
+> El **paper maestro** es la referencia técnica completa (~4300 líneas). No hace falta leerlo entero el día 1; usalo como fuente de verdad cuando tengas dudas. *The master paper is in Spanish — Joel: Antonio will translate any specific section you need.*
 
 ---
 
 ## Cómo trabajamos (regla corta)
 
-- **Branch principal:** `main`. Protegida — todo entra por PR.
-- **Trabajo en feature branches cortas** con **namespace por área**:
+### Branch principal y branches de trabajo
+
+- **`main`** está protegida — todo entra por Pull Request.
+- **Trabajo en feature branches cortas** con namespace por área:
   - `feat/wf-...` — Antonio (Webfleet)
   - `feat/be-...` — Jesús (backend)
   - `feat/fe-...` — Alejandro (frontend)
   - `feat/qa-...` — Joel (tests + CI + simulator)
   - `chore/cross-...` — cambios cross-team
-- **Vida útil de rama:** < 1 día.
-- **PRs:** 1 review obligatoria. **2 reviews** si tocás `prisma/schema.prisma`, middleware de auth, `package.json` raíz, CI o `docker-compose` (Antonio mandatory).
-- **Daily:** 09:30 (Europe/Madrid). 15 minutos. Inflexible.
-- **Conventional commits** en cada commit (`feat:`, `fix:`, `chore:`, `docs:`).
-- **Endpoint freeze diario:** Jesús pushea `docs/api-snapshot.md` cada noche con los endpoints estables.
-- **Definition of Ready** y **Definition of Done** definidos en [`CONTRIBUTING.md`](CONTRIBUTING.md).
-- **Quién aprueba qué:** ver [`OWNERS.md`](OWNERS.md). Sin esto los 4 chocamos.
+- **Vida útil de rama:** menos de 1 día.
+
+### Pull Requests
+
+- **1 review obligatoria** del equipo.
+- **2 reviews** si tocás `prisma/schema.prisma`, middleware de auth, `package.json` raíz, CI o `docker-compose` (Antonio mandatory).
+- **Squash merge** por defecto.
+- **CI verde** antes de merge.
+
+### Convenciones que evitan colisiones
+
+- **Conventional commits:** `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`.
+- **Endpoint freeze diario:** Jesús pushea `docs/api-snapshot.md` cada noche con los endpoints estables. Alejandro y Joel codean contra ese snapshot.
+- **Convención `data-testid`:** `<portal>-<pantalla>-<elemento>` (Alejandro pone, Joel usa).
+- **Naming de migraciones Prisma:** `YYYYMMDD_HHMM_<verbo>_<modelo>`. Una migración por PR.
+- **Daily standup:** 09:30 sharp Europe/Madrid · 15 min · inflexible · Joel habla último en inglés (3 frases).
+- **Definition of Ready** + **Definition of Done** en `CONTRIBUTING.md`.
+- **Quién aprueba qué:** `OWNERS.md`. Sin esto los 4 chocamos.
 
 > **Detalle completo:** [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
@@ -122,8 +173,8 @@ docs/
 
 ## Próximos pasos (orden cronológico)
 
-1. **Antes del kickoff:** cada persona del equipo lee su doc individual (link arriba) + `OWNERS.md` + `CONTRIBUTING.md`.
-2. **Día 1 — kickoff con Antonio (martes 28/04, 09:00):** lectura silenciosa del paper maestro (las secciones que aplican a cada uno) + Q&A.
+1. **Antes del kickoff:** cada persona del equipo lee su doc individual + `OWNERS.md` + `CONTRIBUTING.md`.
+2. **Día 1 — kickoff (martes 28/04 09:00):** lectura silenciosa del paper maestro (las secciones que aplican a cada uno) + Q&A.
 3. **Día 1, mañana:** scaffolding compartido entre los 4 (pnpm + workspaces + Prisma + Docker). Cada persona crea su rama `chore/setup-<nombre>` con su primer PR.
 4. **Día 1, tarde:** cada uno arranca su trabajo según su doc. Joel bootstrappea Playwright. Jesús el backend. Alejandro el frontend.
 5. **Cada viernes 17:30:** retrospectiva semanal del equipo + status update al cliente.
@@ -163,7 +214,7 @@ Si llegás mañana sin alguno de estos, **no hay drama**: en los primeros 15 min
 
 ### "¿Tengo que leer el paper maestro entero antes de venir?"
 
-**No.** El paper son ~3500 líneas. La lectura silenciosa de 30 minutos durante el kickoff es lo único obligatorio del día 1: cada uno lee solo las secciones que aplican a su rol (tu doc individual te dice cuáles). El resto se consulta como referencia cuando aparezca una duda concreta durante el sprint.
+**No.** El paper son ~4300 líneas. La lectura silenciosa de 30 minutos durante el kickoff es lo único obligatorio del día 1: cada uno lee solo las secciones que aplican a su rol (tu doc individual te dice cuáles). El resto se consulta como referencia cuando aparezca una duda concreta durante el sprint.
 
 ### "¿Qué pasa si me bloquea algo y no hay chat del equipo todavía?"
 
