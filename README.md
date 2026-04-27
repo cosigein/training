@@ -1,5 +1,13 @@
 # Training
 
+> **Sistema de evaluación competitiva para conductores de camión de bomberos · CMadrid**
+> Sprint 14 días · Demo lunes 11 de mayo de 2026 · Equipo en Córdoba
+
+🇪🇸 Sistema de evaluación de candidatos a conductor de camión de bomberos para CMadrid (oposición pública).
+🇬🇧 *Evaluation system for fire-truck driver candidates at CMadrid (Spanish public competitive examination).*
+
+---
+
 ## ⚡ ¿Quién sos? — abre tu doc en 5 segundos
 
 | Si sos / If you are | Abrí ESTE archivo / Open THIS file |
@@ -8,18 +16,26 @@
 | **Jesús** | [`docs/team/jesus.md`](docs/team/jesus.md) (ES) |
 | **Alejandro** | [`docs/team/alejandro.md`](docs/team/alejandro.md) (ES) |
 | **Joel** | [`docs/team/joel-day1-en.md`](docs/team/joel-day1-en.md) — **start here, EN** |
+| **Dirección · Stakeholder · Cliente** | [`docs/RESUMEN-EJECUTIVO.md`](docs/RESUMEN-EJECUTIVO.md) — visión del proyecto en 10 minutos |
 | Anyone else | This repo is confidential. Stop reading. |
 
-**Kickoff / When we start:** martes 28 de abril de 2026, 09:00 (Europe/Madrid).
+**Kickoff:** martes 28 de abril de 2026, 09:00 (Europe/Madrid).
 **Demo CMadrid:** lunes 11 de mayo de 2026.
+
+> **Estado del repo:** recién creado. Aquí viven los **documentos del proyecto**. El código aún no se ha subido — eso ocurre durante el sprint, en este mismo repo.
 
 ---
 
-🇪🇸 Sistema de evaluación de candidatos a conductor de camión de bomberos para CMadrid (oposición pública).
-🇬🇧 *Evaluation system for fire-truck driver candidates at CMadrid (Spanish public competitive examination).*
+## Tabla de contenidos
 
-> **Estado del repo:** recién creado. Aquí viven los **documentos del proyecto**. El código aún no se ha subido — eso ocurre durante el sprint, en este mismo repo.
-> *Repo state: just created. Only project documents live here. Code lands during the sprint.*
+1. [Contexto en una pantalla](#contexto-en-una-pantalla)
+2. [Documentos disponibles](#documentos-disponibles)
+3. [Después del doc de tu rol — qué leer y qué issue trackeás](#después-del-doc-de-tu-rol--qué-leer-y-qué-issue-trackeás)
+4. [Cómo trabajamos](#cómo-trabajamos-regla-corta)
+5. [Próximos pasos](#próximos-pasos-orden-cronológico)
+6. [Issues y seguimiento](#issues-y-seguimiento)
+7. [FAQ del día 1](#faq-del-día-1--preguntas-que-probablemente-vas-a-tener)
+8. [Confidencialidad](#confidencialidad)
 
 ---
 
@@ -27,10 +43,43 @@
 
 - **Cliente:** CMadrid (cuerpo de bomberos de la Comunidad de Madrid). Está en Madrid.
 - **Equipo:** 4 personas trabajando desde **Córdoba** (Andalucía). El equipo viaja a Madrid solo para la demo del 11/05.
-- **Modelo:** oposición pública. Los candidatos compiten por un número fijo de plazas. La decisión APTO / NO APTO se emite al **cierre de la convocatoria**, según ranking final.
-- **Sprint:** 14 días. Demo con CMadrid el lunes **11 de mayo de 2026**.
-- **Roles:** Antonio (director técnico), Jesús (backend), Alejandro (frontend), Joel (simulador + QA).
-- **Stack:** TypeScript + Node 20 + Express + Prisma 6 + PostgreSQL 17 + Redis + BullMQ + React 18 + Vite + Tailwind 4 + Zustand + React Query.
+- **Modelo:** oposición pública. Los candidatos compiten por un número fijo de plazas. La decisión APTO / NO APTO se emite al **cierre de la convocatoria**, según ranking final + plazas disponibles. Cumple GDPR art. 22 (revisión humana significativa).
+- **Sprint:** 14 días naturales · 9 días laborables (festivo Día del Trabajador 01/05). Demo con CMadrid el lunes **11 de mayo de 2026** en Madrid.
+- **Roles:** Antonio (director técnico · enlace cliente · Webfleet), Jesús (backend), Alejandro (frontend), Joel (simulador + QA + CI/CD).
+- **Stack:** TypeScript + Node 20 + Express + Prisma 6 + PostgreSQL 17 + Redis + BullMQ + React 18 + Vite + Tailwind 4 + Zustand + React Query + Playwright.
+
+---
+
+## Documentos disponibles
+
+```
+README.md                            ← este documento (entry point)
+CONTRIBUTING.md                      ← branches, PRs, conventions, DoR/DoD
+OWNERS.md                            ← quién aprueba qué archivo (LEER antes del primer PR)
+
+docs/
+├── 📘 RESUMEN-EJECUTIVO.md           ← visión del proyecto en 10 min · Dirección/stakeholders
+├── 📕 PAPER-MAESTRO.md               ← referencia técnica completa (~3500 líneas)
+├── 📗 DOCUMENTO-EJECUTIVO.md         ← visión funcional no técnica (cliente + gestión)
+├── 📙 PROPUESTA-CMADRID.md           ← descripción del servicio para CMadrid (SLA, GDPR, escrow)
+├── 📓 MEMO-DIRECCION-INTERNO.md      ← visión interna · solo Dirección · NO compartir
+├── 📔 OPERATIONS.md                  ← incidentes, rollback, secretos, DR, soporte post-cutover
+└── team/
+    ├── antonio.md                    ← qué hace Antonio en el sprint
+    ├── jesus.md                      ← qué hace Jesús
+    ├── alejandro.md                  ← qué hace Alejandro
+    ├── joel-day1-en.md               ← Joel: primeras horas (EN)
+    └── joel-en.md                    ← Joel: rol completo (EN)
+```
+
+### Mapa de docs por audiencia
+
+| Si sos / Si necesitás | Empezá por | Después, si querés profundidad |
+|---|---|---|
+| **Miembro del equipo** | Tu doc en `docs/team/` | `OWNERS.md` + `CONTRIBUTING.md` antes de tu primer PR |
+| **Dirección / stakeholder** | `docs/RESUMEN-EJECUTIVO.md` (10 min) | `docs/MEMO-DIRECCION-INTERNO.md` (15 min) si necesitás detalle interno |
+| **Cliente CMadrid** | `docs/DOCUMENTO-EJECUTIVO.md` | `docs/PROPUESTA-CMADRID.md` para SLA, GDPR, escrow |
+| **Auditor / nuevo en el repo** | `docs/RESUMEN-EJECUTIVO.md` + este README | `docs/PAPER-MAESTRO.md` solo cuando dudes de algo concreto |
 
 ---
 
@@ -51,71 +100,67 @@
 
 ---
 
-## Documentos disponibles
-
-```
-README.md                        ← este documento (entry point)
-CONTRIBUTING.md                  ← branch strategy, PRs, conventions
-OWNERS.md                        ← quién aprueba qué archivo (LEER antes del primer PR)
-
-docs/
-├── PAPER-MAESTRO.md             ← referencia técnica completa (todo el equipo)
-├── DOCUMENTO-EJECUTIVO.md       ← visión ejecutiva no técnica (cliente + gestión)
-├── PROPUESTA-CMADRID.md         ← descripción del servicio para CMadrid (SLA, GDPR, escrow)
-├── MEMO-DIRECCION-INTERNO.md    ← visión interna (solo Dirección)
-├── OPERATIONS.md                ← incidentes, rollback, secretos, DR, soporte post-cutover
-└── team/
-    ├── antonio.md               ← qué hace Antonio en estos 14 días
-    ├── jesus.md                 ← qué hace Jesús
-    ├── alejandro.md             ← qué hace Alejandro
-    ├── joel-day1-en.md          ← Joel: primeras horas (EN)
-    └── joel-en.md               ← Joel: rol completo (EN)
-```
-
----
-
 ## Cómo trabajamos (regla corta)
 
 - **Branch principal:** `main`. Protegida — todo entra por PR.
-- **Trabajo en feature branches cortas** con **namespace por área**: `feat/be-...` (Jesús), `feat/fe-...` (Alejandro), `feat/qa-...` (Joel), `feat/wf-...` (Antonio Webfleet), `chore/cross-...` (cambios cross-team). Vida útil objetivo: < 1 día.
-- **PRs:** 1 review obligatoria; **2 reviews si tocás `prisma/schema.prisma`, middleware de auth, `package.json` raíz, CI o `docker-compose`** (Antonio mandatory).
+- **Trabajo en feature branches cortas** con **namespace por área**:
+  - `feat/wf-...` — Antonio (Webfleet)
+  - `feat/be-...` — Jesús (backend)
+  - `feat/fe-...` — Alejandro (frontend)
+  - `feat/qa-...` — Joel (tests + CI + simulator)
+  - `chore/cross-...` — cambios cross-team
+- **Vida útil de rama:** < 1 día.
+- **PRs:** 1 review obligatoria. **2 reviews** si tocás `prisma/schema.prisma`, middleware de auth, `package.json` raíz, CI o `docker-compose` (Antonio mandatory).
 - **Daily:** 09:30 (Europe/Madrid). 15 minutos. Inflexible.
 - **Conventional commits** en cada commit (`feat:`, `fix:`, `chore:`, `docs:`).
+- **Endpoint freeze diario:** Jesús pushea `docs/api-snapshot.md` cada noche con los endpoints estables.
+- **Definition of Ready** y **Definition of Done** definidos en [`CONTRIBUTING.md`](CONTRIBUTING.md).
 - **Quién aprueba qué:** ver [`OWNERS.md`](OWNERS.md). Sin esto los 4 chocamos.
-- **Detalle completo:** [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+> **Detalle completo:** [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ---
 
 ## Próximos pasos (orden cronológico)
 
-1. **Ahora (antes de empezar):** cada persona del equipo lee su doc individual (link arriba).
-2. **Día 1 — kickoff con Antonio:** lectura silenciosa del paper maestro (las secciones que aplican a cada uno) + Q&A.
-3. **Día 1, fin de mañana:** primer commit de cada persona en una rama `chore/setup-<nombre>` con su archivo de bienvenida en `docs/onboarding/<nombre>.md` para validar el flujo de PR.
-4. **Día 1, tarde:** se levanta la base del backend y del frontend en este repo. A partir de ese momento empezamos a tener código.
-5. **Cada viernes 17:00:** demo interna del progreso de la semana.
+1. **Antes del kickoff:** cada persona del equipo lee su doc individual (link arriba) + `OWNERS.md` + `CONTRIBUTING.md`.
+2. **Día 1 — kickoff con Antonio (martes 28/04, 09:00):** lectura silenciosa del paper maestro (las secciones que aplican a cada uno) + Q&A.
+3. **Día 1, mañana:** scaffolding compartido entre los 4 (pnpm + workspaces + Prisma + Docker). Cada persona crea su rama `chore/setup-<nombre>` con su primer PR.
+4. **Día 1, tarde:** cada uno arranca su trabajo según su doc. Joel bootstrappea Playwright. Jesús el backend. Alejandro el frontend.
+5. **Cada viernes 17:30:** retrospectiva semanal del equipo + status update al cliente.
+6. **Demo CMadrid:** lunes 11 de mayo en Madrid (Antonio viaja).
 
 ---
 
 ## Issues y seguimiento
 
-El trabajo del sprint está distribuido en **issues de GitHub** en este repo. Cada persona tiene un issue principal con su scope y issues hijos por entregable. Mirá la pestaña [Issues](../../issues) y filtrá por la etiqueta de tu rol (`role:antonio`, `role:jesus`, `role:alejandro`, `role:joel`).
+El trabajo del sprint está distribuido en **6 issues de GitHub** en este repo, todos con Definition of Done. Cada persona tiene un issue principal con su scope; los issues hijos se abren conforme aparece trabajo nuevo.
+
+[**Ver pestaña Issues** →](../../issues)
+
+Filtrá por la etiqueta de tu rol para ver solo los que te aplican:
+- [`role:antonio`](../../issues?q=is%3Aissue+label%3Arole%3Aantonio)
+- [`role:jesus`](../../issues?q=is%3Aissue+label%3Arole%3Ajesus)
+- [`role:alejandro`](../../issues?q=is%3Aissue+label%3Arole%3Aalejandro)
+- [`role:joel`](../../issues?q=is%3Aissue+label%3Arole%3Ajoel)
 
 ---
 
 ## FAQ del día 1 — preguntas que probablemente vas a tener
 
-**🇪🇸 Estas son las preguntas que detectamos al simular cómo lo lee cada miembro del equipo. Si todavía tenés dudas después, preguntale a Antonio.**
+> 🇪🇸 Estas son las preguntas que detectamos al simular cómo lo lee cada miembro del equipo. Si todavía tenés dudas después, preguntale a Antonio.
 
 ### "¿Qué tengo que tener instalado al llegar al kickoff?"
 
 Solo 3 cosas, y NO incluye clonar el repo ni `npm install`:
-- Node 20 LTS (`node --version` debe imprimir v20.x.x).
-- Docker Desktop (debe arrancar).
-- Aceptar la invitación al repo en GitHub (te llega cuando Antonio te invite).
 
-Si llegás mañana sin alguno de estos, **no hay drama**: en los primeros 15 minutos del kickoff los instalamos juntos. El kickoff arranca a las 09:00, dura 1 hora, y después scaffolding compartido — durante ese tiempo se nivela el setup.
+- ✅ **Node 20 LTS** (`node --version` debe imprimir `v20.x.x`).
+- ✅ **Docker Desktop** (debe arrancar).
+- ✅ **Aceptar la invitación al repo** en GitHub (te llega cuando Antonio te invite).
 
-**No clones el repo, no instales dependencias del proyecto, no crees carpetas.** El scaffolding lo hacemos los 4 en pantalla compartida para que nadie quede con una versión distinta.
+Si llegás mañana sin alguno de estos, **no hay drama**: en los primeros 15 minutos del kickoff los instalamos juntos.
+
+> ❌ **No clones el repo, no instales dependencias del proyecto, no crees carpetas.** El scaffolding lo hacemos los 4 en pantalla compartida para que nadie quede con una versión distinta.
 
 ### "¿Tengo que leer el paper maestro entero antes de venir?"
 
@@ -145,10 +190,12 @@ Antonio. Si Antonio no está disponible y bloquea, **el más afectado por la dec
 
 `main` está protegida — no podés hacer push directo. Solo entra por PR con review. Si tu PR rompe CI, lo arreglás antes de mergear. Si ya está mergeado y rompe staging, **el que rompió, arregla, antes de irse de la oficina**. Eso es regla del proceso.
 
+> Para incidentes operativos durante una convocatoria real, ver [`docs/OPERATIONS.md`](docs/OPERATIONS.md).
+
 ### "¿Qué hago si no entiendo algo de mi propio doc?"
 
 1. Buscalo en el glosario (cada doc tiene uno al principio).
-2. Buscalo en `docs/PAPER-MAESTRO.md` con Cmd+F / Ctrl+F.
+2. Buscalo en `docs/PAPER-MAESTRO.md` con `Cmd+F` / `Ctrl+F`.
 3. Si sigue sin estar claro, preguntale a Antonio en el daily o por DM. **Es mejor pregunta tonta que código equivocado.**
 
 ---
