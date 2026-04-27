@@ -2,7 +2,7 @@
 
 ## 14-day Sprint · CMadrid Demo: Monday, May 11th, 2026
 
-> **Read the day-1 onboarding doc FIRST** (`docs/team/joel-day1-en.md`). It contains the glossary, cultural notes, and the exact plan for your Tuesday. **This document is for days 2 onwards** — your full role and reference. Don't try to absorb it on day 1.
+> ⚠️ **Read [`joel-day1-en.md`](joel-day1-en.md) FIRST.** It contains your glossary, day-1 plan, office logistics, and cultural notes for Madrid. This document (`joel-en.md`) is for **days 2 onwards** — your full role reference. **Don't try to read this tonight (Monday).** Read it Wednesday morning when you're settled and the project has actual code in it.
 
 > **Reality check (written 27/04/2026):** the repo `cosigein/training` was just created and only contains documents. **No code, no `apps/`, no `packages/`, no `e2e/` folders exist yet.** Folder structures and test layouts described below are **the target**, not the state. We materialize them during week 1, starting with the kickoff scaffolding session on Tuesday 28/04.
 

@@ -6,6 +6,18 @@
 
 ---
 
+## ⚡ TLDR — what tomorrow looks like in 5 lines
+
+1. **Your role:** QA + simulator + E2E tests + seed data + CI/CD. You don't write product features — you make sure they work and that we ship.
+2. **Tonight (Monday):** install Node 20 LTS + Docker Desktop. Accept the GitHub invite. **DO NOT clone the repo, DO NOT install anything else.** That's it.
+3. **Tomorrow 09:00 in the office:** 1h kickoff with the team. Then we set up the project scaffolding together (the 4 of us, screen-shared) until ~13:00.
+4. **Your first task (afternoon):** bootstrap Playwright in the new `e2e/` workspace, write 1 smoke test, open a PR. Antonio will guide you. ~3 hours of work, very doable.
+5. **You don't speak Spanish — that's expected and OK.** This doc + the README in English at the top + your full role doc (`joel-en.md`) are in English. Antonio translates anything else you need.
+
+---
+
+---
+
 ## Read this first — the people you'll meet on day 1
 
 | Name | Role | Languages | How to talk to them |

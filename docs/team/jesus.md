@@ -4,6 +4,16 @@
 
 ---
 
+## ⚡ TLDR — esto es lo que tenés mañana en 5 líneas
+
+1. **Sos backend lead.** Construís api + worker + packages internos (domain, normalization, detection, scoring, ranking) + schema Prisma + auth.
+2. **Esta noche:** instalá Node 20 LTS + Docker Desktop. Aceptá la invite del repo. **NO clones el repo, NO corras `pnpm install`.** El scaffolding lo hacemos juntos mañana.
+3. **Mañana 09:00:** kickoff de 1h. Después (10:00-13:00) scaffolding compartido entre los 4. Tu primer PR: `chore/setup-jesus`.
+4. **Tu primer hito serio (miércoles 29/04):** health endpoints + schema base + migración `20260428_HHMM_init_base_models` aplicada. Detalle en §0.10.
+5. **Lectura obligatoria del paper esta noche:** glosario + §3 (9 invariantes) + §5 (modelo de datos). 30 minutos. Nada más.
+
+---
+
 | | |
 |---|---|
 | **Tu rol** | Backend completo (api + worker + packages internos + schema Prisma) |

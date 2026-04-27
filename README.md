@@ -1,8 +1,26 @@
 # Training
 
-Sistema de evaluación de candidatos a conductor de camión de bomberos para CMadrid (oposición pública).
+🇪🇸 Sistema de evaluación de candidatos a conductor de camión de bomberos para CMadrid (oposición pública).
+🇬🇧 *Evaluation system for fire-truck driver candidates at CMadrid (Spanish public competitive examination).*
 
 > **Estado del repo:** recién creado. Aquí viven los **documentos del proyecto**. El código aún no se ha subido — eso ocurre durante el sprint, en este mismo repo.
+> *Repo state: just created. Only project documents live here. Code lands during the sprint.*
+
+---
+
+## ⚡ ¿Acabás de entrar al repo? — 30 segundos
+
+| Si sos / If you are | Abrí ESTE archivo / Open THIS file | Idioma |
+|---|---|---|
+| **Antonio** | [`docs/team/antonio.md`](docs/team/antonio.md) | ES |
+| **Jesús** | [`docs/team/jesus.md`](docs/team/jesus.md) | ES |
+| **Alejandro** | [`docs/team/alejandro.md`](docs/team/alejandro.md) | ES |
+| **Joel** | [`docs/team/joel-day1-en.md`](docs/team/joel-day1-en.md) — **start here, EN** | EN |
+| Anyone else | Don't read further. This repo is confidential. | — |
+
+**Cuándo arrancamos / When we start:** martes 28 de abril de 2026, 09:00 (Europe/Madrid). Kickoff de 1 hora con todo el equipo en la oficina.
+
+**Demo CMadrid:** lunes 11 de mayo de 2026.
 
 ---
 
@@ -16,16 +34,16 @@ Sistema de evaluación de candidatos a conductor de camión de bomberos para CMa
 
 ---
 
-## Lo primero que tenés que leer (según quién seas)
+## Después del doc de tu rol — qué leer
 
-| Si sos | Empezá por | Después |
-|---|---|---|
-| **Antonio** | [`docs/team/antonio.md`](docs/team/antonio.md) | [`docs/PAPER-MAESTRO.md`](docs/PAPER-MAESTRO.md) |
-| **Jesús** | [`docs/team/jesus.md`](docs/team/jesus.md) | [`docs/PAPER-MAESTRO.md`](docs/PAPER-MAESTRO.md) (§Backend, §Modelo de datos) |
-| **Alejandro** | [`docs/team/alejandro.md`](docs/team/alejandro.md) | [`docs/PAPER-MAESTRO.md`](docs/PAPER-MAESTRO.md) (§Frontend, §Decisiones de UI) |
-| **Joel** | [`docs/team/joel-day1-en.md`](docs/team/joel-day1-en.md) | [`docs/team/joel-en.md`](docs/team/joel-en.md) (full role) |
+| Si sos | Después de tu doc, leé esto |
+|---|---|
+| **Antonio** | [`docs/PAPER-MAESTRO.md`](docs/PAPER-MAESTRO.md) — completo |
+| **Jesús** | [`docs/PAPER-MAESTRO.md`](docs/PAPER-MAESTRO.md) (§Backend + §Modelo de datos) — solo si tenés tiempo |
+| **Alejandro** | [`docs/PAPER-MAESTRO.md`](docs/PAPER-MAESTRO.md) (§Frontend + §Decisiones de UI) — solo si tenés tiempo |
+| **Joel** | [`docs/team/joel-en.md`](docs/team/joel-en.md) (full role, EN) — for days 2+ |
 
-> El **paper maestro** es la referencia técnica completa (~3500 líneas). No hace falta leerlo entero el día 1; usalo como fuente de verdad cuando tengas dudas.
+> El **paper maestro** es la referencia técnica completa (~3500 líneas). No hace falta leerlo entero el día 1; usalo como fuente de verdad cuando tengas dudas. *The master paper is in Spanish — Joel: Antonio will translate any specific section you need.*
 
 ---
 
@@ -76,6 +94,55 @@ docs/
 ## Issues y seguimiento
 
 El trabajo del sprint está distribuido en **issues de GitHub** en este repo. Cada persona tiene un issue principal con su scope y issues hijos por entregable. Mirá la pestaña [Issues](../../issues) y filtrá por la etiqueta de tu rol (`role:antonio`, `role:jesus`, `role:alejandro`, `role:joel`).
+
+---
+
+## FAQ del día 1 — preguntas que probablemente vas a tener
+
+**🇪🇸 Estas son las preguntas que detectamos al simular cómo lo lee cada miembro del equipo. Si todavía tenés dudas después, preguntale a Antonio.**
+
+### "¿Tengo que instalar algo esta noche del lunes?"
+
+Solo 3 cosas, y NO incluye clonar ni `npm install`:
+- Node 20 LTS (`node --version` debe imprimir v20.x.x).
+- Docker Desktop (debe arrancar).
+- Aceptar la invitación al repo en GitHub.
+
+**No clones el repo. No instales dependencias. No crees carpetas.** Eso lo hacemos juntos en el kickoff del martes para que los 4 quedemos sincronizados.
+
+### "¿Tengo que leer el paper maestro entero esta noche?"
+
+**No.** Cada doc de rol te dice exactamente qué leer del paper esta noche (típicamente: glosario + invariantes + sección de tu área = ~30 minutos). El silent reading del kickoff cubre el resto.
+
+### "¿Qué pasa si me bloquea algo y no hay chat del equipo todavía?"
+
+El chat lo crea Antonio el lunes 27/04 por la noche o el martes 28/04 por la mañana. Hasta que exista:
+- DM directo a Antonio (su número está en tu DM personal, te lo manda el lunes).
+- O esperá al kickoff de las 09:00 — tenemos una hora juntos para resolver dudas.
+
+### "¿Y si Antonio se demora la mañana del kickoff?"
+
+Plan de contingencia (si Antonio no está a las 09:15 y nadie sabe nada de él):
+
+1. **No empieces a codear nada.** El kickoff existe para alinearnos.
+2. **Cada uno relee su doc de rol con calma** (~30 min).
+3. **Hablan entre los 3:** repasen quién hace qué la primera semana, qué dependencias tienen entre ustedes, qué dudas comunes.
+4. **Si Antonio sigue sin aparecer a las 10:30**, llamen a su teléfono. Si no contesta, escalan a Dirección (`__COMPLETAR-CONTACTO-DIRECCION__`).
+5. **Si todo eso falla**, el equipo sigue las instrucciones de su doc individual hasta tener noticias. Mejor avanzar lento que parar.
+
+### "¿Quién decide cuando hay un conflicto técnico entre Jesús y Alejandro?"
+
+Antonio. Si Antonio no está disponible y bloquea, **el más afectado por la decisión decide y lo documenta** en el chat — Antonio puede revertirlo después si discrepa, sin drama.
+
+### "¿Qué pasa si rompo algo en `main`?"
+
+`main` está protegida — no podés hacer push directo. Solo entra por PR con review. Si tu PR rompe CI, lo arreglás antes de mergear. Si ya está mergeado y rompe staging, **el que rompió, arregla, antes de irse de la oficina**. Eso es regla del proceso.
+
+### "¿Qué hago si no entiendo algo de mi propio doc?"
+
+1. Buscalo en el glosario (cada doc tiene uno al principio).
+2. Buscalo en `docs/PAPER-MAESTRO.md` con Cmd+F / Ctrl+F.
+3. Si sigue sin estar claro, preguntale a Antonio en el daily o por DM. **Es mejor pregunta tonta que código equivocado.**
 
 ---
 

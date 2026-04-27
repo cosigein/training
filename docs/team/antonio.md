@@ -4,6 +4,16 @@
 
 ---
 
+## ⚡ TLDR — esto es lo que tenés mañana en 5 líneas
+
+1. **Sos director técnico.** Conducís el kickoff de 1h a las 09:00 (agenda en §12).
+2. **Tu código:** Webfleet ingestion package (`packages/ingestion/webfleet/`). Nadie más lo toca.
+3. **Tu otra responsabilidad:** comunicación CMadrid, decisiones cross-team, review obligatoria en archivos críticos (lista en `OWNERS.md`).
+4. **Esta noche:** revisá la checklist "Pendientes para Antonio antes del kickoff" en el `README.md`. 7 puntos en ~90 minutos.
+5. **Demo CMadrid:** lunes 11 de mayo. Plan día por día en §7.
+
+---
+
 | | |
 |---|---|
 | **Tu rol** | Director técnico · Cliente · Webfleet (dev) |
