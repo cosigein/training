@@ -19,6 +19,8 @@
 | **Tu rol** | Director técnico · Cliente · Webfleet (dev) |
 | **Equipo** | Vos · Jesús (backend) · Alejandro (frontend) · Joel (simulador + QA) |
 | **Tu carga** | 3 frentes simultáneos: arquitectura, cliente, código de Webfleet |
+| **Tu issue principal** | [#2 — Webfleet ingestion package](https://github.com/cosigein/training/issues/2) |
+| **Issues compartidos** | [#1 — Scaffolding día 1](https://github.com/cosigein/training/issues/1) · [#6 — Convenciones del sprint](https://github.com/cosigein/training/issues/6) |
 | **Documento maestro** | `docs/PAPER-MAESTRO.md` (referencia completa cuando dudes) |
 | **Convenciones** | [`OWNERS.md`](../../OWNERS.md) y [`CONTRIBUTING.md`](../../CONTRIBUTING.md) — léelas antes de mañana |
 | **Memo Dirección** | [`docs/MEMO-DIRECCION-INTERNO.md`](../MEMO-DIRECCION-INTERNO.md) — caso de negocio para tu jefe |

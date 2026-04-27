@@ -19,6 +19,8 @@
 | **Tu rol** | Frontend completo (4 portales · ~32 pantallas · Wrappers · Tests Vitest) |
 | **Tu jefe técnico** | Antonio (director técnico) |
 | **Tus pares** | Jesús (backend) · Joel (simulador + QA) |
+| **Tu issue principal** | [#4 — Frontend completo (4 portales + design system)](https://github.com/cosigein/training/issues/4) |
+| **Issues compartidos** | [#1 — Scaffolding día 1](https://github.com/cosigein/training/issues/1) · [#6 — Convenciones del sprint](https://github.com/cosigein/training/issues/6) |
 | **Documento maestro** | `docs/PAPER-MAESTRO.md` (referencia completa cuando dudes) |
 | **Convenciones del repo** | [`OWNERS.md`](../../OWNERS.md) y [`CONTRIBUTING.md`](../../CONTRIBUTING.md) |
 

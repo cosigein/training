@@ -18,6 +18,20 @@
 
 ---
 
+## Your issues on GitHub
+
+Track your work against these issues. Each one has a Definition of Done checklist in the comments.
+
+| # | Title | Link |
+|---|---|---|
+| **#5** | **Your main issue: Simulator + QA + E2E + Seed Data + CI/CD** | [issues/5](https://github.com/cosigein/training/issues/5) |
+| #1 | Day-1 scaffolding (whole team) | [issues/1](https://github.com/cosigein/training/issues/1) |
+| #6 | Sprint conventions — required reading | [issues/6](https://github.com/cosigein/training/issues/6) |
+
+> If you discover work that doesn't fit any of these, open a new issue with the label `role:joel` and link it from your main one.
+
+---
+
 ## Read this first — the people you'll meet on day 1
 
 | Name | Role | Languages | How to talk to them |

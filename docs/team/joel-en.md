@@ -13,6 +13,8 @@
 | **Your role** | Scoring Simulator (sole owner) + QA + E2E Tests + Seed Data + CI/CD |
 | **Your tech lead** | Antonio (technical director) |
 | **Your peers** | Jesús (backend) · Alejandro (frontend) |
+| **Your main issue** | [#5 — Simulator + QA + E2E + Seed Data + CI/CD](https://github.com/cosigein/training/issues/5) |
+| **Shared issues** | [#1 — Day-1 scaffolding](https://github.com/cosigein/training/issues/1) · [#6 — Sprint conventions](https://github.com/cosigein/training/issues/6) |
 | **Master document** | `docs/PAPER-MAESTRO.md` (in Spanish — full reference when in doubt) |
 
 ---

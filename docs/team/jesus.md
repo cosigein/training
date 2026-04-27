@@ -19,6 +19,8 @@
 | **Tu rol** | Backend completo (api + worker + packages internos + schema Prisma) |
 | **Tu jefe técnico** | Antonio (director técnico) |
 | **Tus pares** | Alejandro (frontend) · Joel (simulador + QA) |
+| **Tu issue principal** | [#3 — Backend completo](https://github.com/cosigein/training/issues/3) |
+| **Issues compartidos** | [#1 — Scaffolding día 1](https://github.com/cosigein/training/issues/1) · [#6 — Convenciones del sprint](https://github.com/cosigein/training/issues/6) |
 | **Documento maestro** | `docs/PAPER-MAESTRO.md` (referencia completa cuando dudes) |
 | **Convenciones del repo** | [`OWNERS.md`](../../OWNERS.md) y [`CONTRIBUTING.md`](../../CONTRIBUTING.md) |
 

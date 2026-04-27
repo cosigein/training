@@ -34,15 +34,19 @@
 
 ---
 
-## Después del doc de tu rol — qué leer
+## Después del doc de tu rol — qué leer y qué issue trackeás
 
-| Si sos | Después de tu doc, leé esto |
-|---|---|
-| **Antonio** | [`docs/PAPER-MAESTRO.md`](docs/PAPER-MAESTRO.md) — completo |
-| **Jesús** | [`docs/PAPER-MAESTRO.md`](docs/PAPER-MAESTRO.md) (§Backend + §Modelo de datos) — solo si tenés tiempo |
-| **Alejandro** | [`docs/PAPER-MAESTRO.md`](docs/PAPER-MAESTRO.md) (§Frontend + §Decisiones de UI) — solo si tenés tiempo |
-| **Joel** | [`docs/team/joel-en.md`](docs/team/joel-en.md) (full role, EN) — for days 2+ |
+| Si sos | Tu issue principal | Issues compartidos | Después de tu doc, leé |
+|---|---|---|---|
+| **Antonio** | [#2 Webfleet ingestion](https://github.com/cosigein/training/issues/2) | [#1](https://github.com/cosigein/training/issues/1) · [#6](https://github.com/cosigein/training/issues/6) | [`docs/PAPER-MAESTRO.md`](docs/PAPER-MAESTRO.md) — completo |
+| **Jesús** | [#3 Backend completo](https://github.com/cosigein/training/issues/3) | [#1](https://github.com/cosigein/training/issues/1) · [#6](https://github.com/cosigein/training/issues/6) | [`docs/PAPER-MAESTRO.md`](docs/PAPER-MAESTRO.md) (§Backend + §Modelo de datos) — solo si tenés tiempo |
+| **Alejandro** | [#4 Frontend completo](https://github.com/cosigein/training/issues/4) | [#1](https://github.com/cosigein/training/issues/1) · [#6](https://github.com/cosigein/training/issues/6) | [`docs/PAPER-MAESTRO.md`](docs/PAPER-MAESTRO.md) (§Frontend + §Decisiones de UI) — solo si tenés tiempo |
+| **Joel** | [#5 Simulator + QA + CI](https://github.com/cosigein/training/issues/5) | [#1](https://github.com/cosigein/training/issues/1) · [#6](https://github.com/cosigein/training/issues/6) | [`docs/team/joel-en.md`](docs/team/joel-en.md) (full role, EN) — for days 2+ |
 
+> Cada issue tiene un **Definition of Done** como comentario o en el body — checklist de qué tiene que estar terminado para cerrarlo.
+>
+> Si descubrís trabajo que no cabe en tu issue principal, **abrís un issue nuevo** con la label `role:<vos>` y lo enlazás. No hacés trabajo invisible.
+>
 > El **paper maestro** es la referencia técnica completa (~3500 líneas). No hace falta leerlo entero el día 1; usalo como fuente de verdad cuando tengas dudas. *The master paper is in Spanish — Joel: Antonio will translate any specific section you need.*
 
 ---
