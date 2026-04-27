@@ -62,7 +62,8 @@ docs/
 ├── PAPER-MAESTRO.md             ← referencia técnica completa (todo el equipo)
 ├── DOCUMENTO-EJECUTIVO.md       ← visión ejecutiva no técnica (cliente + gestión)
 ├── PROPUESTA-CMADRID.md         ← descripción del servicio para CMadrid (SLA, GDPR, escrow)
-├── MEMO-DIRECCION-INTERNO.md    ← caso de negocio (interno, solo Dirección)
+├── MEMO-DIRECCION-INTERNO.md    ← visión interna (solo Dirección)
+├── OPERATIONS.md                ← incidentes, rollback, secretos, DR, soporte post-cutover
 └── team/
     ├── antonio.md               ← qué hace Antonio en estos 14 días
     ├── jesus.md                 ← qué hace Jesús

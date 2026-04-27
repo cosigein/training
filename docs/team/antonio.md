@@ -210,20 +210,63 @@ Si te enfermás 3 días o tenés un imprevisto:
    PARA LA DEMO
    ☐ Datos seed creíbles (Joel los hace, vos los validás)
    ☐ Script de presentación rehearsed 3 veces
-   ☐ Plan B (screencast pregrabado por si falla algo)
+   ☐ Plan B operativo (ver §3.6 — NO es solo "screencast")
    ☐ Conexión a internet del lugar de demo, probada
+   ☐ Hotspot 4G del móvil como red de respaldo
    ☐ Laptop principal cargada + cargador de respaldo
-   ☐ Pendrive con backup del PDF ejecutivo + comercial
+   ☐ Pendrive con backup de los PDFs ejecutivo + servicio CMadrid
    ☐ Tarjeta RFID o teclado para simular RFID
 
    PARA EL CLIENTE
-   ☐ PDF Ejecutivo + Comercial entregados al menos el 04/05
+   ☐ PDF Ejecutivo + PDF Descripción del Servicio entregados al menos el 04/05
    ☐ Resumen 1 página enviado el 07/05
    ☐ Email post-demo redactado a medias antes del 11/05
+   ☐ Audit trail del acuerdo CMadrid documentado por escrito
+        (acta de reunión, email firmado, lo que sea)
+        antes del jueves 30/04 — sin esto el proyecto está en aire
 
    ADMINISTRATIVO
-   ☐ Borrador de contrato listo (legal o asesor)
    ☐ NDA mutuo firmado o en proceso
+   ☐ DPO de CMadrid identificado y contactado
+```
+
+## 3.6 Plan B real para la demo (no es "el screencast pregrabado")
+
+El "screencast pregrabado" es Plan C. **El Plan B real es un demo offline en staging con datos sintéticos y red local.**
+
+```
+   ESCENARIO 1 — Falla la conexión a internet del lugar
+   → Activás hotspot 4G del móvil (preparado el día antes con datos suficientes).
+   → Si tampoco funciona: laptop solo, demo sobre `localhost` con docker compose
+     levantado y datos seed v4.
+   → Tiempo de pivot: <2 minutos.
+
+   ESCENARIO 2 — Falla algo del backend en demo
+   → No reiniciás. NO debugueás en vivo.
+   → Pasás a la siguiente pantalla del script y avisás "este flujo lo
+     mostramos en otro momento". Sigue la demo.
+   → Si lo que falló es bloqueante (login, navegación), pivotás a screencast
+     desde la sección que sigue, no desde el principio.
+
+   ESCENARIO 3 — Falla algo del frontend / kiosko
+   → Mostrás el flujo equivalente desde el portal manager (siempre tiene la
+     misma información en formato distinto).
+   → El kiosko en producción es una pantalla, en demo lo simulamos: si no
+     funciona, lo describís y mostrás la captura del Paper Maestro.
+
+   ESCENARIO 4 — Falla TODO (catastrófico)
+   → Plan C: screencast pregrabado el sábado 09/05 después de la tortura
+     del kiosko. Lo grabás vos en pantalla compartida + voiceover en vivo.
+     Duración: 8 minutos. Dueño de grabación: vos. Dueño de revisión: Joel.
+
+   QUÉ LLEVÁS ENCIMA EL DÍA DE LA DEMO (kit físico)
+   ☐ Laptop con docker compose precorrido, base seed v4 cargada
+   ☐ Hotspot 4G activo, password apuntada
+   ☐ Pendrive con screencast .mp4 (Plan C)
+   ☐ Pendrive con los 3 PDFs (Ejecutivo + Servicio CMadrid + Memo si lo pide)
+   ☐ Tarjeta RFID o teclado USB-HID para simular
+   ☐ Batería de respaldo del móvil
+   ☐ Cable HDMI propio (NO confiás en el del lugar)
 ```
 
 ---
@@ -372,6 +415,9 @@ JUEVES (DÍA 3) 30/04
   - client.ts (cliente HTTP con encodeURI obligatorio)
   - auth con tilde resuelto
 - Tests iniciales contra fixtures.
+- 17:30 — RETROSPECTIVA SEMANA 1 (30 min, todo el equipo)
+    · ¿Qué funcionó? · ¿Qué nos bloqueó? · ¿Qué cambiamos para semana 2?
+    · La conducís vos. Anotás 3-5 acciones concretas para semana 2.
 
 VIERNES (DÍA 4) 01/05 — FESTIVO (Día del Trabajador, España)
 - Sin trabajo planificado. Si querés adelantar algo, libre.
@@ -415,14 +461,20 @@ VIERNES (DÍA 11) 08/05
 - Backup completo de la DB de staging.
 - Validación end-to-end con datos reales.
 - Verificar que demo está al 90%.
+- 17:30 — RETROSPECTIVA SEMANA 2 + PRE-DEMO (45 min, todo el equipo)
+    · Estado real de los entregables vs DoD de cada issue.
+    · ¿Qué cortamos del scope si llegamos justos?
+    · Plan operativo del fin de semana (tortura + ensayo).
 
 SÁBADO (DÍA 12) 09/05 — TORTURA DEL KIOSKO
-- Liderado por Joel. Todo el equipo participa (voluntario, doc fuera del horario laboral acordado).
+- Liderado por Joel. Todo el equipo participa (voluntario, fuera del horario laboral acordado).
 - Vos validás que Webfleet aguanta los escenarios.
+- 18:00 — Grabación del screencast Plan C (vos solo, en pantalla compartida + voiceover).
+    · 8 minutos. Joel revisa al cierre.
 
 DOMINGO (DÍA 13) 10/05 — ENSAYO DEMO
 - Conducís el ensayo (3 pasadas completas).
-- Plan B: screencast como fallback.
+- Plan B operativo (§3.6) verificado en cada pasada (¿qué hago si falla X?).
 - Script de presentación rehearsed.
 
 LUNES (DÍA 14) 11/05 — REUNIÓN CMADRID

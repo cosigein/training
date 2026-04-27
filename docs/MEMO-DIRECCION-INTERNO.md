@@ -133,12 +133,16 @@ Una vez validado con CMadrid, el sistema es replicable a otros cuerpos públicos
 
 ### 7.1 — DobackSoft V3 sin director técnico durante 74 días
 
-**El elefante en la habitación.** Mientras yo estoy en Training (sprint + Fase 2), DobackSoft V3 (nuestro producto madre, en pleno cutover de Pipeline Audit Phase 2) **se queda sin director técnico** del 28/04 al ~12/07. Eso es real y necesita decisión.
+**El elefante en la habitación.** Mientras yo estoy en Training (sprint + Fase 2), DobackSoft V3 (nuestro producto madre, en pleno cutover de Pipeline Audit Phase 2) **se queda sin director técnico** del 28/04 al ~12/07.
 
-Opciones a evaluar contigo:
-- (a) Yo divido tiempo (60% Training / 40% DobackSoft V3) durante Fase 2. Riesgo: ambos productos sufren.
-- (b) Designamos un suplente interino para DobackSoft V3 durante el sprint. ¿Quién?
-- (c) Pausamos el cutover de Pipeline Audit Phase 2 hasta julio.
+**Mi recomendación:** opción (b) — designar un suplente interino con autoridad de decisión técnica para V3.
+
+Razonamiento:
+- (a) **Reparto 60/40 lo descarto.** En la práctica el 40% se convierte en 0% cuando Training tenga un fuego (que tendrá). Ambos productos sufren y yo no duermo.
+- (b) **Suplente interino es lo prudente.** Mi candidato es _[Antonio: nombre concreto del senior con más conocimiento de V3 — vos lo sabés mejor]_. Le dejaría firmadas decisiones para las 5-7 áreas más probables que pidan resolución durante 74 días: Pipeline Audit Phase 2 cutover, deploy semanal, response a incidentes P1-P2, contratación interina si entra alguien nuevo, escalado a vos si aparece P0. Yo me reservo solo P0 + decisiones de scope que cambien el roadmap.
+- (c) **Pausar Phase 2 hasta julio** lo dejo como plan B si no hay suplente disponible. Coste: 2-3 meses de retraso en V3.
+
+**Lo que necesito de vos:** confirmar a (b) con un nombre concreto del suplente, y que vos le des autoridad explícita por escrito al equipo de V3 antes del jueves 30/04. Si no llegás a un nombre, default es (c).
 
 ### 7.2 — Webfleet sandbox de CMadrid: probablemente NO existe
 

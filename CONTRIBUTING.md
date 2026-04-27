@@ -97,6 +97,20 @@ Cuando revisás el PR de otro:
 
 No es necesario que el código sea perfecto — necesario que sea **honesto** (hace lo que dice, sin sorpresas).
 
+## 4.bis Definition of Ready — cuándo una tarea está lista para empezar
+
+Antes de mover una tarea a "in progress" en tu rama, asegurate de que cumple TODO esto:
+
+- [ ] **Acceptance criteria escritos** (qué tiene que hacer el código para considerarse hecho).
+- [ ] **Pequeña** — se puede terminar y mergear en menos de 1 día. Si no, partila.
+- [ ] **Dependencias identificadas y resueltas** — si necesitás un endpoint de Jesús o un componente de Alejandro, está disponible o lo está al final del día.
+- [ ] **Dueño asignado** (vos mismo si lo agarrás).
+- [ ] **Sabe a qué issue padre pertenece** (etiqueta `role:*` correspondiente).
+
+Si una tarea no cumple los 5, **no arranques con ella** — abrila como issue nueva o pediselo a Antonio en el daily.
+
+> Esto es complemento del Definition of Done: DoR es "cuándo empiezo", DoD es "cuándo cierro". Ambos previenen trabajo que no sirve.
+
 ---
 
 ## 5. Estructura del repo (durante el sprint)
