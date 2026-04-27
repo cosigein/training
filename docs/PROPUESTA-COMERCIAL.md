@@ -23,7 +23,7 @@ Training es un sistema de **evaluación automática y competitiva** de candidato
 - Evaluación **objetiva, trazable y reproducible** de cada candidato.
 - **Ranking acumulado** publicado diariamente, con visibilidad controlada.
 - **Acta firmada** legalmente válida al cierre de cada convocatoria.
-- **Procesamiento autónomo**: el sistema decide sin intervención humana operativa.
+- **Procesamiento autónomo de la captura y cálculo**: el sistema mide, normaliza y calcula la nota de cada intento sin intervención humana en el camino.
 - **Compliance GDPR** desde el día uno.
 
 **Lo que no es:**
@@ -252,6 +252,33 @@ El sistema soporta el flujo completo de recurso administrativo en oposición:
 
 > El intento original **nunca se modifica**. El amendment es un registro adicional. Esto preserva la cadena de evidencia legal.
 
+### 5.4 Política de cambio de reglas durante una convocatoria abierta
+
+```
+   PRINCIPIO: igualdad de trato dentro de una convocatoria.
+
+   Una vez publicada una convocatoria, las reglas de evaluación
+   (umbrales, pesos por familia, criterios de desempate)
+   quedan FIRMES y se aplican uniformemente a todos los
+   candidatos de esa convocatoria.
+
+   Si durante la convocatoria se detecta un BUG (no un cambio
+   de criterio):
+     · CMadrid + DobackSoft documentan el bug.
+     · Se reprocesan los intentos afectados con la lógica
+       correcta, manteniendo la versión documentada del cambio.
+     · El audit log refleja el reproceso con su justificación.
+
+   Si CMadrid quiere cambiar reglas que NO son bug:
+     · Se aplica solo a la SIGUIENTE convocatoria.
+     · El simulador permite previsualizar el impacto antes
+       de publicar.
+
+   Esto está alineado con LPACAP (igualdad de trato, transparencia
+   procedimental) y se documenta por escrito antes de cada
+   convocatoria real.
+```
+
 ---
 
 ## 6. Cómo se opera el sistema
@@ -290,8 +317,15 @@ El sistema soporta el flujo completo de recurso administrativo en oposición:
 ### 6.3 Soporte técnico
 
 ```
-   Sistema autónomo: opera sin intervención humana
-   en el flujo normal.
+   La captura y el cálculo son autónomos en el flujo normal.
+   La DECISIÓN final APTO / NO APTO la toma siempre CMadrid en
+   el cierre formal de la convocatoria, con doble validación
+   administrativa (3 pasos: preview, initiate, confirm).
+
+   Esto cumple con el artículo 22 del Reglamento General de
+   Protección de Datos (GDPR): la decisión que afecta al
+   candidato NO es producto exclusivo de un proceso automatizado;
+   hay revisión humana significativa en el cierre.
 
    Casos que requieren intervención (esperados <1% de los intentos):
    · Solicitud de auditoría del candidato → resuelve el responsable
@@ -394,7 +428,16 @@ Tres componentes, separados por claridad:
    1. SETUP INICIAL (pago único)
       Cubre el sprint de construcción + integración con Webfleet de CMadrid +
       formación del equipo de admins e instructores + traspaso documental.
-      Se factura por hitos: 50% al kickoff, 50% tras el cutover validado.
+
+      Esquema de hitos propuesto (alineado con normativa de contratación
+      pública española — pago contra entregable verificable):
+        Hito 1 (~30%): firma del contrato.
+        Hito 2 (~30%): demo aceptada por CMadrid (lunes 11/05/2026).
+        Hito 3 (~25%): cutover validado de la primera convocatoria real.
+        Hito 4 (~15%): primera convocatoria cerrada con acta firmada.
+
+      Modelo alternativo (menor preferencia por contratación pública):
+        50% al kickoff, 50% tras el cutover validado.
 
    2. SUSCRIPCIÓN MENSUAL (mantenimiento + operación)
       Incluye:
@@ -409,6 +452,12 @@ Tres componentes, separados por claridad:
       Importe acordado por convocatoria efectivamente cerrada en producción.
       Cubre el coste variable de cuota Webfleet + storage de raw_samples
       durante 12 meses + generación del acta firmada cualificada.
+
+   4. SOPORTE EXTENDIDO PARA DÍA DE CIERRE FORMAL (variable, opcional)
+      Para los días de cierre formal de cada convocatoria real:
+        - Presencia on-site o stand-by garantizado del equipo.
+        - Cobertura ampliada vs el horario laboral estándar.
+      Tarifa por convocatoria, acordada en contrato.
 
    Las cifras concretas se proponen en negociación bilateral antes
    de la firma del contrato.
@@ -462,10 +511,20 @@ Tres componentes, separados por claridad:
 Una preocupación legítima: ¿qué pasa si el equipo se va?
 
 ```
-   ▶ Code escrow
-     Todo el código fuente queda depositado en un repositorio que
-     CMadrid puede auditar y, en caso de cese de la relación, asumir
-     la titularidad operativa o transferir a otro proveedor.
+   ▶ Code escrow — acceso desde día 1, no condicionado al cese
+     Desde la firma del contrato, CMadrid recibe acceso de
+     LECTURA al repositorio de código (rol "auditor"). Esto
+     permite:
+       - Auditoría continua del código y su evolución.
+       - Verificación de la integridad del sistema en cualquier
+         momento por personal técnico de CMadrid o un tercero
+         designado.
+       - Cláusula opcional: auditoría externa anual del escrow
+         por una empresa acordada bilateralmente.
+
+     En caso de cese de la relación, CMadrid puede asumir la
+     titularidad operativa o transferir a otro proveedor con
+     toda la trazabilidad disponible.
 
    ▶ Documentación
      Mantenida actualizada en el repositorio. Incluye:

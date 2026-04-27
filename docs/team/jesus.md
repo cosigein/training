@@ -9,7 +9,43 @@
 | **Tu rol** | Backend completo (api + worker + packages internos + schema Prisma) |
 | **Tu jefe técnico** | Antonio (director técnico) |
 | **Tus pares** | Alejandro (frontend) · Joel (simulador + QA) |
-| **Documento maestro** | `Paper Maestro - Equipo.pdf` (referencia completa cuando dudes) |
+| **Documento maestro** | `docs/PAPER-MAESTRO.md` (referencia completa cuando dudes) |
+| **Convenciones del repo** | [`OWNERS.md`](../../OWNERS.md) y [`CONTRIBUTING.md`](../../CONTRIBUTING.md) |
+
+---
+
+## Tabla de contenidos
+
+- [0. Cómo arrancás el día 1 (setup operativo)](#0-cómo-arrancás-el-día-1-setup-operativo)
+- [1. Qué construimos (5 minutos)](#1-qué-construimos-5-minutos)
+- [2. Tu territorio de código](#2-tu-territorio-de-código)
+- [3. Las 9 invariantes (regla de oro)](#3-las-9-invariantes-regla-de-oro)
+- [4. Tu calendario día por día](#4-tu-calendario-día-por-día)
+- [5. Schema Prisma — modelos críticos](#5-schema-prisma--modelos-críticos)
+- [6. Endpoints API — catálogo](#6-endpoints-api--catálogo)
+- [7. Lógica del cierre (3 pasos)](#7-lógica-del-cierre-3-pasos)
+- [8. Lo que copiás del actual (DobackSoft)](#8-lo-que-copiás-del-actual-dobacksoft)
+- [9. Coordinación con el equipo](#9-coordinación-con-el-equipo)
+- [10. Glosario y siglas](#10-glosario-y-siglas)
+
+---
+
+## Glosario rápido (lectura previa de 1 minuto)
+
+| Término | Significado |
+|---|---|
+| **Paper Maestro v6** | Sexta iteración del paper técnico de Training. La "v6" hace referencia a la versión del paper, no del producto. |
+| **DobackSoft V3 / DobackSoft Fleet** | El producto principal de la empresa (telemetría vehicular para flotas). Antonio te puede dar acceso al repo `dobackv2` si necesitás referenciarlo (ver §8). Training es un sistema NUEVO, no una extensión de DobackSoft V3. |
+| **StabilityProcessor** | Componente backend de DobackSoft V3 que convierte muestras en eventos. Lo extraemos a un package puro `packages/detection` para reutilizar en Training (§8). Antonio te muestra dónde vive el día 1 si necesitás. |
+| **Doback Elite** | Dispositivo físico (sensor + GPS) instalado en cada camión. Producto propio. |
+| **Webfleet** | Plataforma externa de Bridgestone que CMadrid tiene contratada. Antonio escribe el package que la consume (`packages/ingestion/webfleet/`). |
+| **D1, D2, ..., D25** | Decisiones firmes del paper maestro. Las 25 están listadas en `docs/PAPER-MAESTRO.md` con su justificación. Buscá `### D` en el paper para encontrarlas. No se reabren durante el sprint. |
+| **F1, F2, ..., F6** | Items de Fase 2 (post-demo). En el paper §17. No se construyen en el sprint. |
+| **convocatoria** | Proceso de oposición concreto con plazas, fecha de cierre, candidatos inscritos. |
+| **enrollment** | Inscripción de un Student a UNA convocatoria. Un humano puede tener varias enrollments (varias convocatorias). |
+| **attempt** | Un intento de evaluación = un alumno + una ruta + una sesión. Tiene una nota 0-10. |
+
+> **Lo que tenés que leer del paper esta noche (lunes):** SOLO el glosario del paper (§0) + las 9 invariantes (§3) + el §5 que cubre el modelo de datos. Total 30 minutos. **NO leas el resto** — el silent reading del kickoff lo cubre. Vení mañana con preguntas, no con el paper digerido.
 
 ---
 

@@ -6,10 +6,56 @@
 
 | | |
 |---|---|
-| **Tu rol** | Frontend completo (4 portales · 32 pantallas · Wrappers · Tests Vitest) |
+| **Tu rol** | Frontend completo (4 portales · ~32 pantallas · Wrappers · Tests Vitest) |
 | **Tu jefe técnico** | Antonio (director técnico) |
 | **Tus pares** | Jesús (backend) · Joel (simulador + QA) |
-| **Documento maestro** | `Paper Maestro - Equipo.pdf` (referencia completa cuando dudes) |
+| **Documento maestro** | `docs/PAPER-MAESTRO.md` (referencia completa cuando dudes) |
+| **Convenciones del repo** | [`OWNERS.md`](../../OWNERS.md) y [`CONTRIBUTING.md`](../../CONTRIBUTING.md) |
+
+---
+
+## Glosario rápido del dominio (no sos bombero, leé esto primero)
+
+| Término | Qué significa visualmente |
+|---|---|
+| **Oposición pública** | Proceso de selección por el que un cuerpo público (en este caso bomberos de Madrid) cubre plazas. Hay un nº fijo de plazas, los candidatos compiten entre sí. **Tu UI tiene que dejar claro que esto NO es un examen escolar — es una competición**. |
+| **convocatoria** | Una "edición" del proceso de selección. Tiene fecha de inicio, fecha de cierre, número de plazas y un grupo cerrado de candidatos inscritos. CMadrid puede tener varias convocatorias activas a la vez (raro en V1, pero posible). |
+| **Student / alumno** | El humano evaluado. Un mismo Student puede inscribirse en varias convocatorias a lo largo del tiempo → cada inscripción es un `Enrollment`. |
+| **Enrollment** | Inscripción de un Student a UNA convocatoria. Es la unidad sobre la que computa el ranking. |
+| **attempt / intento** | Un Student + una ruta + una sesión de conducción. Tiene una nota 0-10. Múltiples attempts dentro de un Enrollment. |
+| **Doback Elite** | Dispositivo físico instalado en el camión (sensor inercial + GPS propio). Es producto NUESTRO. No lo dibujás en pantalla, pero el **kiosko** muestra estado de conexión con él. |
+| **Webfleet** | Plataforma externa de Bridgestone que CMadrid tiene contratada. Provee datos GPS redundantes. No la dibujás. |
+| **kiosko** | **Tablet fija dentro de la cabina del camión.** Es la pantalla que ve el conductor mientras hace su intento. Modo oscuro obligatorio (legibilidad nocturna y cabina ruidosa). El conductor **NO ve la nota** desde el kiosko — solo el manager la ve después en el portal manager. |
+| **manager / responsable** | Bombero senior que supervisa la convocatoria. Lee la matriz, gestiona auditorías. **Read-only sobre las notas** (no las cambia). |
+| **APTO / NO_APTO** | La decisión final por candidato al cierre de la convocatoria. **No se emite por intento** — solo al cierre, según ranking final + plazas. |
+| **acta** | PDF generado al cierre con SHA256 de integridad. Documento legal. |
+| **matriz** (M5/M6) | **Tabla 2D**: filas = candidatos enrolled en la convocatoria, columnas = rutas evaluadas. Cada celda = la nota del último attempt del candidato en esa ruta (o vacío si aún no la hizo). Es la pantalla más importante para el manager. Por eso virtualizada (`react-window`) — puede tener 265 filas × 4-8 columnas. |
+| **ranking** | Tabla 1D: lista ordenada de candidatos dentro de UNA convocatoria por su `nota_media` o criterio agregado. Se publica diaria a las 06:00 Madrid. |
+
+> Si te falta saber **cómo se ve físicamente un camión de bomberos por dentro**, pediselo a Antonio el día 1 — idealmente foto/video. Sin haber visto la cabina, vas a inventar UX del kiosko.
+
+---
+
+## Priorización de pantallas (P0 / P1 / P2)
+
+> **Si llegamos justos al 11/05, recortamos en este orden:** primero P2, luego P1, nunca P0.
+
+| Priori | Pantallas (objetivo de la demo) |
+|---|---|
+| **P0 — Bloquea la demo** | M1 (login manager) · M5 (matriz convocatoria) · M6 (detalle attempt + auditoría desde manager) · A1 (login alumno) · A2 (StandingCard del alumno: posición + nota media + dentro/fuera del corte) · D1 (login admin) · D5 (cierre convocatoria — flujo 3 pasos) · K1 (idle kiosko) · K2 (RFID) · K3 (sesión activa) · D12 (simulador) |
+| **P1 — Importante para credibilidad** | A3-A6 (portal alumno completo: histórico, ruta, audit request) · M7 (reevaluación tras auditoría) · D2-D4 (admin: rutas, RFID, students) · D11 (matriz vista admin) · K4 (recovery modal) |
+| **P2 — Nice-to-have demo / Fase 2** | D6-D10 (admin: convocatorias edit, exports, GDPR ops, audit log viewer) · K5-K6 (kiosko: cierre intento, abandono) — si no llegan, los simulamos en demo |
+
+> **~14 pantallas P0** en 9 días laborables = ~1.5 pantallas/día. Es factible si el contrato API está estable desde el día 3 y los wrappers (MapViewer, Matrix, Ranking) se reusan. Sin contrato API estable, esta priorización no se cumple — escalá a Antonio.
+
+---
+
+## Resolución de la contradicción §0.2 ↔ §0.12
+
+- **§0.2** dice "no crees apps/web por adelantado". Eso aplica a **antes del kickoff** (esta noche del lunes). Correcto.
+- **§0.12** habla de tu primer hito serio (jueves 30/04). Para entonces YA hicimos el scaffolding juntos en el kickoff — la estructura existe.
+
+Resumen: **lunes a la noche, NO toques nada**. Martes 28/04 por la mañana, durante el scaffolding compartido, nace `apps/web/` con todo el equipo en pantalla. Desde ahí, vos lo manejás.
 
 ---
 

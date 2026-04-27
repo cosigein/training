@@ -120,6 +120,24 @@ Three small things. None of them require the project to exist.
    nobody ends up with a slightly different version of anything.
 ```
 
+## Logistics — confirm with Antonio Monday evening
+
+The day-1 doc can't put these on paper because they vary by office and contract setup. **Ask Antonio in DM tonight** so you don't arrive lost tomorrow:
+
+```
+   ☐ Office address (or remote-work confirmation)
+   ☐ How to enter the building at 09:00 (reception, code, doorbell?)
+   ☐ Wifi network name + password
+   ☐ NDA / employment paperwork — does Antonio bring it Tuesday morning,
+     or is it already signed?
+   ☐ Working hours expectation (Spanish 09:00-18:30 with long lunch is
+     the assumption — confirm)
+   ☐ Tax / payroll setup if relevant in your contract
+   ☐ Lunch — does the team eat together day 1? Where?
+```
+
+> If Antonio doesn't reply by midnight, default plan: arrive at 08:45 to whatever address he gave you, ring the bell, ask reception, and have his phone number ready.
+
 ---
 
 ## Tuesday 28/04 — your actual first day
@@ -151,10 +169,16 @@ Three small things. None of them require the project to exist.
    14:30 - 16:00   YOUR FIRST CONCRETE TASK
    ─────────────────────────────────────────
    • Add Playwright to the repo as a top-level e2e/ workspace.
-   • Write ONE smoke test: load the future login URL (won't exist yet,
-     so test against a placeholder index page Alejandro adds during
-     scaffolding) → assert page renders.
-   • Open a PR: chore(e2e): bootstrap Playwright + first smoke test.
+   • Write ONE smoke test: load the placeholder index page that
+     Alejandro pushes during the morning scaffolding session.
+
+     IMPORTANT: agree with Alejandro DURING the kickoff what URL
+     and what test selector you'll use. Specifically:
+       - URL: `http://localhost:5173/` (Vite default)
+       - Selector: `data-testid="app-root"` on the root component.
+     Without that contract, you write nothing this afternoon.
+
+   • Open a PR: `chore(qa-e2e-bootstrap)` — Playwright + first smoke test.
    • Tag Antonio for review.
 
    16:00 - 17:00   GITHUB ACTIONS — first workflow
@@ -206,6 +230,17 @@ Antonio sets up the team channel on day 1 (Slack, Discord, or Teams — he picks
    • #training-deploys      — automated deploy notifications
    • #training-bugs         — bugs and incidents
    • #cmadrid-cliente       — client comms (Antonio only)
+```
+
+### What if I'm blocked DURING the kickoff and there's no channel yet?
+
+Until the team channel exists (Tuesday morning), the fallback is:
+
+```
+   1. Raise it out loud during the kickoff (everyone is in the same room).
+   2. If it's after the kickoff and the channel still isn't ready,
+      DM Antonio directly on whatever platform he uses with you.
+   3. Don't sit silently for >20 minutes thinking. Ask.
 ```
 
 ### Rules of thumb

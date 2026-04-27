@@ -1,6 +1,10 @@
-# Cómo contribuimos
+# Cómo contribuimos / How we contribute
 
-Equipo de 4 personas, sprint corto. Estas reglas existen para que **nadie pierda tiempo** y para que **nada se rompa por sorpresa**.
+> 🇪🇸 Equipo de 4 personas, sprint corto. Estas reglas existen para que **nadie pierda tiempo** y para que **nada se rompa por sorpresa**.
+>
+> 🇬🇧 *4-person team, short sprint. These rules exist so **nobody wastes time** and **nothing breaks by surprise**. Joel: a short English summary lives at the bottom of this file.*
+
+> **Antes de hacer un PR**, leé también [OWNERS.md](OWNERS.md) — define quién aprueba qué archivo. Sin eso este doc queda en el aire.
 
 ---
 
@@ -8,15 +12,25 @@ Equipo de 4 personas, sprint corto. Estas reglas existen para que **nadie pierda
 
 - **`main`** es la rama principal. Está protegida — todo entra por Pull Request.
 - Trabajo en **feature branches cortas** (objetivo: < 1 día de vida).
-- Convenciones de nombre:
+- Convenciones de nombre con **namespace por área**:
   - `feat/<area>-<descripcion-corta>` — feature nueva.
   - `fix/<area>-<descripcion-corta>` — bug fix.
   - `chore/<descripcion>` — config, CI, dependencias.
   - `docs/<descripcion>` — solo documentación.
-- Ejemplos:
-  - `feat/scoring-tiebreak`
-  - `fix/webfleet-tilde-encoding`
-  - `chore/setup-eslint`
+
+**Áreas reservadas (para que dos PRs no se confundan):**
+- `wf` → Antonio (webfleet)
+- `be` → Jesús (backend)
+- `fe` → Alejandro (frontend)
+- `qa` → Joel (tests + CI + simulator)
+- `cross` → cambios que cruzan áreas (revisar con Antonio antes)
+
+Ejemplos:
+- `feat/be-auth-jwt-cookies`
+- `feat/fe-matrix-virtualized`
+- `feat/qa-e2e-login-flow`
+- `feat/wf-circuit-breaker`
+- `chore/cross-pnpm-workspaces`
 
 > Si una rama lleva >2 días abierta, partila en algo más chico.
 
@@ -25,6 +39,13 @@ Equipo de 4 personas, sprint corto. Estas reglas existen para que **nadie pierda
 ## 2. Pull Requests
 
 - **1 review obligatoria** de otro dev antes de hacer merge. Self-merge prohibido.
+- **Algunos archivos exigen 2 reviews** (dueño técnico + Antonio). Lista en [OWNERS.md](OWNERS.md) sección "Antonio — review obligatoria":
+  - `prisma/schema.prisma`
+  - `apps/api/src/middleware/`
+  - `package.json` raíz
+  - `.github/workflows/`
+  - `docker-compose*.yml`
+  - Endpoints de `/close/*`, `/scoring/simulate`, `/gdpr/*`, `/admin/*`
 - El reviewer no es solo un sello — si veés algo raro, comentalo.
 - PRs pequeños (< 300 líneas) se revisan en minutos. PRs grandes se revisan tarde y mal: si tu cambio crece, partilo.
 - **Squash merge** por defecto. El historial de `main` debe ser legible.
@@ -80,9 +101,47 @@ No es necesario que el código sea perfecto — necesario que sea **honesto** (h
 
 ## 5. Estructura del repo (durante el sprint)
 
-Empezamos vacío. La estructura definitiva la consolidamos el día 1 del sprint con todo el equipo presente. La propuesta de partida (sujeta a validación) está en `docs/PAPER-MAESTRO.md`.
+Empezamos vacío. La estructura se consolida el día 1 del sprint en pantalla compartida con todo el equipo. La propuesta de partida está en `docs/PAPER-MAESTRO.md`.
+
+**Decisión tomada antes del kickoff:**
+- **Gestor de paquetes:** `pnpm` con workspaces.
+- **Monorepo:** `apps/api`, `apps/worker`, `apps/web`, `packages/*`.
+- **TypeScript:** strict, modo workspace con `tsconfig.base.json` en raíz.
+- **Lint/format:** ESLint + Prettier + Husky pre-commit + lint-staged.
 
 **No crees carpetas `apps/`, `packages/` ni añadas dependencias de forma unilateral antes del kickoff.** Eso lo hacemos juntos para evitar reescribir la base 3 veces.
+
+## 5.bis Política de breaking changes durante el sprint
+
+Si tu cambio rompe algo de otra persona (renombrar un endpoint, cambiar shape de respuesta, mover un componente):
+
+1. **Avisás ANTES** — chat del equipo + comentario en el issue del afectado.
+2. **Mergeás el cambio + el fix del consumidor en el mismo PR**, o coordinás dos PRs back-to-back en menos de 1 hora.
+3. **Si no podés coordinar el back-to-back**, abrís un PR pequeño primero que mantiene compatibilidad temporal (ambos shapes funcionan), después tu cambio real, después el cleanup.
+
+**No permitido:** mergear y "ya verá el otro mañana cuando le rompa". Bloquea al equipo y consume horas que no tenemos.
+
+## 5.ter Endpoint freeze diario
+
+Cada noche, antes de irse, **Jesús pushea** `docs/api-snapshot.md` con el listado de endpoints estables (path, método, request/response shape).
+
+- Alejandro y Joel solo escriben código contra ese snapshot.
+- Cambios al día siguiente = PR + aviso explícito en el chat con `@Alejandro @Joel`.
+- Si Jesús no actualiza el snapshot, el snapshot anterior sigue siendo el contrato.
+
+## 5.quater Convención `data-testid` (Alejandro pone, Joel usa)
+
+Formato: `data-testid="<portal>-<pantalla>-<elemento>"`
+
+Ejemplos: `manager-matrix-row-3` · `kiosko-rfid-prompt` · `admin-close-step1-button-confirm`
+
+- Alejandro los pone al crear o editar un componente.
+- Si Alejandro renombra uno → coordina con Joel ANTES de mergear.
+- Sin `data-testid` no hay E2E posible — Joel puede bloquear merge si una pantalla nueva no los tiene.
+
+## 5.quinquies Naming de migraciones Prisma
+
+Formato: `YYYYMMDD_HHMM_<verbo>_<modelo>` — ejemplo: `20260428_1100_init_base_models`. Una migración por PR.
 
 ---
 
@@ -129,3 +188,28 @@ Empezamos vacío. La estructura definitiva la consolidamos el día 1 del sprint 
 ---
 
 **Si tenés una duda sobre estas reglas, preguntá. Si una regla te parece tonta para tu caso, también preguntá — vale más cambiar la regla que ignorarla.**
+
+---
+
+## 🇬🇧 Quick reference for Joel (English summary)
+
+| Rule | TL;DR |
+|---|---|
+| **Branches** | `feat/qa-<description>` for your work · short-lived (<1 day) · off `main`. |
+| **PRs** | 1 review required · 2 reviews if you touch `prisma/schema.prisma`, middleware, CI, package.json (Antonio mandatory). |
+| **Squash merge.** | One commit per PR on `main`. |
+| **Conventional commits** | `feat:`, `fix:`, `chore:`, `docs:`, `test:`. No AI co-authors. |
+| **CI must be green** before merge. If you break CI, fix it. Don't ignore it. |
+| **Code review** | Look for: does it work? does it have tests? does it break a project invariant? |
+| **No console.log** in product code. Use the logger we set up day 1. |
+| **No `: any`** without a justified `// any: <reason>` comment. |
+| **No secrets** in the repo. Use `.env` (ignored). |
+| **No commits to `main`** — always PR. |
+| **Daily** at 09:30 sharp (CET). 15 min. You speak last, in English, 3 sentences. |
+| **Data-testid** convention: `<portal>-<screen>-<element>`. Alejandro puts them; you use them in E2E. |
+| **Endpoint freeze**: Jesús pushes `docs/api-snapshot.md` each night. Only test against that snapshot. |
+| **Breaking changes**: if you break someone else's code, you coordinate the fix in the same PR. Don't push & forget. |
+| **Owners**: see `OWNERS.md` — every shared file has one approver. |
+| **Issues**: tag your work with `role:joel`. Track sub-tasks as a checklist inside the issue. |
+
+If you don't understand a rule, ask Antonio. The rule may be wrong — better to change it than ignore it.

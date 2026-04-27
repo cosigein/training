@@ -9,7 +9,49 @@
 | **Tu rol** | Director técnico · Cliente · Webfleet (dev) |
 | **Equipo** | Vos · Jesús (backend) · Alejandro (frontend) · Joel (simulador + QA) |
 | **Tu carga** | 3 frentes simultáneos: arquitectura, cliente, código de Webfleet |
-| **Documento maestro** | `Paper Maestro - Equipo.pdf` (referencia completa cuando dudes) |
+| **Documento maestro** | `docs/PAPER-MAESTRO.md` (referencia completa cuando dudes) |
+| **Convenciones** | [`OWNERS.md`](../../OWNERS.md) y [`CONTRIBUTING.md`](../../CONTRIBUTING.md) — léelas antes de mañana |
+| **Memo Dirección** | [`docs/MEMO-DIRECCION-INTERNO.md`](../MEMO-DIRECCION-INTERNO.md) — caso de negocio para tu jefe |
+
+---
+
+## TOC
+
+1. [Tu rol en una línea](#1-tu-rol-en-una-línea)
+2. [Tu territorio de código](#2-tu-territorio-de-código)
+3. [Tu agenda externa — calendario con cliente](#3-tu-agenda-externa--calendario-con-cliente-y-stakeholders)
+4. [Tu rol con el cliente](#4-tu-rol-con-el-cliente--lo-que-sí-hacés-y-lo-que-no)
+5. [Cuota Webfleet — circuit breaker](#5-cuota-webfleet--circuit-breaker-desde-día-1)
+6. [Tu interfaz con Jesús](#6-tu-interfaz-con-jesús-la-api-pública-del-package)
+7. [Tu calendario día por día](#7-tu-calendario-día-por-día)
+8. [Decisiones que SOLO vos tomás](#8-decisiones-que-solo-vos-podés-tomar)
+9. [Decisiones que delegás](#9-decisiones-que-delegás)
+10. [Reglas no negociables — las 9 invariantes](#10-reglas-no-negociables--las-9-invariantes)
+11. [Reglas de proceso](#11-reglas-de-proceso-10-reglas-operativas)
+12. [Antes del kickoff — checklist tuya](#12-antes-del-kickoff--checklist-tuya-hoy-lunes-2704)
+13. [Criterios de "tu trabajo está bien hecho"](#13-criterios-de-tu-trabajo-está-bien-hecho)
+14. [Glosario mínimo](#14-glosario-mínimo)
+15. [Si algo va mal](#15-si-algo-va-mal)
+
+---
+
+## Decisiones tomadas pre-kickoff (si algo te preguntan, esto está cerrado)
+
+| Tema | Decisión |
+|---|---|
+| Gestor de paquetes | **pnpm** + workspaces |
+| Estructura monorepo | `apps/{api,worker,web}` + `packages/*` |
+| TypeScript | strict + `tsconfig.base.json` raíz |
+| Lint/format | ESLint + Prettier + Husky pre-commit + lint-staged |
+| Logger backend | **Winston** con transport JSON estructurado |
+| Logger frontend | helper propio `utils/logger.ts` con flag `LOG_LEVEL` |
+| Convención branches | `feat/<area>-<desc>` con áreas reservadas (wf/be/fe/qa/cross) — ver CONTRIBUTING |
+| Convención commits | Conventional commits (`feat:`, `fix:`, `chore:`...) |
+| Squash merge | Por defecto en todos los PRs |
+| `data-testid` | `<portal>-<pantalla>-<elemento>` — ver CONTRIBUTING §5.quater |
+| Tipos compartidos backend↔frontend | Package `packages/api-types/` (Jesús lo expone, Alejandro y Joel consumen) |
+| VPS staging | __PENDIENTE — decidir HOY antes del kickoff__ (sugerencia: Hetzner CX22 si no hay infra existente) |
+| Plan B screencast demo | Vos lo grabás el sábado 09/05 por la tarde tras tortura kiosko (45 min, 3 takes) |
 
 ---
 

@@ -32,10 +32,15 @@ Sistema de evaluación de candidatos a conductor de camión de bomberos para CMa
 ## Documentos disponibles
 
 ```
+README.md                        ← este documento (entry point)
+CONTRIBUTING.md                  ← branch strategy, PRs, conventions
+OWNERS.md                        ← quién aprueba qué archivo (LEER antes del primer PR)
+
 docs/
 ├── PAPER-MAESTRO.md             ← referencia técnica completa (todo el equipo)
-├── DOCUMENTO-EJECUTIVO.md       ← visión ejecutiva (interna)
+├── DOCUMENTO-EJECUTIVO.md       ← visión ejecutiva no técnica (cliente + gestión)
 ├── PROPUESTA-COMERCIAL.md       ← propuesta para CMadrid (no compartir aún)
+├── MEMO-DIRECCION-INTERNO.md    ← caso de negocio (interno, solo Dirección)
 └── team/
     ├── antonio.md               ← qué hace Antonio en estos 14 días
     ├── jesus.md                 ← qué hace Jesús
@@ -49,11 +54,12 @@ docs/
 ## Cómo trabajamos (regla corta)
 
 - **Branch principal:** `main`. Protegida — todo entra por PR.
-- **Trabajo en feature branches cortas** (`feat/<area>-<descripcion>`, `fix/...`, `chore/...`). Vida útil objetivo: < 1 día.
-- **PRs:** 1 review obligatoria de otro dev antes de merge. Self-merge prohibido.
+- **Trabajo en feature branches cortas** con **namespace por área**: `feat/be-...` (Jesús), `feat/fe-...` (Alejandro), `feat/qa-...` (Joel), `feat/wf-...` (Antonio Webfleet), `chore/cross-...` (cambios cross-team). Vida útil objetivo: < 1 día.
+- **PRs:** 1 review obligatoria; **2 reviews si tocás `prisma/schema.prisma`, middleware de auth, `package.json` raíz, CI o `docker-compose`** (Antonio mandatory).
 - **Daily:** 09:30 (Europe/Madrid). 15 minutos. Inflexible.
 - **Conventional commits** en cada commit (`feat:`, `fix:`, `chore:`, `docs:`).
-- **Detalle completo:** [CONTRIBUTING.md](CONTRIBUTING.md).
+- **Quién aprueba qué:** ver [`OWNERS.md`](OWNERS.md). Sin esto los 4 chocamos.
+- **Detalle completo:** [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ---
 
@@ -80,3 +86,47 @@ Este repo es **privado**. Los datos de CMadrid son confidenciales bajo NDA. No c
 ---
 
 **Si tenés cualquier duda el día 1, preguntá a Antonio. No pierdas tiempo intentando descifrar algo solo.**
+
+---
+
+## ☑️ Pendientes para Antonio antes del kickoff (HOY lunes 27/04)
+
+> Esta lista es interna. Antonio: si todos estos están ✅ a las 23:00 del lunes, mañana arrancamos sin titubeos. Si alguno está ❌, escalalo a Dirección.
+
+```
+   ☐ Pedir GitHub usernames de Jesús, Alejandro, Joel
+       e invitarlos a cosigein/training como collaborators
+
+   ☐ Crear espacio del equipo (Slack / Discord / Teams — tu elección)
+       y mandarles el link de invitación a los 3
+
+   ☐ Mandar a cada uno el link al repo + path a su doc:
+       Jesús    → docs/team/jesus.md
+       Alejandro → docs/team/alejandro.md
+       Joel     → docs/team/joel-day1-en.md  (PRIMERO, EN)
+
+   ☐ Confirmar logística para Joel:
+       - Dirección de la oficina
+       - Cómo entrar al edificio (recepción, código, timbre)
+       - Wifi del local (SSID + password)
+       - NDA / paperwork — ¿se firma martes mañana o ya está?
+       - Tu número de teléfono por si algo
+
+   ☐ Mandar a CMadrid:
+       - Documento Ejecutivo (PDF)
+       - Propuesta Comercial (PDF)
+       y proponer llamada de 15-30 min en la semana
+
+   ☐ Conseguir al menos 1 fixture real de Webfleet
+       (payload anonimizado o, en su defecto, contacto técnico de Bridgestone)
+
+   ☐ Decidir VPS staging (proveedor) — Hetzner CX22 si no hay infra existente
+
+   ☐ Reunión de 30 min con Dirección
+       (puntos en docs/MEMO-DIRECCION-INTERNO.md §9)
+
+   ☐ Configurar 1 Project board en GitHub con los 5 issues abiertos
+       y asignar cada issue al GitHub username correspondiente
+```
+
+**Una vez todo lo de arriba esté ✅, mañana 09:00 conducís el kickoff con tranquilidad.**

@@ -7,9 +7,10 @@
 |---|---|
 | **Versión** | 4.0 |
 | **Fecha** | 27 de abril de 2026 |
-| **Audiencia** | Dirección · Cliente · Equipo de gestión |
+| **Audiencia** | Cliente (CMadrid) · Equipo de gestión interno (no técnico) |
 | **Carácter** | No técnico — orientado a uso real |
 | **Estado del proyecto al 27/04/2026** | Documento de **propuesta y diseño**. El código aún no está construido: el sprint de implementación arranca el martes 28/04 y la demo está programada para el lunes 11/05. Cifras económicas, SLA y plazos del plan de despliegue son **propuestas de partida** sujetas a contrato. |
+| **Para Dirección de la empresa** | El caso de negocio (coste interno, modelo económico, exit plan, plan de contingencia, exposición legal) está en `MEMO-DIRECCION-INTERNO.md` — documento separado por confidencialidad. |
 | **Cambio principal v3 → v4** | Tras review adversarial, se incorporan al documento aspectos legales y operativos críticos para producción: privacidad y GDPR, cierre de convocatoria con acta y doble validación, derecho de recurso del candidato, sistema de notificaciones, redundancia de captura de datos. Nada de esto cambia el modelo del sistema — son refinamientos que el cliente y la dirección deben conocer antes de la reunión. |
 
 ---
