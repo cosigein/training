@@ -89,7 +89,8 @@
         btn.addEventListener('click', async function() {
             if (!confirm('¿Eliminar este recorrido? Esta acción no se puede deshacer.')) return;
 
-            const csrfToken = getCookie('csrf_access_token');
+            const jwtCsrf = getCookie('csrf_access_token');
+            const wtfCsrf = "{{ csrf_token() }}";
             btn.disabled = true;
 
             try {
@@ -97,7 +98,8 @@
                     method: 'DELETE',
                     credentials: 'same-origin',
                     headers: {
-                        'X-CSRF-TOKEN': csrfToken || '',
+                        'X-CSRF-TOKEN': jwtCsrf || '',
+                        'X-CSRFToken': wtfCsrf,
                         'Accept': 'application/json'
                     }
                 });
@@ -112,8 +114,12 @@
                     return;
                 }
 
-                const data = await res.json().catch(() => ({}));
-                alert(data.message || 'No se pudo eliminar la sesión.');
+                const raw = await res.text();
+                let parsed;
+                try { parsed = JSON.parse(raw); } catch (e) { parsed = null; }
+                const detail = parsed && parsed.message ? parsed.message : raw.slice(0, 500);
+                console.error('[delete-session] status=' + res.status, parsed || raw);
+                alert('No se pudo eliminar (HTTP ' + res.status + '): ' + detail);
                 btn.disabled = false;
             } catch (err) {
                 alert('Error de red. Intentalo de nuevo.');

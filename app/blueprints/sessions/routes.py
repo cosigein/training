@@ -1,8 +1,10 @@
-from flask import jsonify, request, render_template
+import traceback
+from flask import jsonify, request, render_template, current_app
 from . import sessions_bp
 from .services import session_service
 from app.utils.decorators import jwt_required, get_jwt_identity, require_org
 from app.models.auth import User
+from app.extensions import db
 
 @sessions_bp.route("/", methods=["GET"])
 @require_org
@@ -74,9 +76,18 @@ def get_session_detail(id):
 def delete_session(id):
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
-    deleted = session_service.delete_session(id, user.organizationId)
+    try:
+        deleted = session_service.delete_session(id, user.organizationId)
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.exception("delete_session failed for id=%s org=%s", id, user.organizationId if user else None)
+        return jsonify({
+            "message": f"{type(exc).__name__}: {str(exc)[:300]}",
+            "type": type(exc).__name__,
+        }), 500
+
     if not deleted:
-        return jsonify({"message": "Sesión no encontrada"}), 404
+        return jsonify({"message": "Sesión no encontrada o sin permisos"}), 404
     return "", 204
 
 @sessions_bp.route("/<string:id>/gps", methods=["GET"])
