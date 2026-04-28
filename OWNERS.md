@@ -19,6 +19,8 @@
 | `app/templates/` (base.html, errors, macros, settings) | **Alejandro** | Alejandro edita; Joel toca solo `data-testid` con su convención |
 | `app/blueprints/<área>/templates/` (templates por blueprint) | **Alejandro** | Alejandro edita |
 | `app/static/css/tokens.css` · `app/static/css/{reset,base}.css` · `app/static/css/components/*.css` (design system) | **Alejandro** | Alejandro decide |
+| `app/blueprints/manager/` (UI manager-facing: dashboard, matriz, ranking, alumno, intento, auditoría, convocatorias) | **Alejandro** mientras sirva mock data; transferencia a **Jesús** cuando se conecte a SQLAlchemy | Alejandro edita templates + presentation; Jesús revisa cuando entren queries reales |
+| `docs/STYLE-GUIDE-MANAGER.md` (style guide del portal manager) | **Alejandro** | Alejandro edita |
 | `app/blueprints/admin/` (cuando se incorpore scoring simulator y cierre de convocatoria) | **Antonio** | Antonio edita; Alejandro entrega componentes base; Joel escribe E2E |
 | `app/services/webfleet/` y `app/workers/webfleet_worker.py` (cuando existan — ingesta Webfleet + sync periódico) | **Antonio** define el contrato + **Jesús** orquesta Celery | Antonio define qué llama, Jesús cómo se programa |
 | `docs/SIMULATOR-USER-GUIDE.md` (cuando se cree) | **Antonio** | Doc para admin CMadrid (español castellano, 1-2 páginas) |

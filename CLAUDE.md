@@ -52,7 +52,7 @@ app/
 ├── __init__.py              # Flask factory, registro de blueprints
 ├── config.py                # Dev / Testing / Production configs
 ├── extensions.py            # db, migrate, jwt, socketio, login, csrf, limiter, cors, ...
-├── blueprints/              # 11 blueprints, cada uno con routes.py + services.py + templates/
+├── blueprints/              # 12 blueprints, cada uno con routes.py + services.py + templates/
 │   ├── auth/        ── /auth
 │   ├── vehicles/    ── /vehicles
 │   ├── sessions/    ── /sessions      (recorridos del alumno)
@@ -62,6 +62,12 @@ app/
 │   ├── kpis/        ── /kpis
 │   ├── reports/     ── /reports
 │   ├── admin/       ── /admin
+│   ├── manager/     ── /manager       (UI manager-facing: dashboard, matriz,
+│   │                                    ranking, alumno, intento, auditoría,
+│   │                                    convocatorias — gateado con
+│   │                                    @require_role([MANAGER, ADMIN]).
+│   │                                    Hoy sirve mock data hardcodeado;
+│   │                                    pendiente conectar a SQLAlchemy.)
 │   ├── system/      ── /
 │   └── telemetry/   ── /telemetry
 ├── models/                  # SQLAlchemy: Organization, User, Vehicle, Session, Geofence, Event,
