@@ -69,6 +69,16 @@ def get_session_detail(id):
         
     return render_template("sessions/detail.html", session=session, events=events, route_geojson=route_geojson, chart_data=chart_data)
 
+@sessions_bp.route("/<string:id>", methods=["DELETE"])
+@require_org
+def delete_session(id):
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    deleted = session_service.delete_session(id, user.organizationId)
+    if not deleted:
+        return jsonify({"message": "Sesión no encontrada"}), 404
+    return "", 204
+
 @sessions_bp.route("/<string:id>/gps", methods=["GET"])
 @require_org
 def get_session_gps(id):

@@ -28,4 +28,12 @@ class SessionService:
         return GpsMeasurement.query.filter_by(sessionId=session_id)\
             .order_by(GpsMeasurement.timestamp.asc()).all()
 
+    @staticmethod
+    def delete_session(session_id, org_id):
+        # ondelete=CASCADE en los FK de measurements/events se encarga de los hijos
+        deleted = Session.query.filter_by(id=session_id, organizationId=org_id)\
+            .delete(synchronize_session=False)
+        db.session.commit()
+        return deleted > 0
+
 session_service = SessionService()

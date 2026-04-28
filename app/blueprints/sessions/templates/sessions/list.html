@@ -54,7 +54,11 @@
                             <a href="{{ url_for('sessions.get_session_detail', id=session.id) }}" class="btn btn--icon btn--ghost" title="Analizar telemetría">
                                 <i class="ph ph-chart-scatter"></i>
                             </a>
-                            <button class="btn btn--icon btn--ghost" style="color: var(--color-danger);" title="Eliminar registro">
+                            <button type="button"
+                                    class="btn btn--icon btn--ghost js-delete-session"
+                                    data-url="{{ url_for('sessions.delete_session', id=session.id) }}"
+                                    style="color: var(--color-danger);"
+                                    title="Eliminar registro">
                                 <i class="ph ph-trash"></i>
                             </button>
                         </div>
@@ -71,4 +75,52 @@
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    function getCookie(name) {
+        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        return match ? decodeURIComponent(match[2]) : null;
+    }
+
+    document.querySelectorAll('.js-delete-session').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
+            if (!confirm('¿Eliminar este recorrido? Esta acción no se puede deshacer.')) return;
+
+            const csrfToken = getCookie('csrf_access_token');
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(btn.dataset.url, {
+                    method: 'DELETE',
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken || '',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (res.status === 204) {
+                    btn.closest('tr').remove();
+                    return;
+                }
+
+                if (res.status === 401) {
+                    window.location.href = "{{ url_for('auth.login') }}";
+                    return;
+                }
+
+                const data = await res.json().catch(() => ({}));
+                alert(data.message || 'No se pudo eliminar la sesión.');
+                btn.disabled = false;
+            } catch (err) {
+                alert('Error de red. Intentalo de nuevo.');
+                btn.disabled = false;
+            }
+        });
+    });
+})();
+</script>
 {% endblock %}
