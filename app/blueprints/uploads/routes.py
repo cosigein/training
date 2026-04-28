@@ -1,11 +1,11 @@
 from flask import jsonify, request, render_template
 from . import uploads_bp
 from .services import ingestion_service
-from app.utils.decorators import jwt_required, get_jwt_identity, require_org, require_role
+from app.utils.decorators import jwt_required, get_jwt_identity, require_role
 from app.models.auth import User
 
 @uploads_bp.route("/", methods=["GET"])
-@require_org
+@require_role(["ADMIN"])
 def unified_upload():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
@@ -22,7 +22,7 @@ def unified_upload():
     return render_template("uploads/unified.html", jobs=jobs)
 
 @uploads_bp.route("/jobs", methods=["GET"])
-@require_org
+@require_role(["ADMIN"])
 def list_jobs():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
@@ -35,7 +35,7 @@ def list_jobs():
     } for j in jobs])
 
 @uploads_bp.route("/upload", methods=["POST"])
-@require_org
+@require_role(["ADMIN"])
 def upload_file():
     # En una implementación real aquí se manejaría S3 o el filesystem local
     # Por ahora registramos el job de ingesta

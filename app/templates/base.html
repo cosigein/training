@@ -50,19 +50,21 @@
             <a href="{{ url_for('events.list_events') }}" class="sidebar__link {% if request.blueprint == 'events' %}active{% endif %}">
                 <i class="ph ph-warning-circle"></i> Gestor de Eventos
             </a>
-            <a href="{{ url_for('reports.list_reports') }}" class="sidebar__link {% if request.blueprint == 'reports' %}active{% endif %}">
-                <i class="ph ph-file-text"></i> Reportes
-            </a>
             <a href="#" class="sidebar__link">
                 <i class="ph ph-chart-bar"></i> KPIs Avanzados
+            </a>
+
+            {% if current_user.role.value == 'ADMIN' %}
+            <a href="{{ url_for('reports.list_reports') }}" class="sidebar__link {% if request.blueprint == 'reports' %}active{% endif %}">
+                <i class="ph ph-file-text"></i> Reportes
             </a>
             <a href="{{ url_for('uploads.unified_upload') }}" class="sidebar__link {{ 'active' if request.blueprint == 'uploads' }}">
                 <i class="ph ph-cloud-arrow-up"></i> Ingesta
             </a>
             <a href="{{ url_for('admin.list_organizations') }}" class="sidebar__link {{ 'active' if request.blueprint == 'admin' }}">
-                <i class="ph ph-shield-check"></i>
-                Administración
+                <i class="ph ph-shield-check"></i> Administración
             </a>
+            {% endif %}
         </nav>
         <div class="sidebar__footer">
             <a href="{{ url_for('system.settings') }}" class="sidebar__link {{ 'active' if request.blueprint == 'system' }}">

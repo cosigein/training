@@ -1,11 +1,11 @@
 from flask import jsonify, request, render_template
 from . import kpis_bp
 from .services import kpi_service
-from app.utils.decorators import jwt_required, get_jwt_identity, require_org
+from app.utils.decorators import jwt_required, get_jwt_identity, require_role
 from app.models.auth import User
 
 @kpis_bp.route("/dashboard", methods=["GET"])
-@require_org
+@require_role(["ADMIN", "MANAGER"])
 def dashboard_executive():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
@@ -24,7 +24,7 @@ def dashboard_executive():
     return render_template("kpis/executive.html", stats=stats, chart_data=chart_data, fleet_data=fleet_data)
 
 @kpis_bp.route("/summary", methods=["GET"])
-@require_org
+@require_role(["ADMIN", "MANAGER"])
 def get_kpi_summary():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
@@ -45,7 +45,7 @@ def get_kpi_summary():
     })
 
 @kpis_bp.route("/rankings", methods=["GET"])
-@require_org
+@require_role(["ADMIN", "MANAGER"])
 def get_rankings():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)

@@ -1,12 +1,12 @@
 from flask import jsonify, request, render_template
 from . import geofences_bp
 from .services import geofence_service
-from app.utils.decorators import jwt_required, get_jwt_identity, require_org
+from app.utils.decorators import jwt_required, get_jwt_identity, require_role
 from app.models.auth import User
 from app.models.vehicle import Vehicle, RealtimePosition
 
 @geofences_bp.route("/", methods=["GET"])
-@require_org
+@require_role(["ADMIN"])
 def list_geofences():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
@@ -49,7 +49,7 @@ def list_geofences():
                          vehicles_json=vehicles_data)
 
 @geofences_bp.route("/parks", methods=["GET"])
-@require_org
+@require_role(["ADMIN"])
 def list_parks():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
@@ -62,7 +62,7 @@ def list_parks():
     } for p in parks])
 
 @geofences_bp.route("/zones", methods=["GET"])
-@require_org
+@require_role(["ADMIN"])
 def list_zones():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)

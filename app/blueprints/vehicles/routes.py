@@ -1,11 +1,11 @@
 from flask import jsonify, request, render_template
 from . import vehicles_bp
 from .services import vehicle_service, fleet_service
-from app.utils.decorators import jwt_required, get_jwt_identity, require_org, require_role
+from app.utils.decorators import jwt_required, get_jwt_identity, require_role
 from app.models.auth import User
 
 @vehicles_bp.route("/", methods=["GET"])
-@require_org
+@require_role(["ADMIN", "MANAGER"])
 def list_vehicles():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
@@ -23,7 +23,7 @@ def list_vehicles():
     return render_template("vehicles/list.html", vehicles=vehicles)
 
 @vehicles_bp.route("/<string:id>", methods=["GET"])
-@require_org
+@require_role(["ADMIN", "MANAGER"])
 def get_vehicle_detail(id):
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
@@ -51,8 +51,7 @@ def get_vehicle_detail(id):
     return render_template("vehicles/detail.html", vehicle=vehicle, sessions=sessions)
 
 @vehicles_bp.route("/", methods=["POST"])
-@require_role(["ADMIN", "MANAGER"])
-@require_org
+@require_role(["ADMIN"])
 def create_vehicle():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
@@ -65,7 +64,7 @@ def create_vehicle():
     return jsonify({"message": "Vehículo creado", "id": vehicle.id}), 201
 
 @vehicles_bp.route("/fleets", methods=["GET"])
-@require_org
+@require_role(["ADMIN", "MANAGER"])
 def list_fleets():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)

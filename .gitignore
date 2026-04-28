@@ -78,3 +78,7 @@ redis-data/
 
 
 .venv
+dobackv2
+
+# Python
+__pycache__/

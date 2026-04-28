@@ -1,6 +1,6 @@
 from flask import render_template, jsonify, request
 from app.extensions import db
-from app.utils.decorators import jwt_required, get_jwt_identity, require_org
+from app.utils.decorators import jwt_required, get_jwt_identity, require_role
 from app.models.auth import User
 import time
 from . import system_bp
@@ -10,7 +10,7 @@ def index():
     return render_template("system/landing.html")
 
 @system_bp.route("/settings", methods=["GET", "POST"])
-@require_org
+@require_role(["ADMIN", "MANAGER"])
 def settings():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)

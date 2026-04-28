@@ -46,42 +46,54 @@ def create_database_if_not_exists():
         print(f"⚠️  Nota: No se pudo verificar/crear la DB automáticamente: {e}")
         print("Asegúrate de que los credenciales en DATABASE_URL sean correctos y el usuario tenga permisos de CREATEDB.")
 
+def get_or_create_org(name, **defaults):
+    org = Organization.query.filter_by(name=name).first()
+    if org:
+        print(f"ℹ️  Organización '{name}' ya existe.")
+        return org
+    org = Organization(name=name, **defaults)
+    db.session.add(org)
+    db.session.flush()
+    print(f"✅ Organización '{name}' creada.")
+    return org
+
+
+def get_or_create_user(email, name, password, role, org_id):
+    user = User.query.filter_by(email=email).first()
+    if user:
+        print(f"ℹ️  Usuario {email} ya existe.")
+        return user
+    user = User(
+        name=name,
+        email=email,
+        password=generate_password_hash(password),
+        role=role,
+        organizationId=org_id,
+        status="ACTIVE"
+    )
+    db.session.add(user)
+    db.session.flush()
+    print(f"✅ Usuario {email} creado (clave: {password}).")
+    return user
+
+
 def setup_database():
     create_database_if_not_exists()
-    
+
     app = create_app()
     with app.app_context():
         print("🛠️  Creando todas las tablas...")
         db.create_all()
         print("✅ Tablas creadas con éxito.")
 
-        # Seed inicial
-        if not Organization.query.filter_by(name="CMadrid").first():
-            print("🌱 Sembrando datos iniciales...")
-            
-            # 1. Crear Organización
-            org = Organization(
-                name="CMadrid",
-                apiKey="demo-key",
-                formacionHabilitada=False
-            )
-            db.session.add(org)
-            db.session.flush()
+        print("🌱 Sembrando datos iniciales (idempotente)...")
+        org = get_or_create_org("CMadrid", apiKey="demo-key", formacionHabilitada=False)
 
-            # 2. Crear Admin User (admin123)
-            admin = User(
-                name="Admin CMadrid",
-                email="admin@cmadrid.com",
-                password=generate_password_hash("admin123"),
-                role=UserRole.ADMIN,
-                organizationId=org.id,
-                status="ACTIVE"
-            )
-            db.session.add(admin)
-            db.session.commit()
-            print("🚀 Seed completado. Usuario: admin@cmadrid.com / Clave: admin123")
-        else:
-            print("ℹ️  Los datos ya existen, saltando seed.")
+        get_or_create_user("admin@cmadrid.com",   "Admin CMadrid",   "admin123",   UserRole.ADMIN,   org.id)
+        get_or_create_user("manager@cmadrid.com", "Manager CMadrid", "manager123", UserRole.MANAGER, org.id)
+
+        db.session.commit()
+        print("🚀 Seed listo.")
 
 if __name__ == "__main__":
     setup_database()

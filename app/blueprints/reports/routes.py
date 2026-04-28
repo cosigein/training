@@ -1,10 +1,10 @@
 from flask import jsonify, request, render_template
 from . import reports_bp
-from app.utils.decorators import jwt_required, get_jwt_identity, require_org
+from app.utils.decorators import jwt_required, get_jwt_identity, require_role
 from app.models.auth import User
 
 @reports_bp.route("/", methods=["GET"])
-@require_org
+@require_role(["ADMIN"])
 def list_reports():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
@@ -22,7 +22,7 @@ def list_reports():
     return render_template("reports/list.html", reports=reports, automations=automations)
 
 @reports_bp.route("/generate", methods=["POST"])
-@require_org
+@require_role(["ADMIN"])
 def trigger_report():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)

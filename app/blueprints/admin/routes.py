@@ -1,12 +1,11 @@
 from flask import jsonify, request, render_template
 from . import admin_bp
 from .services import admin_service
-from app.utils.decorators import jwt_required, get_jwt_identity, require_org, require_role
+from app.utils.decorators import jwt_required, get_jwt_identity, require_role
 from app.models.auth import User
 
 @admin_bp.route("/users", methods=["GET"])
 @require_role(["ADMIN"])
-@require_org
 def list_users():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)

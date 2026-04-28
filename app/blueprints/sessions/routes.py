@@ -2,12 +2,12 @@ import traceback
 from flask import jsonify, request, render_template, current_app
 from . import sessions_bp
 from .services import session_service
-from app.utils.decorators import jwt_required, get_jwt_identity, require_org
+from app.utils.decorators import jwt_required, get_jwt_identity, require_role
 from app.models.auth import User
 from app.extensions import db
 
 @sessions_bp.route("/", methods=["GET"])
-@require_org
+@require_role(["ADMIN", "MANAGER"])
 def list_sessions():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
@@ -28,7 +28,7 @@ def list_sessions():
     return render_template("sessions/list.html", sessions=sessions)
 
 @sessions_bp.route("/<string:id>", methods=["GET"])
-@require_org
+@require_role(["ADMIN", "MANAGER"])
 def get_session_detail(id):
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
@@ -72,7 +72,7 @@ def get_session_detail(id):
     return render_template("sessions/detail.html", session=session, events=events, route_geojson=route_geojson, chart_data=chart_data)
 
 @sessions_bp.route("/<string:id>", methods=["DELETE"])
-@require_org
+@require_role(["ADMIN"])
 def delete_session(id):
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
@@ -91,7 +91,7 @@ def delete_session(id):
     return "", 204
 
 @sessions_bp.route("/<string:id>/gps", methods=["GET"])
-@require_org
+@require_role(["ADMIN", "MANAGER"])
 def get_session_gps(id):
     # Validar que la sesión pertenece a la org del usuario (podría hacerse en service)
     user_id = get_jwt_identity()
