@@ -1,0 +1,87 @@
+{% extends "manager/layout.html" %}
+{% block title %}Convocatorias — CMadrid Training{% endblock %}
+
+{% block content %}
+
+<div>
+    <h1 class="mgr-page-title">Convocatorias</h1>
+    <p class="mgr-page-subtitle">Listado de todos los procesos de selección activos y cerrados</p>
+</div>
+
+<!-- Filtros de estado -->
+<div class="mgr-toolbar">
+    <span data-filter-status="all" class="mgr-pill active">Todas</span>
+    <span data-filter-status="open" class="mgr-pill">Abiertas</span>
+    <span data-filter-status="closing" class="mgr-pill">En cierre</span>
+    <span data-filter-status="closed" class="mgr-pill">Cerradas</span>
+</div>
+
+<!-- Tarjetas de convocatoria -->
+<div class="mgr-conv-list">
+    {% for conv in convocatorias %}
+    <div class="mgr-conv-row" data-status="{{ conv.status|lower }}">
+
+        <div class="mgr-conv-row__main">
+            <div class="mgr-conv-row__title">
+                <span class="mgr-conv-card__name">{{ conv.nombre }}</span>
+                <span class="mgr-conv-status mgr-conv-status--{{ conv.status|lower }}">{{ conv.status }}</span>
+            </div>
+            <span class="mgr-conv-row__desc">{{ conv.descripcion }}</span>
+        </div>
+
+        <div class="mgr-conv-row__stats">
+            <div class="mgr-conv-stat">
+                <span class="mgr-conv-stat__val">{{ conv.total_candidatos }}</span>
+                <span class="mgr-conv-stat__lbl">Candidatos</span>
+            </div>
+            <div class="mgr-conv-stat">
+                <span class="mgr-conv-stat__val">{{ conv.plazas }}</span>
+                <span class="mgr-conv-stat__lbl">Plazas</span>
+            </div>
+            <div class="mgr-conv-stat">
+                <span class="mgr-conv-stat__val" style="font-size:12px">{{ conv.fecha_cierre }}</span>
+                <span class="mgr-conv-stat__lbl">Cierre</span>
+            </div>
+            {% if conv.auditorias_pendientes > 0 %}
+            <div class="mgr-conv-stat">
+                <span class="mgr-conv-stat__val" style="color:#dc2626">{{ conv.auditorias_pendientes }}</span>
+                <span class="mgr-conv-stat__lbl" style="color:#dc2626">Auditorías</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="mgr-conv-row__actions">
+            <a href="{{ url_for('manager.matriz') }}" class="mgr-action-btn mgr-action-btn--secondary">
+                <i class="ph ph-grid-nine"></i> Matriz
+            </a>
+            <a href="{{ url_for('manager.ranking') }}" class="mgr-action-btn mgr-action-btn--primary">
+                <i class="ph ph-trophy"></i> Ranking
+            </a>
+        </div>
+
+    </div>
+    {% else %}
+    <div class="mgr-empty">
+        <i class="ph ph-clipboard-text"></i>
+        <p>No hay convocatorias registradas</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Filtro por status
+document.querySelectorAll('[data-filter-status]').forEach(pill => {
+    pill.addEventListener('click', () => {
+        document.querySelectorAll('[data-filter-status]').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        const status = pill.dataset.filterStatus;
+        document.querySelectorAll('.mgr-conv-row').forEach(row => {
+            row.style.display = (status === 'all' || row.dataset.status === status) ? '' : 'none';
+        });
+    });
+});
+</script>
+{% endblock %}

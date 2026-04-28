@@ -1,0 +1,155 @@
+{% extends "manager/layout.html" %}
+{% block title %}Matriz — CMadrid Training{% endblock %}
+
+{% block content %}
+
+<div class="mgr-page-header">
+    <div>
+        <h1 class="mgr-page-title" style="display:flex; align-items:center; gap:12px;">
+            Matriz de evaluación
+            <select class="mgr-conv-selector" onchange="window.location.href='?conv_id=' + this.value">
+                {% for c in convocatorias %}
+                <option value="{{ c.id }}" {% if c.id == convocatoria.id %}selected{% endif %}>
+                    {{ c.nombre }}
+                </option>
+                {% endfor %}
+            </select>
+        </h1>
+        <p class="mgr-page-subtitle">
+            {{ candidatos|length }} candidatos · {{ circuitos|length }} circuitos
+        </p>
+    </div>
+    <a href="{{ url_for('manager.ranking') }}" class="mgr-action-btn mgr-action-btn--primary">
+        <i class="ph ph-trophy"></i> Ver Ranking
+    </a>
+</div>
+
+<!-- KPIs rápidos -->
+<div class="mgr-kpis">
+    <div class="mgr-kpi mgr-kpi--blue">
+        <span class="mgr-kpi__label">Candidatos</span>
+        <span class="mgr-kpi__value">{{ candidatos|length }}</span>
+        <span class="mgr-kpi__sub">filas en matriz</span>
+    </div>
+    <div class="mgr-kpi mgr-kpi--gray">
+        <span class="mgr-kpi__label">Circuitos</span>
+        <span class="mgr-kpi__value">{{ circuitos|length }}</span>
+        <span class="mgr-kpi__sub">columnas evaluadas</span>
+    </div>
+    <div class="mgr-kpi mgr-kpi--green">
+        <span class="mgr-kpi__label">Celdas completadas</span>
+        <span class="mgr-kpi__value">
+            {% set ns = namespace(n=0) %}
+            {% for c in candidatos %}
+                {% for v in c.notas.values() %}
+                    {% if v is not none %}{% set ns.n = ns.n + 1 %}{% endif %}
+                {% endfor %}
+            {% endfor %}
+            {{ ns.n }}
+        </span>
+        <span class="mgr-kpi__sub">intentos con nota</span>
+    </div>
+    <div class="mgr-kpi mgr-kpi--red">
+        <span class="mgr-kpi__label">Calidad baja</span>
+        <span class="mgr-kpi__value">
+            {% set ns2 = namespace(n=0) %}
+            {% for c in candidatos %}
+                {% for v in c.notas.values() %}
+                    {% if v is not none and v.data_quality == 'LOW' %}{% set ns2.n = ns2.n + 1 %}{% endif %}
+                {% endfor %}
+            {% endfor %}
+            {{ ns2.n }}
+        </span>
+        <span class="mgr-kpi__sub">intentos con datos LQ</span>
+    </div>
+</div>
+
+<!-- Leyenda -->
+<div class="mgr-legend">
+    <span class="mgr-legend__item">
+        <span class="mgr-matrix-badge mgr-matrix-badge--high">8.8</span> Nota · calidad HIGH
+    </span>
+    <span class="mgr-legend__item">
+        <span class="mgr-matrix-badge mgr-matrix-badge--low">3.2 <i class="ph ph-warning" style="font-size:9px"></i></span> Nota · calidad LOW
+    </span>
+    <span class="mgr-legend__item">
+        <span class="mgr-matrix-badge mgr-matrix-badge--audit">6.5 <i class="ph ph-scales" style="font-size:9px"></i></span> Auditoría pendiente
+    </span>
+    <span class="mgr-legend__item">
+        <span class="mgr-matrix-badge mgr-matrix-badge--pending">—</span> Pendiente
+    </span>
+    <span style="margin-left:auto; font-size:11px; color:#94a3b8">
+        Click en celda → detalle del intento
+    </span>
+</div>
+
+<!-- Matriz -->
+<div class="mgr-matrix-wrap">
+    <table class="mgr-matrix">
+        <thead>
+            <tr>
+                <th>Candidato</th>
+                {% for circ in circuitos %}
+                <th title="{{ circ.label }}">{{ circ.id }}</th>
+                {% endfor %}
+                <th style="min-width:80px">Media</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for c in candidatos %}
+        <tr>
+            <td>
+                <strong><a href="{{ url_for('manager.alumno_detalle', candidato_id=c.id) }}" class="mgr-candidato-link">{{ c.nombre }}</a></strong>
+                <br>
+                <small style="color:#94a3b8; font-size:11px; font-weight:400">
+                    #{{ c.plaza }} · {{ c.categoria }}
+                </small>
+            </td>
+
+            {% for circ in circuitos %}
+            {% set info = c.notas.get(circ.id) %}
+            <td title="{{ circ.label }}: {% if info %}{{ '%.1f'|format(info.nota) }}{% else %}Pendiente{% endif %}">
+                {% if info %}
+                    {% set badge_class = 'mgr-matrix-badge--high' %}
+                    {% if info.audit %}
+                        {% set badge_class = 'mgr-matrix-badge--audit' %}
+                    {% elif info.data_quality == 'LOW' %}
+                        {% set badge_class = 'mgr-matrix-badge--low' %}
+                    {% elif info.nota < 5 %}
+                        {% set badge_class = 'mgr-matrix-badge--fail' %}
+                    {% endif %}
+                    <a href="{{ url_for('manager.intento_detalle', attempt_id=info.attempt_id) }}"
+                       class="mgr-matrix-badge {{ badge_class }}">
+                        {{ "%.1f"|format(info.nota) }}
+                        {% if info.audit %}<i class="ph ph-scales" style="font-size:8px"></i>{% endif %}
+                        {% if info.data_quality == 'LOW' and not info.audit %}
+                            <i class="ph ph-warning" style="font-size:8px"></i>
+                        {% endif %}
+                    </a>
+                {% else %}
+                    <span class="mgr-matrix-badge mgr-matrix-badge--pending">—</span>
+                {% endif %}
+            </td>
+            {% endfor %}
+
+            <td>
+                {% set notas = [] %}
+                {% for v in c.notas.values() %}
+                    {% if v is not none %}{% set _ = notas.append(v.nota) %}{% endif %}
+                {% endfor %}
+                {% if notas %}
+                {% set media = notas|sum / notas|length %}
+                <span class="mgr-score {% if media >= 5 %}mgr-score--pass{% else %}mgr-score--fail{% endif %}">
+                    {{ "%.1f"|format(media) }}
+                </span>
+                {% else %}
+                <span class="mgr-score mgr-score--none">—</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

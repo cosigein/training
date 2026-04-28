@@ -1,0 +1,153 @@
+{% extends "manager/layout.html" %}
+{% block title %}Intento · {{ candidato.nombre }} — CMadrid Training{% endblock %}
+
+{% block content %}
+
+<div class="mgr-page-header">
+    <div>
+        <a href="{{ url_for('manager.matriz') }}" class="mgr-back-link">
+            <i class="ph ph-arrow-left"></i> Volver a Matriz
+        </a>
+        <h1 class="mgr-page-title" style="margin-top:8px">
+            {{ candidato.nombre }}
+            <span style="font-weight:400; color:#64748b">·</span>
+            {{ ruta.label if ruta else attempt_id }}
+        </h1>
+        <p class="mgr-page-subtitle">
+            Intento {{ attempt_id }} ·
+            Calidad datos: <strong>{{ nota_info.data_quality }}</strong> ·
+            Versión criteria: <strong>v2.1</strong>
+        </p>
+    </div>
+    <span class="mgr-score-hero
+        {% if nota_info.nota >= 5 %}mgr-score-hero--pass{% else %}mgr-score-hero--fail{% endif %}">
+        {{ "%.1f"|format(nota_info.nota) }}
+    </span>
+</div>
+
+<!-- 2 columnas: Mapa + Score Breakdown -->
+<div class="mgr-detail-grid">
+
+    <!-- Mapa simulado -->
+    <div class="mgr-card mgr-card--map">
+        <div class="mgr-card__header">
+            <h3><i class="ph ph-map-trifold"></i> Recorrido</h3>
+            <span class="mgr-pill" style="font-size:11px; cursor:default">{{ ruta.id if ruta else '—' }}</span>
+        </div>
+        <div class="mgr-map-placeholder">
+            <i class="ph ph-map-trifold" style="font-size:48px; color:#334155; opacity:0.3"></i>
+            <p style="color:#64748b; font-size:12px; margin-top:8px">MapViewer disponible en integración con datos reales</p>
+        </div>
+    </div>
+
+    <!-- Score Breakdown -->
+    <div class="mgr-card">
+        <div class="mgr-card__header">
+            <h3><i class="ph ph-chart-bar"></i> Desglose de puntuación</h3>
+        </div>
+        <div class="mgr-score-breakdown">
+            {% for item in score_breakdown %}
+            <div class="mgr-breakdown-row">
+                <span class="mgr-breakdown-row__familia">{{ item.familia }}</span>
+                <div class="mgr-breakdown-bar-wrap">
+                    <div class="mgr-breakdown-bar"
+                         style="width: {{ (item.obtenido / item.maximo * 100)|int }}%">
+                    </div>
+                </div>
+                <span class="mgr-breakdown-row__valor">
+                    {{ item.obtenido }} / {{ item.maximo }}
+                </span>
+            </div>
+            {% endfor %}
+            <div class="mgr-breakdown-total">
+                <span>TOTAL</span>
+                <span class="mgr-score
+                    {% if nota_info.nota >= 5 %}mgr-score--pass{% else %}mgr-score--fail{% endif %}">
+                    {{ "%.1f"|format(nota_info.nota) }} / 10
+                </span>
+            </div>
+        </div>
+
+        {% if nota_info.data_quality != 'HIGH' %}
+        <div class="mgr-alert mgr-alert--warning" style="margin-top:16px">
+            <i class="ph ph-warning"></i>
+            Calidad de datos <strong>{{ nota_info.data_quality }}</strong> — puede afectar la precisión del scoring.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Timeline de eventos -->
+<div class="mgr-card" style="margin-top:16px">
+    <div class="mgr-card__header">
+        <h3><i class="ph ph-activity"></i> Eventos detectados</h3>
+        <span style="font-size:12px; color:#64748b">Sensores + Webfleet</span>
+    </div>
+
+    {% if eventos %}
+    <div class="mgr-timeline">
+        {% for ev in eventos %}
+        <div class="mgr-timeline-event mgr-timeline-event--{{ ev.confidence|lower }}">
+            <div class="mgr-timeline-event__header">
+                <span class="mgr-event-type">{{ ev.tipo.replace('_', ' ') }}</span>
+                <span class="mgr-event-source">
+                    <i class="ph ph-{{ 'broadcast' if ev.source == 'WEBFLEET' else 'device-mobile' }}"></i>
+                    {{ ev.source }}
+                </span>
+                <span class="mgr-event-confidence mgr-event-confidence--{{ ev.confidence|lower }}">
+                    {{ ev.confidence }}
+                </span>
+                <span class="mgr-event-ts">{{ ev.timestamp }}</span>
+            </div>
+            <p class="mgr-event-desc">{{ ev.descripcion }}</p>
+            <div class="mgr-event-severity">
+                <span style="font-size:11px; color:#94a3b8">Severidad</span>
+                <div class="mgr-sev-bar-wrap">
+                    <div class="mgr-sev-bar
+                        {% if ev.severidad > 0.7 %}mgr-sev-bar--high
+                        {% elif ev.severidad > 0.4 %}mgr-sev-bar--medium
+                        {% else %}mgr-sev-bar--low{% endif %}"
+                        style="width:{{ (ev.severidad * 100)|int }}%"></div>
+                </div>
+                <span style="font-size:11px; color:#475569">{{ (ev.severidad * 100)|int }}%</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="mgr-empty" style="padding:24px">
+        <i class="ph ph-check-circle" style="color:#16a34a"></i>
+        <p>Sin eventos detectados en este intento</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Auditoría (si la hay) -->
+{% if auditoria %}
+<div class="mgr-card mgr-card--audit" style="margin-top:16px">
+    <div class="mgr-card__header">
+        <h3><i class="ph ph-scales"></i> Solicitud de auditoría</h3>
+        <span style="font-size:12px; color:#94a3b8">
+            {{ auditoria.fecha_solicitud }} · {{ auditoria.hora_solicitud }}
+        </span>
+    </div>
+    <div class="mgr-audit-panel">
+        <div class="mgr-audit-panel__razon">
+            <span class="mgr-label">Razón del candidato</span>
+            <blockquote class="mgr-quote">{{ auditoria.razon }}</blockquote>
+        </div>
+        <a href="{{ url_for('manager.auditoria_detalle', audit_id=auditoria.id) }}"
+           class="mgr-action-btn mgr-action-btn--primary" style="margin-top:16px">
+            <i class="ph ph-arrow-square-out"></i> Revisar y responder
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<div style="margin-top:24px">
+    <a href="{{ url_for('manager.matriz') }}" class="mgr-action-btn mgr-action-btn--secondary">
+        <i class="ph ph-arrow-left"></i> Volver a Matriz
+    </a>
+</div>
+
+{% endblock %}

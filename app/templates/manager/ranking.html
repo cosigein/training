@@ -1,0 +1,180 @@
+{% extends "manager/layout.html" %}
+{% block title %}Ranking — CMadrid Training{% endblock %}
+
+{% block content %}
+
+<div class="mgr-page-header">
+    <div>
+        <h1 class="mgr-page-title" style="display:flex; align-items:center; gap:12px;">
+            Ranking de clasificación
+            <select class="mgr-conv-selector" onchange="window.location.href='?conv_id=' + this.value">
+                {% for c in convocatorias %}
+                <option value="{{ c.id }}" {% if c.id == convocatoria.id %}selected{% endif %}>
+                    {{ c.nombre }}
+                </option>
+                {% endfor %}
+            </select>
+        </h1>
+        <p class="mgr-page-subtitle">
+            {{ total_candidatos }} candidatos · Plazas: {{ plazas }} · Última actualización: {{ convocatoria.ultima_actualizacion }}
+        </p>
+    </div>
+    <span class="mgr-estado-badge mgr-estado-badge--provisional">
+        <i class="ph ph-clock"></i>
+        PROVISIONAL
+    </span>
+</div>
+
+<!-- KPIs -->
+<div class="mgr-kpis">
+    <div class="mgr-kpi mgr-kpi--blue">
+        <span class="mgr-kpi__label">Total aspirantes</span>
+        <span class="mgr-kpi__value">{{ total_candidatos }}</span>
+        <span class="mgr-kpi__sub">en evaluación</span>
+    </div>
+    <div class="mgr-kpi mgr-kpi--green">
+        <span class="mgr-kpi__label">Plazas convocadas</span>
+        <span class="mgr-kpi__value">{{ plazas }}</span>
+        <span class="mgr-kpi__sub">a cubrir</span>
+    </div>
+    <div class="mgr-kpi mgr-kpi--gray">
+        <span class="mgr-kpi__label">Nota de corte</span>
+        <span class="mgr-kpi__value">{{ "%.1f"|format(nota_corte) if nota_corte else "—" }}</span>
+        <span class="mgr-kpi__sub">última plaza cubierta</span>
+    </div>
+    <div class="mgr-kpi mgr-kpi--red">
+        <span class="mgr-kpi__label">Fuera del corte</span>
+        <span class="mgr-kpi__value">{{ [total_candidatos - plazas, 0]|max }}</span>
+        <span class="mgr-kpi__sub">por debajo del corte actual</span>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="mgr-toolbar">
+    <span data-filter-rank="all" class="mgr-pill active">Todos</span>
+    <span data-filter-rank="dentro" class="mgr-pill">Dentro del corte</span>
+    <span data-filter-rank="fuera" class="mgr-pill">Fuera del corte</span>
+    <span data-filter-rank="auditoria" class="mgr-pill">Con auditoría</span>
+</div>
+
+<!-- Tabla ranking -->
+<div class="mgr-ranking">
+    <table class="mgr-rank-table">
+        <thead>
+            <tr>
+                <th style="width:64px">#</th>
+                <th>Candidato</th>
+                <th style="width:110px; text-align:center">Rutas</th>
+                <th style="width:120px; text-align:center">Auditorías</th>
+                <th style="width:80px; text-align:center">Corte</th>
+                <th class="align-right" style="width:120px">Nota media</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for entry in ranking %}
+        {% set pos = entry.puesto %}
+        <tr class="mgr-rank-row
+            {% if pos <= plazas %}mgr-rank--pass{% endif %}
+            {% if pos == plazas + 1 %}mgr-cut-row{% endif %}"
+            data-rank="{{ 'dentro' if entry.dentro_del_corte else 'fuera' }}"
+            data-audit="{{ 'auditoria' if entry.tiene_auditoria else '' }}">
+
+            <td>
+                <span class="mgr-pos
+                    {% if pos == 1 %}mgr-pos--gold
+                    {% elif pos == 2 %}mgr-pos--silver
+                    {% elif pos == 3 %}mgr-pos--bronze
+                    {% endif %}">
+                    {{ pos }}
+                </span>
+            </td>
+
+            <td>
+                <div class="mgr-rank-candidato">
+                    <a href="{{ url_for('manager.alumno_detalle', candidato_id=entry.candidato.id) }}" class="mgr-candidato-link">
+                        <strong>{{ entry.candidato.nombre }}</strong>
+                    </a>
+                    <div class="mgr-alumno__meta">
+                        <span class="mgr-alumno__plaza">#{{ entry.candidato.plaza }}</span>
+                        <span class="mgr-badge-cat">{{ entry.candidato.categoria }}</span>
+                        {% if pos == plazas %}
+                        <span class="mgr-cut-label">Corte</span>
+                        {% elif pos == plazas + 1 %}
+                        <span class="mgr-cut-label mgr-cut-label--out">Fuera</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </td>
+
+            <td style="text-align:center">
+                <span class="mgr-rutas-chip {% if entry.rutas_completadas == entry.rutas_total %}mgr-rutas-chip--complete{% endif %}">
+                    {{ entry.rutas_completadas }} / {{ entry.rutas_total }}
+                </span>
+            </td>
+
+            <td style="text-align:center">
+                {% if entry.tiene_auditoria %}
+                <span class="mgr-audit-chip">
+                    <i class="ph ph-scales"></i> Pendiente
+                </span>
+                {% else %}
+                <span style="color:#94a3b8; font-size:12px">—</span>
+                {% endif %}
+            </td>
+
+            <td style="text-align:center">
+                {% if entry.dentro_del_corte %}
+                <span class="mgr-corte-chip mgr-corte-chip--dentro">
+                    <i class="ph ph-check-circle"></i> Dentro
+                </span>
+                {% else %}
+                <span class="mgr-corte-chip mgr-corte-chip--fuera">
+                    <i class="ph ph-x-circle"></i> Fuera
+                </span>
+                {% endif %}
+            </td>
+
+            <td class="align-right">
+                {% if entry.nota_media > 0 %}
+                <span class="mgr-score {% if entry.nota_media >= 5 %}mgr-score--pass{% else %}mgr-score--fail{% endif %}">
+                    {{ "%.2f"|format(entry.nota_media) }}
+                </span>
+                {% else %}
+                <span class="mgr-score mgr-score--none">—</span>
+                {% endif %}
+            </td>
+
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<p style="font-size:11px; color:#94a3b8; text-align:right; margin-top:8px">
+    Ranking provisional. Se actualiza diariamente a las 06:00 AM.
+    El resultado definitivo se emite al cierre de la convocatoria.
+</p>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Filtro ranking
+document.querySelectorAll('[data-filter-rank]').forEach(pill => {
+    pill.addEventListener('click', () => {
+        document.querySelectorAll('[data-filter-rank]').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        const filter = pill.dataset.filterRank;
+        document.querySelectorAll('.mgr-rank-row').forEach(row => {
+            if (filter === 'all') {
+                row.style.display = '';
+            } else if (filter === 'auditoria') {
+                row.style.display = row.dataset.audit === 'auditoria' ? '' : 'none';
+            } else {
+                row.style.display = row.dataset.rank === filter ? '' : 'none';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
