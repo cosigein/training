@@ -30,7 +30,7 @@ Ejemplos:
 - `feat/fe-matrix-virtualized`
 - `feat/qa-e2e-login-flow`
 - `feat/wf-circuit-breaker`
-- `chore/cross-pnpm-workspaces`
+- `chore/cross-clean-pycache`
 
 > Si una rama lleva >2 días abierta, partila en algo más chico.
 
@@ -40,12 +40,13 @@ Ejemplos:
 
 - **1 review obligatoria** de otro dev antes de hacer merge. Self-merge prohibido.
 - **Algunos archivos exigen 2 reviews** (dueño técnico + Antonio). Lista en [OWNERS.md](OWNERS.md) sección "Antonio — review obligatoria":
-  - `prisma/schema.prisma`
-  - `apps/api/src/middleware/`
-  - `package.json` raíz
+  - `migrations/` (cualquier migración Alembic)
+  - `app/middleware/` (auth, audit, JWT handlers)
+  - `app/utils/decorators.py` (`require_role`, `require_org`)
+  - `app/__init__.py`, `app/extensions.py`, `app/config.py`
+  - `requirements.txt`, `requirements-dev.txt`
   - `.github/workflows/`
-  - `docker-compose*.yml`
-  - Endpoints de `/close/*`, `/scoring/simulate`, `/gdpr/*`, `/admin/*`
+  - Endpoints en `admin/`, `reports/`, `uploads/`, y cualquier ruta de cierre de convocatoria, simulación de scoring, o export legal
 - El reviewer no es solo un sello — si veés algo raro, comentalo.
 - PRs pequeños (< 300 líneas) se revisan en minutos. PRs grandes se revisan tarde y mal: si tu cambio crece, partilo.
 - **Squash merge** por defecto. El historial de `main` debe ser legible.
@@ -113,17 +114,20 @@ Si una tarea no cumple los 5, **no arranques con ella** — abrila como issue nu
 
 ---
 
-## 5. Estructura del repo (durante el sprint)
+## 5. Estructura del repo
 
-Empezamos vacío. La estructura se consolida el día 1 del sprint en pantalla compartida con todo el equipo. La propuesta de partida está en `docs/PAPER-MAESTRO.md`.
+Monolito Flask/Python con blueprints. Ver `CLAUDE.md` §"Estructura del repo" para el árbol completo.
 
-**Decisión tomada antes del kickoff:**
-- **Gestor de paquetes:** `pnpm` con workspaces.
-- **Monorepo:** `apps/api`, `apps/worker`, `apps/web`, `packages/*`.
-- **TypeScript:** strict, modo workspace con `tsconfig.base.json` en raíz.
-- **Lint/format:** ESLint + Prettier + Husky pre-commit + lint-staged.
+**Stack consolidado:**
+- **Lenguaje y entorno:** Python 3.12, virtualenv en `.venv`.
+- **Framework web:** Flask 3 (factory pattern en `app/__init__.py`) + 11 blueprints (`auth`, `vehicles`, `sessions`, `events`, `geofences`, `uploads`, `kpis`, `reports`, `admin`, `system`, `telemetry`).
+- **Datos:** SQLAlchemy 2.0 + Alembic (vía Flask-Migrate) + GeoAlchemy2 + PostgreSQL/PostGIS.
+- **Async:** Celery (workers en `app/workers/`) + Redis (broker + cache + rate-limit) + Flask-SocketIO (sockets en `app/sockets/`).
+- **Auth:** Flask-JWT-Extended con tokens en cookies + CSRF + Flask-Login + Talisman + Limiter.
+- **UI:** Jinja2 SSR + CSS tokenizado en `app/static/css/{tokens,reset,base}.css` + componentes en `app/static/css/components/*.css`.
+- **Calidad:** dependencias en `requirements.txt` y `requirements-dev.txt`. Lint/format del equipo se acuerda en daily si hace falta (no hay pre-commit definido todavía).
 
-**No crees carpetas `apps/`, `packages/` ni añadas dependencias de forma unilateral antes del kickoff.** Eso lo hacemos juntos para evitar reescribir la base 3 veces.
+**Reescritura desde `dobackv2-main`:** este repo reescribe en Flask el producto previo TS/React. `dobackv2-main` se ignora en `.gitignore` y aparece como referencia de paridad funcional en docs de migración (ej: `RBAC-FIX-PLAN.md`). Ver `CLAUDE.md` para más contexto.
 
 ## 5.bis Política de breaking changes durante el sprint
 
@@ -137,7 +141,7 @@ Si tu cambio rompe algo de otra persona (renombrar un endpoint, cambiar shape de
 
 ## 5.ter Endpoint freeze diario
 
-Cada noche, un job en CI extrae los endpoints estables de `apps/api/` (vía anotaciones JSDoc o decorador) y commitea `docs/api-snapshot.md` con el diff posteado en el chat del equipo.
+Cada noche, un job en CI extrae los endpoints estables de los blueprints registrados en `app/__init__.py` (recorriendo `app.url_map`) y commitea `docs/api-snapshot.md` con el diff posteado en el chat del equipo.
 
 - Joel monta y mantiene el cron desde el día 2.
 - Alejandro y Joel solo escriben código contra el snapshot vigente.
@@ -153,9 +157,16 @@ Ejemplos: `manager-matrix-row-3` · `kiosko-rfid-prompt` · `admin-close-step1-b
 - Si Alejandro renombra uno → coordina con Joel ANTES de mergear.
 - Sin `data-testid` no hay E2E posible — Joel puede bloquear merge si una pantalla nueva no los tiene.
 
-## 5.quinquies Naming de migraciones Prisma
+## 5.quinquies Naming de migraciones Alembic
 
-Formato: `YYYYMMDD_HHMM_<verbo>_<modelo>` — ejemplo: `20260428_1100_init_base_models`. Una migración por PR.
+El script de Alembic (`migrations/script.py.mako`) genera el archivo con timestamp automático. Lo que controlamos es el mensaje del migrate:
+
+```bash
+flask db migrate -m "<verbo>_<modelo>"
+# ejemplos: add_role_column_user, init_base_models, modify_session_score_audit
+```
+
+Una migración por PR. Si tenés que renombrar / squash una migración antes de mergear, hacelo dentro del propio PR.
 
 ---
 
@@ -178,9 +189,11 @@ Formato: `YYYYMMDD_HHMM_<verbo>_<modelo>` — ejemplo: `20260428_1100_init_base_
 
 ## 8. Calidad — no negociables
 
-- **Sin `console.log` en código de producto.** Usar logger central (lo definimos día 1).
-- **Sin `: any` en TypeScript** salvo casos justificados con comentario `// any: <razón>`.
-- **Sin secrets en el repo.** Variables sensibles van por `.env` (ignorado) o secret manager.
+- **Sin `print(...)` en código de producto.** Usar Loguru (configurado vía `app/extensions.py` / `app/__init__.py`).
+- **Sin `# type: ignore`** salvo casos justificados con comentario `# type: ignore  # <razón>`.
+- **Sin `__pycache__/` ni `*.pyc` commiteados.** Ya están en `.gitignore`. Si aparecen en un PR, removerlos del index antes de mergear (`git rm -r --cached ...`).
+- **Sin secrets en el repo.** Variables sensibles van por `.env` (ignorado) o secret manager. `.env.example` es la fuente de verdad de qué variables existen.
+- **CSRF + JWT cookies:** no servir mutaciones por GET; no desactivar `JWT_COOKIE_CSRF_PROTECT` salvo en `TestingConfig`.
 - **Sin commits a `main`.** Siempre PR.
 
 ---
@@ -210,13 +223,14 @@ Formato: `YYYYMMDD_HHMM_<verbo>_<modelo>` — ejemplo: `20260428_1100_init_base_
 | Rule | TL;DR |
 |---|---|
 | **Branches** | `feat/qa-<description>` for your work · short-lived (<1 day) · off `main`. |
-| **PRs** | 1 review required · 2 reviews if you touch `prisma/schema.prisma`, middleware, CI, package.json (Antonio mandatory). |
+| **PRs** | 1 review required · 2 reviews if you touch `migrations/`, `app/middleware/`, `app/utils/decorators.py`, `requirements*.txt`, CI, or `admin/`/`reports/`/`uploads/` endpoints (Antonio mandatory). |
 | **Squash merge.** | One commit per PR on `main`. |
 | **Conventional commits** | `feat:`, `fix:`, `chore:`, `docs:`, `test:`. No AI co-authors. |
 | **CI must be green** before merge. If you break CI, fix it. Don't ignore it. |
 | **Code review** | Look for: does it work? does it have tests? does it break a project invariant? |
-| **No console.log** in product code. Use the logger we set up day 1. |
-| **No `: any`** without a justified `// any: <reason>` comment. |
+| **No `print(...)`** in product code. Use Loguru (set up in `app/extensions.py`). |
+| **No `# type: ignore`** without a justified `# type: ignore  # <reason>` comment. |
+| **No `__pycache__/` or `*.pyc`** committed — already in `.gitignore`. |
 | **No secrets** in the repo. Use `.env` (ignored). |
 | **No commits to `main`** — always PR. |
 | **Daily** at 09:30 sharp (CET). 15 min. You speak last, in English, 3 sentences. |
