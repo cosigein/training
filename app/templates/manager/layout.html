@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Training | CMadrid{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/manager.css') }}">
+
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10" defer></script>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<div class="mgr-root">
+
+    <header class="mgr-header">
+        <a href="{{ url_for('manager.dashboard') }}" class="mgr-logo">
+            <div class="mgr-logo__icon">CM</div>
+            <span class="mgr-logo__text">CMadrid <span>Training</span></span>
+        </a>
+
+        <nav class="mgr-nav">
+            <a href="{{ url_for('manager.dashboard') }}"
+               class="mgr-nav__btn {% if active_page == 'dashboard' %}active{% endif %}"
+               title="Dashboard">
+                <i class="ph ph-squares-four"></i>
+            </a>
+            <a href="{{ url_for('manager.convocatorias') }}"
+               class="mgr-nav__btn {% if active_page == 'convocatorias' %}active{% endif %}"
+               title="Convocatorias">
+                <i class="ph ph-clipboard-text"></i>
+            </a>
+            <a href="{{ url_for('manager.matriz') }}"
+               class="mgr-nav__btn {% if active_page == 'matriz' %}active{% endif %}"
+               title="Matriz">
+                <i class="ph ph-grid-nine"></i>
+            </a>
+            <a href="{{ url_for('manager.ranking') }}"
+               class="mgr-nav__btn {% if active_page == 'ranking' %}active{% endif %}"
+               title="Ranking">
+                <i class="ph ph-trophy"></i>
+            </a>
+        </nav>
+
+        <div class="mgr-header-right">
+            {% block header_extra %}{% endblock %}
+            <a href="{{ url_for('auth.login') }}" class="mgr-btn-logout">
+                <i class="ph ph-sign-out"></i>
+                Salir
+            </a>
+        </div>
+    </header>
+
+    <main class="mgr-body">
+        {% block content %}{% endblock %}
+    </main>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/manager.js') }}"></script>
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>

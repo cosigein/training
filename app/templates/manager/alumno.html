@@ -1,0 +1,105 @@
+{% extends "manager/layout.html" %}
+{% block title %}Perfil del Alumno — CMadrid Training{% endblock %}
+
+{% block content %}
+
+<div class="mgr-page-header">
+    <div>
+        <a href="{{ url_for('manager.matriz') }}" class="mgr-back-link">
+            <i class="ph ph-arrow-left"></i> Volver a Matriz
+        </a>
+        <h1 class="mgr-page-title" style="margin-top:8px">Perfil de Aspirante</h1>
+        <p class="mgr-page-subtitle">
+            Convocatoria {{ convocatoria.nombre }}
+        </p>
+    </div>
+    <span class="mgr-estado-badge {% if nota_media >= 5 %}mgr-estado-badge--final{% else %}mgr-estado-badge--provisional{% endif %}">
+        {% if nota_media >= 5 %}<i class="ph ph-check-circle"></i> APTO (PROVISIONAL){% else %}<i class="ph ph-x-circle"></i> NO APTO (PROVISIONAL){% endif %}
+    </span>
+</div>
+
+<div class="mgr-card" style="margin-bottom: 20px;">
+    <div class="mgr-card__header">
+        <h3><i class="ph ph-user"></i> Detalles del candidato</h3>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+        <div>
+            <span class="mgr-label">Nombre completo</span>
+            <div style="font-weight: 600; font-size: 15px; margin-top: 4px;">{{ candidato.nombre }}</div>
+        </div>
+        <div>
+            <span class="mgr-label">Número de Plaza</span>
+            <div style="font-weight: 600; font-size: 15px; margin-top: 4px;">#{{ candidato.plaza }}</div>
+        </div>
+        <div>
+            <span class="mgr-label">Categoría</span>
+            <div style="margin-top: 4px;">
+                <span class="mgr-badge-cat">{{ candidato.categoria }}</span>
+            </div>
+        </div>
+        <div>
+            <span class="mgr-label">Nota Media Actual</span>
+            <div style="font-family: var(--font-heading); font-size: 24px; font-weight: 700; color: {% if nota_media >= 5 %}#16a34a{% else %}#dc2626{% endif %}; margin-top: 4px;">
+                {{ "%.2f"|format(nota_media) }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mgr-card">
+    <div class="mgr-card__header">
+        <h3><i class="ph ph-map-trifold"></i> Desglose por Rutas ({{ candidato.rutas_completadas }} / {{ candidato.rutas_total }})</h3>
+    </div>
+    
+    <div class="mgr-conv-list">
+        {% for intento in intentos %}
+        <div class="mgr-conv-row" style="padding: 12px 16px;">
+            <div class="mgr-conv-row__main">
+                <div class="mgr-conv-row__title">
+                    <strong>{{ intento.ruta_label }}</strong>
+                    <span style="font-size: 11px; color: #64748b; font-family: monospace;">({{ intento.ruta_id }})</span>
+                </div>
+            </div>
+            
+            <div class="mgr-conv-row__stats" style="align-items: center; gap: 24px;">
+                {% if intento.audit %}
+                <span class="mgr-audit-chip" title="Auditoría pendiente">
+                    <i class="ph ph-scales"></i>
+                </span>
+                {% endif %}
+                
+                {% if intento.data_quality == 'LOW' %}
+                <span class="mgr-matrix-badge mgr-matrix-badge--low" title="Calidad de datos baja">
+                    LQ <i class="ph ph-warning" style="font-size:10px"></i>
+                </span>
+                {% elif intento.data_quality == 'HIGH' %}
+                <span class="mgr-matrix-badge mgr-matrix-badge--high" title="Calidad de datos alta">
+                    HQ <i class="ph ph-check" style="font-size:10px"></i>
+                </span>
+                {% else %}
+                <span class="mgr-matrix-badge mgr-matrix-badge--pending" title="Calidad de datos media">
+                    MQ
+                </span>
+                {% endif %}
+                
+                <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 700; color: {% if intento.nota >= 5 %}#16a34a{% else %}#dc2626{% endif %}; width: 60px; text-align: right;">
+                    {{ "%.1f"|format(intento.nota) }}
+                </div>
+                
+                <a href="{{ url_for('manager.intento_detalle', attempt_id=intento.attempt_id) }}" class="mgr-action-btn mgr-action-btn--secondary">
+                    Ver intento <i class="ph ph-caret-right"></i>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+        
+        {% if not intentos %}
+        <div class="mgr-empty">
+            <i class="ph ph-clipboard-text"></i>
+            <p>Este candidato aún no ha completado ninguna ruta en esta convocatoria.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

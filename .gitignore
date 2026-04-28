@@ -76,9 +76,7 @@ redis-data/
 *.pdf
 !docs/**/*.pdf
 
-
-.venv
-dobackv2
-
 # Python
+.venv
 __pycache__/
+dobackv2

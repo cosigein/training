@@ -1,4 +1,5 @@
-from flask import render_template, jsonify, request
+import os
+from flask import render_template, jsonify, request, redirect, url_for, current_app, send_from_directory
 from app.extensions import db
 from app.utils.decorators import jwt_required, get_jwt_identity, require_role
 from app.models.auth import User
@@ -7,7 +8,7 @@ from . import system_bp
 
 @system_bp.route("/", methods=["GET"])
 def index():
-    return render_template("system/landing.html")
+    return redirect(url_for('manager.dashboard'))
 
 @system_bp.route("/settings", methods=["GET", "POST"])
 @require_role(["ADMIN", "MANAGER"])

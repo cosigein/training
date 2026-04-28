@@ -4,7 +4,7 @@ import warnings
 warnings.filterwarnings("ignore", message="Eventlet is deprecated")
 warnings.filterwarnings("ignore", category=UserWarning, module="flask_limiter")
 
-from flask import Flask
+from flask import Flask, request
 from app.config import config
 from app.extensions import (
     db, migrate, jwt, socketio, login_manager, 
@@ -47,6 +47,7 @@ def create_app(config_name=None):
     from app.blueprints.admin import admin_bp
     from app.blueprints.reports import reports_bp
     from app.blueprints.telemetry import telemetry_bp
+    from app.blueprints.manager import manager_bp
     
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(vehicles_bp, url_prefix="/vehicles")
@@ -59,6 +60,7 @@ def create_app(config_name=None):
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(reports_bp, url_prefix="/reports")
     app.register_blueprint(telemetry_bp, url_prefix="/telemetry")
+    app.register_blueprint(manager_bp, url_prefix="/manager")
     
     # Custom Filters
     @app.template_filter('datetimeformat')
@@ -86,5 +88,5 @@ def create_app(config_name=None):
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(user_id)
-    
+
     return app
