@@ -1,5 +1,6 @@
 from flask import render_template
 from . import manager_bp
+from app.utils.decorators import require_role
 
 # ── DATOS MOCK (modelo Paper Maestro v6) ────────────────────────────────────
 # Representan el estado de la Convocatoria 2026-A al día de hoy.
@@ -322,6 +323,7 @@ def _calcular_ranking(plazas, conv_id):
 # ── RUTAS ──────────────────────────────────────────────────────────────────
 
 @manager_bp.route('/')
+@require_role(["MANAGER", "ADMIN"])
 def dashboard():
     pendientes_total = sum(
         1 for a in AUDITORIAS if a["status"] == "PENDING"
@@ -336,6 +338,7 @@ def dashboard():
 
 
 @manager_bp.route('/convocatorias')
+@require_role(["MANAGER", "ADMIN"])
 def convocatorias():
     return render_template(
         'manager/convocatorias.html',
@@ -345,6 +348,7 @@ def convocatorias():
 
 
 @manager_bp.route('/matriz')
+@require_role(["MANAGER", "ADMIN"])
 def matriz():
     from flask import request
     conv_id = request.args.get('conv_id')
@@ -363,6 +367,7 @@ def matriz():
 
 
 @manager_bp.route('/ranking')
+@require_role(["MANAGER", "ADMIN"])
 def ranking():
     from flask import request
     conv_id = request.args.get('conv_id')
@@ -389,6 +394,7 @@ def ranking():
 
 
 @manager_bp.route('/intento/<attempt_id>')
+@require_role(["MANAGER", "ADMIN"])
 def intento_detalle(attempt_id):
     # Buscar el intento en los datos mock
     candidato = None
@@ -454,6 +460,7 @@ def intento_detalle(attempt_id):
 
 
 @manager_bp.route('/auditoria/<audit_id>')
+@require_role(["MANAGER", "ADMIN"])
 def auditoria_detalle(audit_id):
     auditoria = next((a for a in AUDITORIAS if a["id"] == audit_id), None)
     if not auditoria:
@@ -466,6 +473,7 @@ def auditoria_detalle(audit_id):
 
 
 @manager_bp.route('/alumno/<int:candidato_id>')
+@require_role(["MANAGER", "ADMIN"])
 def alumno_detalle(candidato_id):
     candidato = next((c for c in CANDIDATOS if c["id"] == candidato_id), None)
     if not candidato:
