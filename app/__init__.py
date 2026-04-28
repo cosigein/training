@@ -79,7 +79,9 @@ def create_app(config_name=None):
     from app import models
     from app.models.auth import User
     from app.middleware.audit import init_audit_context
+    from app.middleware.jwt_handlers import init_jwt_handlers
     init_audit_context(app)
+    init_jwt_handlers(jwt)
 
     @login_manager.user_loader
     def load_user(user_id):

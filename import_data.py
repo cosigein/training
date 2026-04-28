@@ -1,5 +1,6 @@
 import os
 import sys
+import argparse
 from datetime import datetime
 import csv
 import math
@@ -231,9 +232,37 @@ def parse_rotary_file(filepath):
         
     return all_sessions
 
+def get_or_create_vehicle(v_id, org):
+    v = Vehicle.query.filter_by(identifier=v_id).first()
+    if not v:
+        v = Vehicle(
+            name=f'Vehicle {v_id}',
+            identifier=v_id,
+            model='Experimental',
+            licensePlate=f'LP-{v_id}',
+            type=VehicleType.TRUCK,
+            organizationId=org.id
+        )
+        db.session.add(v)
+        db.session.flush()
+    return v
+
+
 def main():
-    data_dir = '../doback028'
-    
+    parser = argparse.ArgumentParser(
+        description='Import Doback session data (GPS / ESTABILIDAD / ROTATIVO) from a directory.'
+    )
+    parser.add_argument(
+        'data_dir',
+        help='Path to the dataset root (must contain GPS/, ESTABILIDAD/ and/or ROTATIVO/ subdirs).'
+    )
+    args = parser.parse_args()
+    data_dir = args.data_dir
+
+    if not os.path.isdir(data_dir):
+        print(f"ERROR: data dir not found: {data_dir}")
+        sys.exit(1)
+
     with app.app_context():
         # Get or create organization
         org = Organization.query.first()
@@ -241,56 +270,33 @@ def main():
             org = Organization(name='DobackSoft Default')
             db.session.add(org)
             db.session.commit()
-            
-        # Get or create vehicle
-        vehicle = Vehicle.query.filter_by(identifier='DOBACK028').first()
-        if not vehicle:
-            vehicle = Vehicle(
-                name='Doback 028',
-                identifier='DOBACK028',
-                model='Experimental',
-                licensePlate='DB-028',
-                type=VehicleType.TRUCK,
-                organizationId=org.id
-            )
-            db.session.add(vehicle)
-            db.session.commit()
-            
-        print(f"Importing data for vehicle {vehicle.identifier}...")
+
+        print(f"Importing data from: {data_dir}")
 
         # Process GPS
         gps_dir = os.path.join(data_dir, 'GPS')
-        print(f"Scanning GPS dir: {gps_dir}")
-        for filename in os.listdir(gps_dir):
-            print(f" Checking file: {filename}")
-            if filename.endswith('.txt') or filename.endswith('.csv'):
+        if not os.path.isdir(gps_dir):
+            print(f"  Skipping GPS: directory not found ({gps_dir})")
+        else:
+            print(f"Scanning GPS dir: {gps_dir}")
+            for filename in os.listdir(gps_dir):
+                print(f" Checking file: {filename}")
+                if not (filename.endswith('.txt') or filename.endswith('.csv')):
+                    continue
                 data = parse_gps_file(os.path.join(gps_dir, filename))
-                if not data: 
+                if not data:
                     print(f"  Skipping {filename}: no data returned")
                     continue
-                
-                v_id = data['vehicle_identifier']
-                # Get or create vehicle
-                v = Vehicle.query.filter_by(identifier=v_id).first()
-                if not v:
-                    v = Vehicle(
-                        name=f'Vehicle {v_id}',
-                        identifier=v_id,
-                        model='Experimental',
-                        licensePlate=f'LP-{v_id}',
-                        type=VehicleType.TRUCK,
-                        organizationId=org.id
-                    )
-                    db.session.add(v)
-                    db.session.flush()
 
-                # Check if session exists
+                v_id = data['vehicle_identifier']
+                v = get_or_create_vehicle(v_id, org)
+
                 session = Session.query.filter_by(
-                    vehicleId=v.id, 
+                    vehicleId=v.id,
                     sessionNumber=data['session_number'],
                     startTime=data['start_time']
                 ).first()
-                
+
                 if not session:
                     session = Session(
                         vehicleId=v.id,
@@ -305,15 +311,14 @@ def main():
                     db.session.add(session)
                     db.session.flush()
                 else:
-                    # Clean up existing data for this session to avoid duplicates
+                    # Wipe existing measurements for this session to avoid dupes on re-import
                     GpsMeasurement.query.filter_by(sessionId=session.id).delete()
                     StabilityMeasurement.query.filter_by(sessionId=session.id).delete()
                     RotativoMeasurement.query.filter_by(sessionId=session.id).delete()
-                
-                # Add measurements
+
                 total_distance = 0
                 last_point = None
-                
+
                 for m in data['measurements']:
                     meas = GpsMeasurement(
                         sessionId=session.id,
@@ -328,25 +333,24 @@ def main():
                         fix=m['fix']
                     )
                     db.session.add(meas)
-                    
+
                     if last_point:
                         total_distance += haversine(
                             last_point['latitude'], last_point['longitude'],
                             m['latitude'], m['longitude']
                         )
                     last_point = m
-                
+
                 session.matcheddistance = total_distance
                 session.endTime = data['measurements'][-1]['timestamp'] if data['measurements'] else data['start_time']
-                
-                # Update Realtime Position
+
                 if data['measurements']:
                     last_m = data['measurements'][-1]
                     rt = RealtimePosition.query.filter_by(vehicleId=v.id).first()
                     if not rt:
                         rt = RealtimePosition(vehicleId=v.id)
                         db.session.add(rt)
-                    
+
                     rt.timestamp = last_m['timestamp']
                     rt.lat = last_m['latitude']
                     rt.lon = last_m['longitude']
@@ -359,21 +363,27 @@ def main():
 
         # Process Stability
         stab_dir = os.path.join(data_dir, 'ESTABILIDAD')
-        for filename in os.listdir(stab_dir):
-            if filename.endswith('.txt'):
+        if not os.path.isdir(stab_dir):
+            print(f"  Skipping ESTABILIDAD: directory not found ({stab_dir})")
+        else:
+            for filename in os.listdir(stab_dir):
+                if not filename.endswith('.txt'):
+                    continue
                 sessions_data = parse_stability_file(os.path.join(stab_dir, filename))
                 for data in sessions_data:
-                    # Find session (by number and date match)
-                    # We match sessions by sessionNumber and the same DAY
+                    v_id = data['vehicle_identifier']
+                    v = get_or_create_vehicle(v_id, org)
+
+                    # Match session by vehicle + sessionNumber + same DAY
                     session = Session.query.filter(
-                        Session.vehicleId == vehicle.id,
+                        Session.vehicleId == v.id,
                         Session.sessionNumber == data['session_number'],
                         db.func.date(Session.startTime) == data['start_time'].date()
                     ).first()
-                    
+
                     if not session:
                         session = Session(
-                            vehicleId=vehicle.id,
+                            vehicleId=v.id,
                             organizationId=org.id,
                             startTime=data['start_time'],
                             sessionNumber=data['session_number'],
@@ -384,7 +394,7 @@ def main():
                         )
                         db.session.add(session)
                         db.session.flush()
-                    
+
                     for m in data['measurements']:
                         meas = StabilityMeasurement(
                             sessionId=session.id,
@@ -396,25 +406,32 @@ def main():
                             si=m['si'], accmag=m['accmag']
                         )
                         db.session.add(meas)
-                    
-                    print(f"  Processed Stability: {filename} (Session {data['session_number']})")
+
+                    print(f"  Processed Stability: {filename} (Vehicle: {v_id}, Session: {data['session_number']})")
                     db.session.commit()
 
         # Process Rotary
         rot_dir = os.path.join(data_dir, 'ROTATIVO')
-        for filename in os.listdir(rot_dir):
-            if filename.endswith('.txt'):
+        if not os.path.isdir(rot_dir):
+            print(f"  Skipping ROTATIVO: directory not found ({rot_dir})")
+        else:
+            for filename in os.listdir(rot_dir):
+                if not filename.endswith('.txt'):
+                    continue
                 sessions_data = parse_rotary_file(os.path.join(rot_dir, filename))
                 for data in sessions_data:
+                    v_id = data['vehicle_identifier']
+                    v = get_or_create_vehicle(v_id, org)
+
                     session = Session.query.filter(
-                        Session.vehicleId == vehicle.id,
+                        Session.vehicleId == v.id,
                         Session.sessionNumber == data['session_number'],
                         db.func.date(Session.startTime) == data['start_time'].date()
                     ).first()
-                    
+
                     if not session:
                         session = Session(
-                            vehicleId=vehicle.id,
+                            vehicleId=v.id,
                             organizationId=org.id,
                             startTime=data['start_time'],
                             sessionNumber=data['session_number'],
@@ -425,7 +442,7 @@ def main():
                         )
                         db.session.add(session)
                         db.session.flush()
-                        
+
                     for m in data['measurements']:
                         meas = RotativoMeasurement(
                             sessionId=session.id,
@@ -434,8 +451,8 @@ def main():
                             state=m['state']
                         )
                         db.session.add(meas)
-                    
-                    print(f"  Processed Rotary: {filename} (Session {data['session_number']})")
+
+                    print(f"  Processed Rotary: {filename} (Vehicle: {v_id}, Session: {data['session_number']})")
                     db.session.commit()
 
 if __name__ == '__main__':

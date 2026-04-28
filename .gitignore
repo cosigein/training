@@ -75,3 +75,6 @@ redis-data/
 # Generated docs / artifacts
 *.pdf
 !docs/**/*.pdf
+
+
+.venv
