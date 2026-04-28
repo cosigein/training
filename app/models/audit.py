@@ -31,7 +31,7 @@ class AuditLog(db.Model):
     why = db.Column(db.String)
     confidence = db.Column(db.Float)
     organizationId = db.Column(db.String, db.ForeignKey("Organization.id", ondelete="SET NULL"))
-    sessionId = db.Column(db.String, db.ForeignKey("Session.id", ondelete="CASCADE"))
+    attemptId = db.Column(db.String, db.ForeignKey("Attempt.id", ondelete="CASCADE"))
     
     createdAt = db.Column(db.DateTime, default=datetime.utcnow)
 

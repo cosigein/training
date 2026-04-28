@@ -40,26 +40,18 @@ def create_app(config_name=None):
     from app.blueprints.vehicles import vehicles_bp
     from app.blueprints.sessions import sessions_bp
     from app.blueprints.events import events_bp
-    from app.blueprints.geofences import geofences_bp
     from app.blueprints.uploads import uploads_bp
-    from app.blueprints.kpis import kpis_bp
     from app.blueprints.system import system_bp
     from app.blueprints.admin import admin_bp
-    from app.blueprints.reports import reports_bp
-    from app.blueprints.telemetry import telemetry_bp
     from app.blueprints.manager import manager_bp
-    
+
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(vehicles_bp, url_prefix="/vehicles")
     app.register_blueprint(sessions_bp, url_prefix="/sessions")
     app.register_blueprint(events_bp, url_prefix="/events")
-    app.register_blueprint(geofences_bp, url_prefix="/geofences")
     app.register_blueprint(uploads_bp, url_prefix="/uploads")
-    app.register_blueprint(kpis_bp, url_prefix="/kpis")
     app.register_blueprint(system_bp, url_prefix="/")
     app.register_blueprint(admin_bp, url_prefix="/admin")
-    app.register_blueprint(reports_bp, url_prefix="/reports")
-    app.register_blueprint(telemetry_bp, url_prefix="/telemetry")
     app.register_blueprint(manager_bp, url_prefix="/manager")
     
     # Custom Filters

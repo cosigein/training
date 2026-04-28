@@ -7,10 +7,12 @@ from sqlalchemy import text
 from app.extensions import db
 
 class UserRole(Enum):
+    SUPER_ADMIN = "SUPER_ADMIN"
     ADMIN = "ADMIN"
     MANAGER = "MANAGER"
-    OPERATOR = "OPERATOR"
-    VIEWER = "VIEWER"
+    STUDENT = "STUDENT"
+    OPERATOR = "OPERATOR"   # legacy, sin uso en Training — pendiente de remover
+    VIEWER = "VIEWER"       # legacy, sin uso en Training — pendiente de remover
 
 class ReportSchedule(Enum):
     DAILY = "DAILY"
@@ -35,10 +37,9 @@ class Organization(db.Model):
     config = db.relationship("OrganizationConfig", back_populates="organization", uselist=False)
     users = db.relationship("User", back_populates="organization")
     drivers = db.relationship("Driver", back_populates="organization")
-    sessions = db.relationship("Session", back_populates="organization")
-    parks = db.relationship("Park", back_populates="organization")
-    zones = db.relationship("Zone", back_populates="organization")
-    geofences = db.relationship("Geofence", back_populates="organization")
+    attempts = db.relationship("Attempt", back_populates="organization", cascade="all, delete-orphan")
+    convocatorias = db.relationship("Convocatoria", back_populates="organization", cascade="all, delete-orphan")
+    enrollments = db.relationship("Enrollment", back_populates="organization", cascade="all, delete-orphan")
 
 class OrganizationConfig(db.Model):
     __tablename__ = "OrganizationConfig"
@@ -71,7 +72,9 @@ class User(db.Model, UserMixin):
     role = db.Column(db.Enum(UserRole), default=UserRole.VIEWER)
     status = db.Column(db.String, default="ACTIVE")
     permissions = db.Column(JSONB, default=[])
-    managedParks = db.Column(JSONB, default=[])
+    managedParks = db.Column(JSONB, default=[])  # legacy
+    managedConvocatorias = db.Column(JSONB, default=[])  # IDs de convocatorias supervisadas (rol MANAGER)
+    studentProfileId = db.Column(db.String, nullable=True)  # id de perfil de alumno (rol STUDENT)
     lastLoginAt = db.Column(db.DateTime)
     passwordChangedAt = db.Column(db.DateTime)
     failedLoginAttempts = db.Column(db.Integer, default=0)
@@ -84,7 +87,11 @@ class User(db.Model, UserMixin):
     organization = db.relationship("Organization", back_populates="users")
     config = db.relationship("UserConfig", back_populates="user", uselist=False)
     instructed_drivers = db.relationship("Driver", back_populates="instructor")
-    sessions = db.relationship("Session", back_populates="user")
+    attempts_uploaded = db.relationship("Attempt", back_populates="uploaded_by", foreign_keys="Attempt.uploadedById")
+    attempts_as_student = db.relationship("Attempt", back_populates="student", foreign_keys="Attempt.studentId")
+    enrollments = db.relationship("Enrollment", back_populates="student", cascade="all, delete-orphan", foreign_keys="Enrollment.studentId")
+    convocatorias_initiated = db.relationship("Convocatoria", back_populates="initiator", foreign_keys="Convocatoria.closureInitiatedBy")
+    convocatorias_confirmed = db.relationship("Convocatoria", back_populates="confirmer", foreign_keys="Convocatoria.closureConfirmedBy")
 
 class UserConfig(db.Model):
     __tablename__ = "UserConfig"
@@ -144,4 +151,4 @@ class Driver(db.Model):
     
     organization = db.relationship("Organization", back_populates="drivers")
     instructor = db.relationship("User", back_populates="instructed_drivers")
-    sessions = db.relationship("Session", back_populates="conductor")
+    attempts = db.relationship("Attempt", back_populates="conductor")

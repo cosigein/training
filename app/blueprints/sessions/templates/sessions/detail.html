@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Análisis de Sesión - {{ session.id }} - DobackSoft{% endblock %}
+{% block title %}Análisis de Intento - {{ attempt.id }} - DobackSoft{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -14,14 +14,14 @@
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
     <div>
         <h1 style="margin: 0; font-size: 1.5rem;">Análisis de Telemetría</h1>
-        <p style="color: var(--color-gray-500); font-size: 0.875rem; margin: 4px 0 0 0;">Sesión: <span style="font-family: var(--font-mono);">{{ session.id }}</span> • Vehículo: {{ session.vehicle.name }}</p>
+        <p style="color: var(--color-gray-500); font-size: 0.875rem; margin: 4px 0 0 0;">Intento: <span style="font-family: var(--font-mono);">{{ attempt.id }}</span> • Vehículo: {{ attempt.vehicle.name }}</p>
     </div>
     <div style="display: flex; gap: var(--space-sm);">
         <button class="btn btn--secondary btn--sm">
             <i class="ph ph-file-pdf"></i> Informe PDF
         </button>
-        <a href="{{ url_for('sessions.list_sessions') }}" class="btn btn--ghost btn--sm">
-            Volver a Lista
+        <a href="{{ url_for('sessions.list_attempts') }}" class="btn btn--ghost btn--sm">
+            Volver al listado
         </a>
     </div>
 </div>
@@ -37,19 +37,19 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
                     <div>
                         <div style="font-size: 0.75rem; color: var(--color-gray-500); text-transform: uppercase;">Inicio</div>
-                        <div style="font-family: var(--font-mono); font-weight: 600;">{{ session.startTime.strftime('%H:%M:%S') }}</div>
+                        <div style="font-family: var(--font-mono); font-weight: 600;">{{ attempt.startTime.strftime('%H:%M:%S') }}</div>
                     </div>
                     <div>
                         <div style="font-size: 0.75rem; color: var(--color-gray-500); text-transform: uppercase;">Duración</div>
-                        <div style="font-weight: 600;">{{ "%.0f"|format(session.distance or 0) }} km</div>
+                        <div style="font-weight: 600;">{{ "%.0f"|format(attempt.distance or 0) }} km</div>
                     </div>
                     <div>
                         <div style="font-size: 0.75rem; color: var(--color-gray-500); text-transform: uppercase;">Estado</div>
-                        <span style="font-weight: 700; color: var(--color-success);">{{ session.status }}</span>
+                        <span style="font-weight: 700; color: var(--color-success);">{{ attempt.status.value if attempt.status else '-' }}</span>
                     </div>
                     <div>
-                        <div style="font-size: 0.75rem; color: var(--color-gray-500); text-transform: uppercase;">Tipo</div>
-                        <div style="font-weight: 600;">{{ session.type }}</div>
+                        <div style="font-size: 0.75rem; color: var(--color-gray-500); text-transform: uppercase;">Nota</div>
+                        <div style="font-weight: 600;">{{ "%.2f"|format(attempt.score) if attempt.score is not none else '—' }}</div>
                     </div>
                 </div>
             </div>
@@ -57,7 +57,7 @@
 
         <div class="card">
             <div class="card__header">
-                <h3 class="card__title">Eventos en la Sesión</h3>
+                <h3 class="card__title">Eventos del intento</h3>
             </div>
             <div class="table-container">
                 <table class="table table--compact">
@@ -115,9 +115,9 @@
                     </div>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-top: var(--space-sm); font-size: 0.7rem; color: var(--color-gray-500); text-transform: uppercase;">
-                    <span>{{ session.startTime.strftime('%H:%M:%S') }}</span>
+                    <span>{{ attempt.startTime.strftime('%H:%M:%S') }}</span>
                     <span>Progreso del viaje</span>
-                    <span>{{ session.endTime.strftime('%H:%M:%S') if session.endTime else 'Ahora' }}</span>
+                    <span>{{ attempt.endTime.strftime('%H:%M:%S') if attempt.endTime else 'Ahora' }}</span>
                 </div>
             </div>
         </div>

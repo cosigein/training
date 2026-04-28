@@ -80,7 +80,7 @@ class ArchivoSubido(db.Model):
     id = db.Column(db.String, primary_key=True, server_default=text("gen_random_uuid()"))
     nombre = db.Column(db.String, nullable=False)
     tipo = db.Column(db.String, nullable=False)
-    sessionId = db.Column(db.String, db.ForeignKey("Session.id", ondelete="CASCADE"))
+    attemptId = db.Column(db.String, db.ForeignKey("Attempt.id", ondelete="CASCADE"))
     vehiculoId = db.Column(db.String, db.ForeignKey("Vehicle.id", ondelete="SET NULL"))
     ingestionJobId = db.Column(db.String, db.ForeignKey("IngestionJob.id", ondelete="SET NULL"))
     

@@ -73,8 +73,6 @@ class Event(db.Model):
     displayData = db.Column(JSONB, nullable=False)
     confidence = db.Column(db.Float)
     source = db.Column(db.String)
-    zoneId = db.Column(db.String, db.ForeignKey("Zone.id", ondelete="SET NULL"))
-    parkId = db.Column(db.String, db.ForeignKey("Park.id", ondelete="SET NULL"))
     
     createdAt = db.Column(db.DateTime, default=datetime.utcnow)
     updatedAt = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -98,7 +96,7 @@ class EjecucionEvento(db.Model):
     id = db.Column(db.String, primary_key=True, server_default=text("gen_random_uuid()"))
     eventId = db.Column(db.String, db.ForeignKey("GestorDeEvento.id", ondelete="CASCADE"), nullable=False)
     vehicleId = db.Column(db.String, db.ForeignKey("Vehicle.id", ondelete="CASCADE"), nullable=False)
-    sessionId = db.Column(db.String, db.ForeignKey("Session.id", ondelete="CASCADE"))
+    attemptId = db.Column(db.String, db.ForeignKey("Attempt.id", ondelete="CASCADE"))
     
     triggeredAt = db.Column(db.DateTime, default=datetime.utcnow)
     data = db.Column(JSONB, nullable=False)

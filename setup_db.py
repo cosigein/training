@@ -12,7 +12,7 @@ from app.extensions import db
 from app.models.auth import User, Organization, UserRole
 from app.models.vehicle import Vehicle
 # Import all models to ensure they are registered
-from app.models import session, vehicle, auth, geofence, kpi, event, report
+from app.models import session, vehicle, auth, event, training
 
 def create_database_if_not_exists():
     print("🔍 Verificando existencia de la base de datos...")
@@ -89,8 +89,11 @@ def setup_database():
         print("🌱 Sembrando datos iniciales (idempotente)...")
         org = get_or_create_org("CMadrid", apiKey="demo-key", formacionHabilitada=False)
 
-        get_or_create_user("admin@cmadrid.com",   "Admin CMadrid",   "admin123",   UserRole.ADMIN,   org.id)
-        get_or_create_user("manager@cmadrid.com", "Manager CMadrid", "manager123", UserRole.MANAGER, org.id)
+        get_or_create_user("super@cmadrid.com",    "Super Admin CMadrid", "super123",   UserRole.SUPER_ADMIN, org.id)
+        get_or_create_user("admin@cmadrid.com",    "Admin CMadrid",       "admin123",   UserRole.ADMIN,       org.id)
+        get_or_create_user("manager@cmadrid.com",  "Manager CMadrid",     "manager123", UserRole.MANAGER,     org.id)
+        get_or_create_user("alumno1@cmadrid.com",  "Alumno Uno",          "alumno123",  UserRole.STUDENT,     org.id)
+        get_or_create_user("alumno2@cmadrid.com",  "Alumno Dos",          "alumno123",  UserRole.STUDENT,     org.id)
 
         db.session.commit()
         print("🚀 Seed listo.")

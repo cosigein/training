@@ -8,7 +8,7 @@ from app import create_app
 from app.extensions import db
 from app.models.vehicle import Vehicle, VehicleType, VehicleStatus, RealtimePosition
 from app.models.auth import Organization
-from app.models.session import Session, GpsMeasurement, StabilityMeasurement, RotativoMeasurement, SessionStatus, SessionType
+from app.models.session import Attempt, GpsMeasurement, StabilityMeasurement, RotativoMeasurement, AttemptStatus
 
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371  # Earth radius in km
@@ -291,37 +291,36 @@ def main():
                 v_id = data['vehicle_identifier']
                 v = get_or_create_vehicle(v_id, org)
 
-                session = Session.query.filter_by(
+                session = Attempt.query.filter_by(
                     vehicleId=v.id,
                     sessionNumber=data['session_number'],
                     startTime=data['start_time']
                 ).first()
 
                 if not session:
-                    session = Session(
+                    session = Attempt(
                         vehicleId=v.id,
                         organizationId=org.id,
                         startTime=data['start_time'],
                         sessionNumber=data['session_number'],
                         sequence=data['session_number'],
-                        status=SessionStatus.COMPLETED,
-                        type=SessionType.ROUTINE,
+                        status=AttemptStatus.CLOSED,
                         source='file_import'
                     )
                     db.session.add(session)
                     db.session.flush()
                 else:
                     # Wipe existing measurements for this session to avoid dupes on re-import
-                    GpsMeasurement.query.filter_by(sessionId=session.id).delete()
-                    StabilityMeasurement.query.filter_by(sessionId=session.id).delete()
-                    RotativoMeasurement.query.filter_by(sessionId=session.id).delete()
+                    GpsMeasurement.query.filter_by(attemptId=session.id).delete()
+                    StabilityMeasurement.query.filter_by(attemptId=session.id).delete()
+                    RotativoMeasurement.query.filter_by(attemptId=session.id).delete()
 
                 total_distance = 0
                 last_point = None
 
                 for m in data['measurements']:
                     meas = GpsMeasurement(
-                        sessionId=session.id,
+                        attemptId=session.id,
                         organizationId=org.id,
                         timestamp=m['timestamp'],
                         latitude=m['latitude'],
@@ -375,21 +374,20 @@ def main():
                     v = get_or_create_vehicle(v_id, org)
 
                     # Match session by vehicle + sessionNumber + same DAY
-                    session = Session.query.filter(
-                        Session.vehicleId == v.id,
-                        Session.sessionNumber == data['session_number'],
-                        db.func.date(Session.startTime) == data['start_time'].date()
+                    session = Attempt.query.filter(
+                        Attempt.vehicleId == v.id,
+                        Attempt.sessionNumber == data['session_number'],
+                        db.func.date(Attempt.startTime) == data['start_time'].date()
                     ).first()
 
                     if not session:
-                        session = Session(
+                        session = Attempt(
                             vehicleId=v.id,
                             organizationId=org.id,
                             startTime=data['start_time'],
                             sessionNumber=data['session_number'],
                             sequence=data['session_number'],
-                            status=SessionStatus.COMPLETED,
-                            type=SessionType.ROUTINE,
+                            status=AttemptStatus.CLOSED,
                             source='file_import'
                         )
                         db.session.add(session)
@@ -397,7 +395,7 @@ def main():
 
                     for m in data['measurements']:
                         meas = StabilityMeasurement(
-                            sessionId=session.id,
+                            attemptId=session.id,
                             organizationId=org.id,
                             timestamp=m['timestamp'],
                             ax=m['ax'], ay=m['ay'], az=m['az'],
@@ -423,21 +421,20 @@ def main():
                     v_id = data['vehicle_identifier']
                     v = get_or_create_vehicle(v_id, org)
 
-                    session = Session.query.filter(
-                        Session.vehicleId == v.id,
-                        Session.sessionNumber == data['session_number'],
-                        db.func.date(Session.startTime) == data['start_time'].date()
+                    session = Attempt.query.filter(
+                        Attempt.vehicleId == v.id,
+                        Attempt.sessionNumber == data['session_number'],
+                        db.func.date(Attempt.startTime) == data['start_time'].date()
                     ).first()
 
                     if not session:
-                        session = Session(
+                        session = Attempt(
                             vehicleId=v.id,
                             organizationId=org.id,
                             startTime=data['start_time'],
                             sessionNumber=data['session_number'],
                             sequence=data['session_number'],
-                            status=SessionStatus.COMPLETED,
-                            type=SessionType.ROUTINE,
+                            status=AttemptStatus.CLOSED,
                             source='file_import'
                         )
                         db.session.add(session)
@@ -445,7 +442,7 @@ def main():
 
                     for m in data['measurements']:
                         meas = RotativoMeasurement(
-                            sessionId=session.id,
+                            attemptId=session.id,
                             organizationId=org.id,
                             timestamp=m['timestamp'],
                             state=m['state']

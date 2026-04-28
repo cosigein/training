@@ -44,7 +44,7 @@ def require_role(roles):
                 if _wants_json():
                     return jsonify({"message": "Permisos insuficientes"}), 403
                 flash("No tenés permisos para acceder a esa sección.", "warning")
-                return redirect(url_for('kpis.dashboard_executive'))
+                return redirect(url_for('sessions.list_sessions'))
 
             return f(*args, **kwargs)
         return decorated_function
@@ -59,7 +59,10 @@ def require_org(f):
         user = User.query.get(user_id)
 
         if not user or not user.organizationId:
-            return jsonify({"message": "Organización no vinculada"}), 403
+            if _wants_json():
+                return jsonify({"message": "Organización no vinculada"}), 403
+            flash("Tu cuenta no tiene una organización vinculada.", "warning")
+            return redirect(url_for('auth.login'))
 
         return f(*args, **kwargs)
     return decorated_function

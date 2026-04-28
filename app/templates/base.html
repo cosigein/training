@@ -38,26 +38,17 @@
             </div>
             
             <nav class="sidebar__nav">
-            <a href="{{ url_for('kpis.dashboard_executive') }}" class="sidebar__link {% if request.blueprint == 'kpis' %}active{% endif %}">
-                <i class="ph ph-layout"></i> Dashboard
+            <a href="{{ url_for('sessions.list_sessions') }}" class="sidebar__link {% if request.blueprint == 'sessions' %}active{% endif %}">
+                <i class="ph ph-map-pin-line"></i> Rutas / Recorridos
             </a>
             <a href="{{ url_for('vehicles.list_vehicles') }}" class="sidebar__link {% if request.blueprint == 'vehicles' %}active{% endif %}">
                 <i class="ph ph-truck"></i> Gestión Flota
             </a>
-            <a href="{{ url_for('sessions.list_sessions') }}" class="sidebar__link {% if request.blueprint == 'sessions' %}active{% endif %}">
-                <i class="ph ph-map-pin-line"></i> Rutas / Recorridos
-            </a>
             <a href="{{ url_for('events.list_events') }}" class="sidebar__link {% if request.blueprint == 'events' %}active{% endif %}">
                 <i class="ph ph-warning-circle"></i> Gestor de Eventos
             </a>
-            <a href="#" class="sidebar__link">
-                <i class="ph ph-chart-bar"></i> KPIs Avanzados
-            </a>
 
-            {% if current_user.role.value == 'ADMIN' %}
-            <a href="{{ url_for('reports.list_reports') }}" class="sidebar__link {% if request.blueprint == 'reports' %}active{% endif %}">
-                <i class="ph ph-file-text"></i> Reportes
-            </a>
+            {% if current_user.role.value in ('ADMIN', 'SUPER_ADMIN') %}
             <a href="{{ url_for('uploads.unified_upload') }}" class="sidebar__link {{ 'active' if request.blueprint == 'uploads' }}">
                 <i class="ph ph-cloud-arrow-up"></i> Ingesta
             </a>
