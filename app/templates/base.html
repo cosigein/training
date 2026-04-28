@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DobackSoft V3{% endblock %}</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- CSS Foundation -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    
+    <!-- Component Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/button.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/card.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/form.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/nav.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/table.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/badge.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/alert.css') }}">
+    
+    <!-- Vendors -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}'>
+    <div class="app-container">
+        {% if current_user.is_authenticated %}
+        <aside class="sidebar">
+            <div class="sidebar__header">
+                <div class="sidebar__logo">DOBACK<span style="color: var(--color-primary-500)">SOFT</span></div>
+            </div>
+            
+            <nav class="sidebar__nav">
+            <a href="{{ url_for('kpis.dashboard_executive') }}" class="sidebar__link {% if request.blueprint == 'kpis' %}active{% endif %}">
+                <i class="ph ph-layout"></i> Dashboard
+            </a>
+            <a href="{{ url_for('vehicles.list_vehicles') }}" class="sidebar__link {% if request.blueprint == 'vehicles' %}active{% endif %}">
+                <i class="ph ph-truck"></i> Gestión Flota
+            </a>
+            <a href="{{ url_for('sessions.list_sessions') }}" class="sidebar__link {% if request.blueprint == 'sessions' %}active{% endif %}">
+                <i class="ph ph-map-pin-line"></i> Rutas / Recorridos
+            </a>
+            <a href="{{ url_for('events.list_events') }}" class="sidebar__link {% if request.blueprint == 'events' %}active{% endif %}">
+                <i class="ph ph-warning-circle"></i> Gestor de Eventos
+            </a>
+            <a href="{{ url_for('reports.list_reports') }}" class="sidebar__link {% if request.blueprint == 'reports' %}active{% endif %}">
+                <i class="ph ph-file-text"></i> Reportes
+            </a>
+            <a href="#" class="sidebar__link">
+                <i class="ph ph-chart-bar"></i> KPIs Avanzados
+            </a>
+            <a href="{{ url_for('uploads.unified_upload') }}" class="sidebar__link {{ 'active' if request.blueprint == 'uploads' }}">
+                <i class="ph ph-cloud-arrow-up"></i> Ingesta
+            </a>
+            <a href="{{ url_for('admin.list_organizations') }}" class="sidebar__link {{ 'active' if request.blueprint == 'admin' }}">
+                <i class="ph ph-shield-check"></i>
+                Administración
+            </a>
+        </nav>
+        <div class="sidebar__footer">
+            <a href="{{ url_for('system.settings') }}" class="sidebar__link {{ 'active' if request.blueprint == 'system' }}">
+                <i class="ph ph-gear"></i>
+                Configuración
+            </a>
+            <a href="{{ url_for('auth.logout') }}" class="sidebar__link" style="color: var(--color-danger);">
+                <i class="ph ph-sign-out"></i>
+                Salir
+            </a>
+        </div>
+        </aside>
+        {% endif %}
+
+        <main class="main-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="alert alert--{{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

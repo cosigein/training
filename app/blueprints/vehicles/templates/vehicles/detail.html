@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle del Vehículo - {{ vehicle.name }} - DobackSoft{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+    <div>
+        <h1 style="margin: 0; font-size: 1.5rem;">{{ vehicle.name }}</h1>
+        <p style="color: var(--color-gray-500); font-size: 0.875rem; margin: 4px 0 0 0;">Identificador: <span style="font-family: var(--font-mono);">{{ vehicle.identifier }}</span></p>
+    </div>
+    <div style="display: flex; gap: var(--space-sm);">
+        <button class="btn btn--secondary btn--sm">
+            <i class="ph ph-note-pencil"></i> Editar
+        </button>
+        <a href="{{ url_for('vehicles.list_vehicles') }}" class="btn btn--ghost btn--sm">
+            Volver a Lista
+        </a>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: var(--space-lg);">
+    <!-- Ficha Técnica -->
+    <div class="card">
+        <div class="card__header">
+            <h3 class="card__title">Ficha Técnica</h3>
+        </div>
+        <div class="card__body">
+            <div style="display: flex; flex-direction: column; gap: var(--space-md);">
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--color-gray-500); text-transform: uppercase;">Marca / Modelo</div>
+                    <div style="font-weight: 600;">{{ vehicle.brand or '-' }} / {{ vehicle.model or '-' }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--color-gray-500); text-transform: uppercase;">Matrícula</div>
+                    <div style="font-family: var(--font-mono); font-weight: 600; font-size: 1.1rem;">{{ vehicle.licensePlate }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--color-gray-500); text-transform: uppercase;">Tipo de Vehículo</div>
+                    <div style="font-weight: 600;">{{ vehicle.type }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--color-gray-500); text-transform: uppercase;">Estado Actual</div>
+                    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; background: {% if vehicle.status == 'ACTIVE' %}rgba(39, 174, 96, 0.1); color: #27ae60;{% else %}rgba(243, 156, 18, 0.1); color: #f39c12;{% endif %}">
+                        {{ vehicle.status }}
+                    </span>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--color-gray-500); text-transform: uppercase;">Última Actualización</div>
+                    <div style="font-size: 0.875rem;">{{ vehicle.updatedAt.strftime('%d/%m/%Y %H:%M') if vehicle.updatedAt else '-' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sesiones Recientes -->
+    <div class="card">
+        <div class="card__header">
+            <h3 class="card__title">Sesiones Recientes</h3>
+        </div>
+        <div class="table-container">
+            <table class="table table--compact">
+                <thead>
+                    <tr>
+                        <th>Inicio</th>
+                        <th>Fin</th>
+                        <th>Tipo</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in sessions %}
+                    <tr>
+                        <td style="font-size: 0.75rem;">{{ session.startTime.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td style="font-size: 0.75rem;">{{ session.endTime.strftime('%H:%M') if session.endTime else '-' }}</td>
+                        <td style="font-size: 0.8rem; font-weight: 600;">{{ session.type }}</td>
+                        <td>
+                            <span style="font-size: 0.7rem; font-weight: 600;">{{ session.status }}</span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('sessions.get_session', session_id=session.id) }}" class="btn btn--icon btn--ghost btn--sm">
+                                <i class="ph ph-arrow-right"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: var(--space-xl); color: var(--color-gray-500);">
+                            No hay sesiones registradas para este vehículo.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

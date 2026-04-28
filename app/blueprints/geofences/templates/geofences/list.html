@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Geocercas - DobackSoft{% endblock %}
+
+{% block content %}
+<header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-xl);">
+    <div>
+        <h1>Geocercas & Zonas</h1>
+        <p style="color: var(--color-text-400);">Monitoreo espacial de activos</p>
+    </div>
+    <a href="#" class="btn btn--primary">
+        <i class="ph ph-plus-circle"></i>
+        Nueva Geocerca
+    </a>
+</header>
+
+<div style="display: grid; grid-template-columns: 1fr; gap: var(--space-lg);">
+    <div class="card" style="height: 500px;" id="main-map">
+        <!-- Mapa aquí -->
+    </div>
+
+    <div class="card">
+        <div class="card__header">
+            <h3>Listado de Geocercas</h3>
+        </div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Tipo</th>
+                        <th>Área</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for geofence in geofences %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ geofence.name }}</td>
+                        <td>{{ geofence.type|capitalize }}</td>
+                        <td>{{ geofence.area|round(2) if geofence.area else '-' }} m²</td>
+                        <td>
+                            {% if geofence.is_enabled %}
+                            <span class="badge badge--success">Activa</span>
+                            {% else %}
+                            <span class="badge badge--danger">Deshabilitada</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn--secondary btn--sm" onclick="zoomToGeofence('{{ geofence.id }}')">
+                                <i class="ph ph-magnifying-glass-plus"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: var(--space-2xl); color: var(--color-text-500);">
+                            No hay geocercas configuradas.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+    .leaflet-container {
+        background: #0f172a;
+        font-family: inherit;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const map = L.map('main-map').setView([0, 0], 2);
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO'
+        }).addTo(map);
+
+        const geofences = {{ geofences_json|tojson|safe }};
+        const geoLayer = L.geoJSON(geofences, {
+            style: function(feature) {
+                return {
+                    color: '#6366f1',
+                    weight: 2,
+                    opacity: 0.8,
+                    fillOpacity: 0.1
+                };
+            }
+        }).addTo(map);
+
+        // Add vehicles
+        const vehicles = {{ vehicles_json|tojson|safe }};
+        const vehicleGroup = L.featureGroup().addTo(map);
+        
+        vehicles.forEach(v => {
+            const marker = L.marker([v.lat, v.lon], {
+                icon: L.divIcon({
+                    className: 'vehicle-marker',
+                    html: `<div style="background: var(--color-primary-500); width: 12px; height: 12px; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 10px var(--color-primary-500);"></div>`,
+                    iconSize: [12, 12]
+                })
+            }).addTo(vehicleGroup);
+            
+            marker.bindPopup(`
+                <div style="color: white; background: #1e293b; padding: 8px; border-radius: var(--radius-md);">
+                    <strong style="display: block; margin-bottom: 4px;">${v.name}</strong>
+                    <div style="font-size: 0.75rem; opacity: 0.8;">
+                        Último reporte: ${v.timestamp}<br>
+                        Velocidad: ${v.speed} km/h
+                    </div>
+                </div>
+            `);
+        });
+
+        if (geofences.features && geofences.features.length > 0) {
+            map.fitBounds(geoLayer.getBounds(), { padding: [20, 20] });
+        } else if (vehicles.length > 0) {
+            map.fitBounds(vehicleGroup.getBounds(), { padding: [50, 50] });
+        }
+
+        window.zoomToGeofence = function(id) {
+            geoLayer.eachLayer(layer => {
+                if (layer.feature.properties.id === id) {
+                    map.fitBounds(layer.getBounds(), { padding: [50, 50] });
+                }
+            });
+        };
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Error del Servidor - DobackSoft{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center;">
+    <h1 style="font-size: 8rem; opacity: 0.1; position: absolute; z-index: -1;">500</h1>
+    <i class="ph ph-plug-connected" style="font-size: 5rem; color: var(--color-danger); margin-bottom: var(--space-xl);"></i>
+    <h2>Algo explotó...</h2>
+    <p style="color: var(--color-text-400); margin-top: var(--space-md); max-width: 400px;">
+        Hubo un error crítico en el servidor. Nuestro equipo de ingenieros ya está en camino (o tomando café).
+    </p>
+    <div style="margin-top: var(--space-2xl);">
+        <a href="/" class="btn btn--secondary">
+            Reintentar
+        </a>
+    </div>
+</div>
+{% endblock %}

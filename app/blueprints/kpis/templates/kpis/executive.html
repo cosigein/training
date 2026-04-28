@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Ejecutivo - DobackSoft{% endblock %}
+
+{% block content %}
+<header style="margin-bottom: var(--space-xl);">
+    <h1>Resumen del Sistema</h1>
+    <p style="color: var(--color-text-400);">Vista global de rendimiento y alertas</p>
+</header>
+
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-lg); margin-bottom: var(--space-xl);">
+    <div class="card card--glass" style="padding: var(--space-lg);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <p style="font-size: 0.875rem; color: var(--color-text-400); margin-bottom: var(--space-xs);">Flota Activa</p>
+                <h3 style="font-size: 1.75rem;">{{ stats.active_vehicles|default(0) }} / {{ stats.total_vehicles|default(0) }}</h3>
+            </div>
+            <div style="background: rgba(99, 102, 241, 0.1); padding: var(--space-sm); border-radius: var(--radius-md); color: var(--color-primary-400);">
+                <i class="ph ph-truck" style="font-size: 1.5rem;"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card card--glass" style="padding: var(--space-lg);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <p style="font-size: 0.875rem; color: var(--color-text-400); margin-bottom: var(--space-xs);">Total Sesiones</p>
+                <h3 style="font-size: 1.75rem;">{{ stats.total_sessions|default(0) }}</h3>
+            </div>
+            <div style="background: rgba(6, 182, 212, 0.1); padding: var(--space-sm); border-radius: var(--radius-md); color: var(--color-accent-500);">
+                <i class="ph ph-steering-wheel" style="font-size: 1.5rem;"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card--glass" style="padding: var(--space-lg);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <p style="font-size: 0.875rem; color: var(--color-text-400); margin-bottom: var(--space-xs);">Alertas Críticas</p>
+                <h3 style="font-size: 1.75rem; color: var(--color-danger);">{{ stats.critical_alerts|default(0) }}</h3>
+            </div>
+            <div style="background: rgba(239, 68, 68, 0.1); padding: var(--space-sm); border-radius: var(--radius-md); color: var(--color-danger);">
+                <i class="ph ph-warning-octagon" style="font-size: 1.5rem;"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card--glass" style="padding: var(--space-lg);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <p style="font-size: 0.875rem; color: var(--color-text-400); margin-bottom: var(--space-xs);">Distancia Total</p>
+                <h3 style="font-size: 1.75rem;">{{ stats.total_distance|default(0)|round(1) }} km</h3>
+            </div>
+            <div style="background: rgba(16, 185, 129, 0.1); padding: var(--space-sm); border-radius: var(--radius-md); color: var(--color-success);">
+                <i class="ph ph-path" style="font-size: 1.5rem;"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-lg);">
+    <div class="card" style="padding: var(--space-xl);">
+        <div class="card__header" style="padding: 0 0 var(--space-lg) 0; border: none;">
+            <h3>Actividad de la Flota (Sesiones)</h3>
+        </div>
+        <canvas id="sessions-chart" style="max-height: 300px;"></canvas>
+    </div>
+
+    <div class="card" style="padding: var(--space-xl);">
+        <div class="card__header" style="padding: 0 0 var(--space-lg) 0; border: none;">
+            <h3>Distribución por Flotas</h3>
+        </div>
+        <canvas id="fleets-chart" style="max-height: 300px;"></canvas>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctxSessions = document.getElementById('sessions-chart').getContext('2d');
+        const ctxFleets = document.getElementById('fleets-chart').getContext('2d');
+
+        new Chart(ctxSessions, {
+            type: 'line',
+            data: {
+                labels: {{ chart_data.labels|tojson }},
+                datasets: [{
+                    label: 'Sesiones',
+                    data: {{ chart_data.values|tojson }},
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        new Chart(ctxFleets, {
+            type: 'doughnut',
+            data: {
+                labels: {{ fleet_data.labels|tojson }},
+                datasets: [{
+                    data: {{ fleet_data.values|tojson }},
+                    backgroundColor: ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#ef4444']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#cbd5e1' }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

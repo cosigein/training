@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Subir Datos - DobackSoft{% endblock %}
+
+{% block content %}
+<header style="margin-bottom: var(--space-xl);">
+    <h1>Carga de Datos</h1>
+    <p style="color: var(--color-text-400);">Sube archivos de telemetría y sesiones para su procesamiento</p>
+</header>
+
+<div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: var(--space-lg);">
+    <div class="card" style="padding: var(--space-xl);">
+        <div class="card__header" style="padding: 0 0 var(--space-lg) 0; border: none;">
+            <h3>Nueva Carga</h3>
+        </div>
+        
+        <form action="{{ url_for('uploads.upload_file') }}" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            
+            <div style="border: 2px dashed var(--color-gray-300); border-radius: var(--radius-lg); padding: var(--space-2xl); text-align: center; margin-bottom: var(--space-xl); cursor: pointer;" onclick="document.getElementById('file-input').click()">
+                <i class="ph ph-upload-simple" style="font-size: 3rem; color: var(--color-primary-500); margin-bottom: var(--space-md);"></i>
+                <p style="color: var(--color-gray-600);">Arrastra tus archivos aquí o haz clic para buscar</p>
+                <p style="font-size: 0.75rem; color: var(--color-gray-400); margin-top: var(--space-xs);">Soporta .csv, .bin, .dat</p>
+                <input type="file" id="file-input" name="file" style="display: none;" multiple onchange="updateFileList(this)">
+            </div>
+
+            <div id="file-list" style="margin-bottom: var(--space-lg);"></div>
+
+            <button type="submit" class="btn btn--primary" style="width: 100%;">
+                Comenzar Procesamiento
+            </button>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="card__header">
+            <h3>Historial de Cargas</h3>
+        </div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Archivo</th>
+                        <th>Estado</th>
+                        <th>Progreso</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in jobs %}
+                    <tr>
+                        <td>{{ job.created_at|datetimeformat }}</td>
+                        <td style="font-size: 0.875rem;">{{ job.filename }}</td>
+                        <td>
+                            {% if job.status == 'COMPLETED' %}
+                                <span class="badge badge--success">Completado</span>
+                            {% elif job.status == 'PROCESSING' %}
+                                <span class="badge badge--warning">En Cola</span>
+                            {% elif job.status == 'FAILED' %}
+                                <span class="badge badge--danger">Fallido</span>
+                            {% else %}
+                                <span class="badge badge--info">{{ job.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="width: 100%; height: 6px; background: var(--color-surface-muted); border-radius: 3px; overflow: hidden;">
+                                <div style="width: {{ job.progress|default(0) }}%; height: 100%; background: var(--color-primary-500);"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: var(--space-2xl); color: var(--color-text-500);">
+                            No hay cargas previas.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function updateFileList(input) {
+        const list = document.getElementById('file-list');
+        list.innerHTML = '';
+        if (input.files.length > 0) {
+            for (let file of input.files) {
+                const item = document.createElement('div');
+                item.className = 'card--glass';
+                item.style.padding = 'var(--space-sm) var(--space-md)';
+                item.style.marginBottom = 'var(--space-xs)';
+                item.style.fontSize = '0.875rem';
+                item.style.display = 'flex';
+                item.style.alignItems = 'center';
+                item.style.gap = 'var(--space-sm)';
+                item.innerHTML = `<i class="ph ph-file"></i> ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                list.appendChild(item);
+            }
+        }
+    }
+</script>
+{% endblock %}

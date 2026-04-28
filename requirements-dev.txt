@@ -1,0 +1,10 @@
+pytest
+pytest-flask
+pytest-cov
+factory-boy
+black
+ruff
+mypy
+isort
+pre-commit
+k6

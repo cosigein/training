@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Cuenta - DobackSoft{% endblock %}
+
+{% block content %}
+<div style="display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 4rem);">
+    <div class="card" style="width: 100%; max-width: 450px; padding: var(--space-2xl);">
+        <div style="text-align: center; margin-bottom: var(--space-xl);">
+            <div class="sidebar__logo" style="font-size: 2rem; margin-bottom: var(--space-sm);">DOBACK<span style="color: var(--color-primary-500)">SOFT</span></div>
+            <p style="color: var(--color-text-400);">Únete a la plataforma de telemetría más avanzada.</p>
+        </div>
+
+        <form action="{{ url_for('auth.register') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            
+            <div class="field">
+                <label class="field__label">Nombre Completo</label>
+                <input type="text" name="name" class="field__input" placeholder="Juan Pérez" required>
+            </div>
+
+            <div class="field">
+                <label class="field__label">Correo Electrónico</label>
+                <input type="email" name="email" class="field__input" placeholder="ejemplo@doback.com" required>
+            </div>
+
+            <div class="field">
+                <label class="field__label">Contraseña</label>
+                <input type="password" name="password" class="field__input" placeholder="••••••••" required>
+                <p style="font-size: 0.75rem; color: var(--color-text-500); margin-top: var(--space-xs);">Mínimo 8 caracteres.</p>
+            </div>
+
+            <div style="margin-top: var(--space-xl);">
+                <button type="submit" class="btn btn--primary" style="width: 100%;">
+                    Crear Cuenta
+                </button>
+            </div>
+
+            <p style="text-align: center; margin-top: var(--space-lg); font-size: 0.875rem; color: var(--color-text-400);">
+                ¿Ya tienes cuenta? <a href="{{ url_for('auth.login') }}" style="color: var(--color-primary-400); font-weight: 600;">Inicia sesión</a>
+            </p>
+        </form>
+    </div>
+</div>
+{% endblock %}

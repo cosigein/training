@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración - DobackSoft{% endblock %}
+
+{% block content %}
+<header style="margin-bottom: var(--space-xl);">
+    <h1 style="margin: 0; font-size: 1.5rem;">Configuración del Sistema</h1>
+    <p style="color: var(--color-gray-500); font-size: 0.875rem; margin: 4px 0 0 0;">Gestiona tus preferencias personales y de organización.</p>
+</header>
+
+<div style="display: grid; grid-template-columns: 240px 1fr; gap: var(--space-2xl);">
+    <!-- Sidebar de Navegación Local -->
+    <aside id="settings-nav" style="display: flex; flex-direction: column; gap: var(--space-xs);">
+        <button class="settings-tab-btn btn btn--secondary active" data-tab="profile" style="justify-content: flex-start; text-transform: none; font-size: 0.9rem;">
+            <i class="ph ph-user-gear"></i>
+            Perfil Personal
+        </button>
+        <button class="settings-tab-btn btn btn--ghost" data-tab="organization" style="justify-content: flex-start; text-transform: none; font-size: 0.9rem;">
+            <i class="ph ph-buildings"></i>
+            Organización
+        </button>
+        <button class="settings-tab-btn btn btn--ghost" data-tab="notifications" style="justify-content: flex-start; text-transform: none; font-size: 0.9rem;">
+            <i class="ph ph-bell-ringing"></i>
+            Notificaciones
+        </button>
+        <button class="settings-tab-btn btn btn--ghost" data-tab="security" style="justify-content: flex-start; text-transform: none; font-size: 0.9rem;">
+            <i class="ph ph-shield-check"></i>
+            Seguridad
+        </button>
+    </aside>
+
+    <!-- Contenido de las Tabs -->
+    <div class="card">
+        <div class="card__body" style="padding: var(--space-xl);">
+            
+            <!-- Tab: Perfil -->
+            <section id="tab-profile" class="settings-section">
+                <h3 style="margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-gray-200);">Perfil de Usuario</h3>
+                <form action="#" method="POST" style="display: flex; flex-direction: column; gap: var(--space-md);">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
+                        <div class="field">
+                            <label class="field__label">Nombre completo</label>
+                            <input type="text" class="field__input" name="name" value="{{ current_user.name }}">
+                        </div>
+                        <div class="field">
+                            <label class="field__label">Email Institucional</label>
+                            <input type="email" class="field__input" value="{{ current_user.email }}" disabled>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="field__label">Rol Asignado</label>
+                        <input type="text" class="field__input" value="{{ current_user.role }}" disabled>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; margin-top: var(--space-md);">
+                        <button type="submit" class="btn btn--primary">Actualizar Perfil</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Tab: Organización -->
+            <section id="tab-organization" class="settings-section" style="display: none;">
+                <h3 style="margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-gray-200);">Organización / Base</h3>
+                <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+                    <div class="field">
+                        <label class="field__label">Nombre del Parque/Base</label>
+                        <input type="text" class="field__input" value="{{ current_user.organization.name if current_user.organization else 'Doback Base Central' }}" disabled>
+                    </div>
+                    <div class="card" style="background: var(--color-gray-100); border-style: dashed;">
+                        <div class="card__body">
+                            <label class="field__label">Clave de Integración API</label>
+                            <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-xs);">
+                                <input type="password" class="field__input" style="flex: 1" value="••••••••••••••••••••••••••••" disabled>
+                                <button class="btn btn--secondary btn--icon"><i class="ph ph-copy"></i></button>
+                            </div>
+                            <p style="font-size: 0.75rem; color: var(--color-gray-500); margin-top: 8px;">Usa esta clave para conectar dispositivos externos al sistema de telemetría.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Notificaciones -->
+            <section id="tab-notifications" class="settings-section" style="display: none;">
+                <h3 style="margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-gray-200);">Alertas y Notificaciones</h3>
+                <div style="display: flex; flex-direction: column; gap: var(--space-md);">
+                    <div class="field__checkbox" style="padding: 12px; background: var(--color-gray-100); border-radius: var(--radius-sm);">
+                        <input type="checkbox" id="notif-speed" checked>
+                        <label for="notif-speed">Alertas de exceso de velocidad (Push)</label>
+                    </div>
+                    <div class="field__checkbox" style="padding: 12px; background: var(--color-gray-100); border-radius: var(--radius-sm);">
+                        <input type="checkbox" id="notif-brake" checked>
+                        <label for="notif-brake">Frenadas bruscas y colisiones</label>
+                    </div>
+                    <div class="field__checkbox" style="padding: 12px; background: var(--color-gray-100); border-radius: var(--radius-sm);">
+                        <input type="checkbox" id="notif-report">
+                        <label for="notif-report">Resumen semanal de desempeño por email</label>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; margin-top: var(--space-lg);">
+                    <button class="btn btn--primary">Guardar Preferencias</button>
+                </div>
+            </section>
+
+            <!-- Tab: Seguridad -->
+            <section id="tab-security" class="settings-section" style="display: none;">
+                <h3 style="margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-gray-200);">Seguridad de la Cuenta</h3>
+                <form style="display: flex; flex-direction: column; gap: var(--space-md);">
+                    <div class="field">
+                        <label class="field__label">Contraseña Actual</label>
+                        <input type="password" class="field__input">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
+                        <div class="field">
+                            <label class="field__label">Nueva Contraseña</label>
+                            <input type="password" class="field__input">
+                        </div>
+                        <div class="field">
+                            <label class="field__label">Confirmar Contraseña</label>
+                            <input type="password" class="field__input">
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button class="btn btn--secondary">Actualizar Contraseña</button>
+                    </div>
+                </form>
+                
+                <div style="margin-top: var(--space-2xl);">
+                    <h3 style="color: var(--color-danger); border-bottom: 1px solid var(--color-danger); padding-bottom: 4px; margin-bottom: var(--space-lg); font-size: 1rem;">Zona de Restricción</h3>
+                    <div style="padding: var(--space-md); border: 1px solid rgba(231, 76, 60, 0.2); background: rgba(231, 76, 60, 0.05); border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h4 style="color: var(--color-danger); margin: 0; font-size: 0.9rem;">Eliminar Acceso al Sistema</h4>
+                            <p style="font-size: 0.8rem; color: var(--color-gray-500); margin: 4px 0 0 0;">Esta acción es irreversible y requiere aprobación del administrador de red.</p>
+                        </div>
+                        <button class="btn btn--danger btn--sm">Cerrar Cuenta</button>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const buttons = document.querySelectorAll('.settings-tab-btn');
+    const sections = document.querySelectorAll('.settings-section');
+
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.getAttribute('data-tab');
+            
+            // Update buttons
+            buttons.forEach(b => {
+                b.classList.remove('btn--secondary', 'active');
+                b.classList.add('btn--ghost');
+            });
+            btn.classList.remove('btn--ghost');
+            btn.classList.add('btn--secondary', 'active');
+
+            // Update sections
+            sections.forEach(s => s.style.display = 'none');
+            document.getElementById('tab-' + tabId).style.display = 'block';
+        });
+    });
+});
+</script>
+
+<style>
+.settings-tab-btn.active {
+    background-color: var(--color-primary-600) !important;
+    color: white !important;
+    font-weight: 600;
+}
+</style>
+{% endblock %}

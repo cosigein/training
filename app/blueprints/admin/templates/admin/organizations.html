@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Administración de Organizaciones - DobackSoft{% endblock %}
+
+{% block content %}
+<header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-xl);">
+    <div>
+        <h1>Mission Control</h1>
+        <p style="color: var(--color-text-400);">Gestión global de clientes y organizaciones</p>
+    </div>
+    <button class="btn btn--primary">
+        <i class="ph ph-plus-circle"></i>
+        Nueva Organización
+    </button>
+</header>
+
+<div class="card">
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Organización</th>
+                    <th>ID</th>
+                    <th>Usuarios</th>
+                    <th>Vehículos</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for org in organizations %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 600; color: var(--color-text-50);">{{ org.name }}</div>
+                    </td>
+                    <td style="font-family: monospace; font-size: 0.75rem;">{{ org.id }}</td>
+                    <td>{{ org.users|length }}</td>
+                    <td>{{ org.vehicles|length }}</td>
+                    <td>
+                        {% if org.is_active %}
+                        <span class="badge badge--success">Activa</span>
+                        {% else %}
+                        <span class="badge badge--danger">Suspendida</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: var(--space-sm);">
+                            <a href="#" class="btn btn--secondary btn--sm">
+                                <i class="ph ph-gear"></i>
+                            </a>
+                            <a href="#" class="btn btn--secondary btn--sm">
+                                <i class="ph ph-shield-check"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: var(--space-2xl); color: var(--color-text-500);">
+                        No hay organizaciones en el sistema.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Historial de Sesiones - DobackSoft{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+    <div>
+        <h1 style="margin: 0; font-size: 1.5rem;">Sesiones de Conducción</h1>
+        <p style="color: var(--color-gray-500); font-size: 0.875rem; margin: 4px 0 0 0;">Análisis detallado de recorridos y telemetría</p>
+    </div>
+    <div style="display: flex; gap: var(--space-sm);">
+        <button class="btn btn--secondary btn--sm">
+            <i class="ph ph-funnel"></i> Filtrar
+        </button>
+        <button class="btn btn--primary btn--sm">
+            <i class="ph ph-plus"></i> Nueva Sesión Manual
+        </button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card__header">
+        <h3 class="card__title">Registros Recientes</h3>
+    </div>
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Vehículo</th>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th>Distancia</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for session in sessions %}
+                <tr>
+                    <td style="font-family: var(--font-mono); font-size: 0.75rem;">{{ session.startTime.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td style="font-family: var(--font-mono); font-size: 0.75rem;">{{ session.endTime.strftime('%H:%M') if session.endTime else 'En curso' }}</td>
+                    <td style="font-weight: 600;">{{ session.vehicle.name if session.vehicle else '-' }}</td>
+                    <td><span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">{{ session.type }}</span></td>
+                    <td>
+                        <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; 
+                            background: {% if session.status == 'COMPLETED' %}rgba(39, 174, 96, 0.1); color: #27ae60;{% elif session.status == 'ACTIVE' %}rgba(52, 152, 219, 0.1); color: #3498db;{% else %}rgba(149, 165, 166, 0.1); color: #95a5a6;{% endif %}">
+                            {{ session.status }}
+                        </span>
+                    </td>
+                    <td style="font-family: var(--font-mono);">{{ "%.1f"|format(session.distance or 0) }} km</td>
+                    <td>
+                        <div style="display: flex; gap: 4px;">
+                            <a href="{{ url_for('sessions.get_session_detail', id=session.id) }}" class="btn btn--icon btn--ghost" title="Analizar telemetría">
+                                <i class="ph ph-chart-scatter"></i>
+                            </a>
+                            <button class="btn btn--icon btn--ghost" style="color: var(--color-danger);" title="Eliminar registro">
+                                <i class="ph ph-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: var(--space-2xl); color: var(--color-gray-500);">
+                        No se encontraron registros de conducción.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

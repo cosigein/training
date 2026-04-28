@@ -1,0 +1,62 @@
+@layer components {
+    .field {
+        margin-bottom: var(--space-md);
+    }
+
+    .field__label {
+        display: block;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--color-primary-800);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .field__input {
+        width: 100%;
+        padding: 8px 12px;
+        background-color: var(--color-white);
+        border: 1px solid var(--color-gray-300);
+        border-radius: var(--radius-sm);
+        color: var(--color-primary-800);
+        transition: all var(--transition-fast);
+        outline: none;
+        font-size: 0.875rem;
+    }
+
+    .field__input:focus {
+        border-color: var(--color-accent-500);
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    }
+
+    .field__input:disabled {
+        background-color: var(--color-gray-100);
+        cursor: not-allowed;
+    }
+
+    .field__input::placeholder {
+        color: var(--color-gray-500);
+    }
+
+    .field__error {
+        color: var(--color-danger);
+        font-size: 0.75rem;
+        margin-top: 4px;
+    }
+
+    /* Checkbox & Radio */
+    .field__checkbox {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        cursor: pointer;
+        font-size: 0.875rem;
+    }
+
+    .field__checkbox input {
+        width: 1rem;
+        height: 1rem;
+        accent-color: var(--color-accent-500);
+    }
+}

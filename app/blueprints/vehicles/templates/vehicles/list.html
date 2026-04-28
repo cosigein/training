@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Inventario de Vehículos - DobackSoft{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+    <h1 style="margin: 0; font-size: 1.5rem;">Vehículos</h1>
+    <button class="btn btn--primary">
+        <i class="ph ph-plus"></i>
+        Nuevo Vehículo
+    </button>
+</div>
+
+<div class="card">
+    <div class="card__header">
+        <div style="display: flex; gap: var(--space-md);">
+            <button class="btn btn--sm btn--secondary">Lista de Vehículos</button>
+            <button class="btn btn--sm btn--ghost" disabled>Sesiones (Selecciona uno)</button>
+            <button class="btn btn--sm btn--ghost">Estadísticas</button>
+        </div>
+    </div>
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Marca</th>
+                    <th>Modelo</th>
+                    <th>Matrícula</th>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th>Última Actividad</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vehicle in vehicles %}
+                <tr>
+                    <td style="font-weight: 600;">{{ vehicle.name }}</td>
+                    <td>{{ vehicle.brand or '-' }}</td>
+                    <td>{{ vehicle.model or '-' }}</td>
+                    <td><span style="font-family: var(--font-mono); font-weight: 600;">{{ vehicle.licensePlate }}</span></td>
+                    <td>{{ vehicle.type }}</td>
+                    <td>
+                        <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; background: {% if vehicle.status == 'ACTIVE' %}rgba(39, 174, 96, 0.1); color: #27ae60;{% elif vehicle.status == 'MAINTENANCE' %}rgba(243, 156, 18, 0.1); color: #f39c12;{% else %}rgba(149, 165, 166, 0.1); color: #95a5a6;{% endif %}">
+                            {{ vehicle.status }}
+                        </span>
+                    </td>
+                    <td style="font-size: 0.75rem; color: var(--color-gray-500);">
+                        {{ vehicle.updatedAt.strftime('%d/%m/%Y %H:%M') if vehicle.updatedAt else '-' }}
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 4px;">
+                            <a href="{{ url_for('vehicles.get_vehicle_detail', id=vehicle.id) }}" class="btn btn--icon btn--ghost" title="Ver detalle">
+                                <i class="ph ph-eye"></i>
+                            </a>
+                            <button class="btn btn--icon btn--ghost" title="Editar">
+                                <i class="ph ph-note-pencil"></i>
+                            </button>
+                            <button class="btn btn--icon btn--ghost" style="color: var(--color-danger);" title="Eliminar">
+                                <i class="ph ph-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: var(--space-2xl); color: var(--color-gray-500);">
+                        No hay vehículos registrados en esta base.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md); margin-top: var(--space-lg);">
+    <div class="card card--metric">
+        <div class="card__body">
+            <div class="metric-label">Total Vehículos</div>
+            <div class="metric-value">{{ vehicles|length }}</div>
+        </div>
+    </div>
+    <div class="card card--metric" style="border-left-color: var(--color-success);">
+        <div class="card__body">
+            <div class="metric-label">Activos</div>
+            <div class="metric-value">{{ vehicles|selectattr('status', 'equalto', 'ACTIVE')|list|length }}</div>
+        </div>
+    </div>
+    <div class="card card--metric" style="border-left-color: var(--color-warning);">
+        <div class="card__body">
+            <div class="metric-label">En Mantenimiento</div>
+            <div class="metric-value">{{ vehicles|selectattr('status', 'equalto', 'MAINTENANCE')|list|length }}</div>
+        </div>
+    </div>
+    <div class="card card--metric" style="border-left-color: var(--color-info);">
+        <div class="card__body">
+            <div class="metric-label">Sesiones Hoy</div>
+            <div class="metric-value">0</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

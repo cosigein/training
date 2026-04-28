@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Análisis de Sesión - {{ session.id }} - DobackSoft{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #map { height: 400px; width: 100%; border-radius: var(--radius-md); }
+    .chart-container { height: 250px; width: 100%; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+    <div>
+        <h1 style="margin: 0; font-size: 1.5rem;">Análisis de Telemetría</h1>
+        <p style="color: var(--color-gray-500); font-size: 0.875rem; margin: 4px 0 0 0;">Sesión: <span style="font-family: var(--font-mono);">{{ session.id }}</span> • Vehículo: {{ session.vehicle.name }}</p>
+    </div>
+    <div style="display: flex; gap: var(--space-sm);">
+        <button class="btn btn--secondary btn--sm">
+            <i class="ph ph-file-pdf"></i> Informe PDF
+        </button>
+        <a href="{{ url_for('sessions.list_sessions') }}" class="btn btn--ghost btn--sm">
+            Volver a Lista
+        </a>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1.2fr 2fr; gap: var(--space-lg);">
+    <!-- Resumen de Sesión -->
+    <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+        <div class="card">
+            <div class="card__header">
+                <h3 class="card__title">Resumen del Viaje</h3>
+            </div>
+            <div class="card__body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--color-gray-500); text-transform: uppercase;">Inicio</div>
+                        <div style="font-family: var(--font-mono); font-weight: 600;">{{ session.startTime.strftime('%H:%M:%S') }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--color-gray-500); text-transform: uppercase;">Duración</div>
+                        <div style="font-weight: 600;">{{ "%.0f"|format(session.distance or 0) }} km</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--color-gray-500); text-transform: uppercase;">Estado</div>
+                        <span style="font-weight: 700; color: var(--color-success);">{{ session.status }}</span>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--color-gray-500); text-transform: uppercase;">Tipo</div>
+                        <div style="font-weight: 600;">{{ session.type }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card__header">
+                <h3 class="card__title">Eventos en la Sesión</h3>
+            </div>
+            <div class="table-container">
+                <table class="table table--compact">
+                    <thead>
+                        <tr>
+                            <th>Hora</th>
+                            <th>Evento</th>
+                            <th>Gravedad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for event in events %}
+                        <tr>
+                            <td style="font-family: var(--font-mono); font-size: 0.7rem;">{{ event.timestamp.strftime('%H:%M:%S') }}</td>
+                            <td style="font-size: 0.75rem; font-weight: 600;">{{ event.type }}</td>
+                            <td>
+                                <span style="font-size: 0.65rem; font-weight: 700; color: {% if event.severity == 'CRITICAL' %}var(--color-danger){% else %}var(--color-warning){% endif %};">
+                                    {{ event.severity }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" style="text-align: center; padding: var(--space-md); color: var(--color-gray-500); font-size: 0.75rem;">Sin incidentes.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mapa y Gráficos -->
+    <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+        <div class="card">
+            <div class="card__header">
+                <h3 class="card__title">Recorrido Geográfico</h3>
+            </div>
+            <div class="card__body" style="padding: 0;">
+                <div id="map"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card__header">
+                <h3 class="card__title">Velocidad vs Tiempo</h3>
+            </div>
+            <div class="card__body">
+                <div class="chart-container" id="speed-chart">
+                    <!-- Placeholder para gráfico real en JS -->
+                    <div style="height: 100%; display: flex; align-items: flex-end; gap: 2px;">
+                        {% for s in chart_data.speed %}
+                        <div style="flex: 1; background: var(--color-accent-500); height: {{ (s/1.2)|round|int }}%; min-height: 2px;"></div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: var(--space-sm); font-size: 0.7rem; color: var(--color-gray-500); text-transform: uppercase;">
+                    <span>{{ session.startTime.strftime('%H:%M:%S') }}</span>
+                    <span>Progreso del viaje</span>
+                    <span>{{ session.endTime.strftime('%H:%M:%S') if session.endTime else 'Ahora' }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar mapa (Dark Theme)
+        const map = L.map('map', {
+            zoomControl: true,
+            scrollWheelZoom: false
+        }).setView([40.4168, -3.7038], 13);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap © CARTO',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+
+        // Datos del recorrido (GeoJSON)
+        const routeData = {{ route_geojson|tojson }};
+        if (routeData.geometry.coordinates.length > 0) {
+            const polyline = L.geoJSON(routeData, {
+                style: { 
+                    color: '#00f2ff', 
+                    weight: 3, 
+                    opacity: 0.8,
+                    lineJoin: 'round',
+                    dashArray: '5, 10' // Optional: Animated-like dashed line
+                }
+            }).addTo(map);
+
+            // Add markers for Start and End
+            const coords = routeData.geometry.coordinates;
+            const startPoint = [coords[0][1], coords[0][0]];
+            const endPoint = [coords[coords.length-1][1], coords[coords.length-1][0]];
+
+            L.circleMarker(startPoint, { radius: 6, color: '#2ecc71', fillOpacity: 0.8 }).addTo(map).bindPopup('Inicio del recorrido');
+            L.circleMarker(endPoint, { radius: 6, color: '#e74c3c', fillOpacity: 0.8 }).addTo(map).bindPopup('Fin del recorrido');
+
+            map.fitBounds(polyline.getBounds(), { padding: [30, 30] });
+        }
+    });
+</script>
+{% endblock %}

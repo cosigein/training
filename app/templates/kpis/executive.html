@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Panel Ejecutivo - DobackSoft{% endblock %}
+
+{% block content %}
+<div class="dashboard-header" style="background: white; border-bottom: 1px solid var(--color-gray-200); padding: var(--space-md) var(--space-lg); margin: -var(--space-xl) -var(--space-xl) var(--space-xl) -var(--space-xl);">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 style="margin: 0;">Panel de Control Ejecutivo</h1>
+            <p style="color: var(--color-gray-500); font-size: 0.875rem; margin: 4px 0 0 0;">Vista estratégica de toda la flota en tiempo real</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: var(--space-md);">
+            <div style="display: flex; gap: 4px; background: var(--color-gray-100); padding: 4px; border-radius: var(--radius-md);">
+                <button class="btn btn--sm btn--secondary">Vista Estándar</button>
+                <button class="btn btn--sm btn--ghost">Modo TV Wall</button>
+            </div>
+            <div style="display: flex; align-items: center; gap: var(--space-sm); color: var(--color-success); font-size: 0.75rem; font-weight: 600;">
+                <span style="display: block; width: 8px; height: 8px; background: currentColor; border-radius: 50%;"></span>
+                Actualizado ahora
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="max-width: 1200px; margin: 0 auto;">
+    <!-- Alertas Críticas (Placeholder similar al de Old) -->
+    <div class="card" style="border-left: 4px solid var(--color-danger); margin-bottom: var(--space-lg);">
+        <div class="card__body" style="display: flex; align-items: center; gap: var(--space-md); color: var(--color-danger);">
+            <i class="ph ph-warning-octagon" style="font-size: 1.5rem;"></i>
+            <div>
+                <strong style="text-transform: uppercase; font-size: 0.75rem;">Sin alertas críticas</strong>
+                <p style="margin: 0; font-size: 0.875rem; color: var(--color-gray-500);">La flota se encuentra operando dentro de los parámetros normales.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md); margin-bottom: var(--space-lg);">
+        <div class="card card--metric">
+            <div class="card__body">
+                <div class="metric-label">Flota Activa</div>
+                <div class="metric-value">{{ stats.total_vehicles }}</div>
+                <div style="font-size: 0.7rem; color: var(--color-success); margin-top: 4px;">✔ En servicio</div>
+            </div>
+        </div>
+        <div class="card card--metric">
+            <div class="card__body">
+                <div class="metric-label">Velocidad Promedio</div>
+                <div class="metric-value">{{ "%.1f"|format(stats.avg_speed) }} <span class="metric-unit">km/h</span></div>
+                <div style="font-size: 0.7rem; color: var(--color-gray-500); margin-top: 4px;">Máx: 85 km/h</div>
+            </div>
+        </div>
+        <div class="card card--metric">
+            <div class="card__body">
+                <div class="metric-label">Distancia Total</div>
+                <div class="metric-value">{{ "%.0f"|format(stats.total_distance) }} <span class="metric-unit">km</span></div>
+                <div style="font-size: 0.7rem; color: var(--color-gray-500); margin-top: 4px;">Acumulado hoy</div>
+            </div>
+        </div>
+        <div class="card card--metric">
+            <div class="card__body">
+                <div class="metric-label">Eventos Reportados</div>
+                <div class="metric-value">{{ stats.critical_events }}</div>
+                <div style="font-size: 0.7rem; color: var(--color-warning); margin-top: 4px;">⚠ Requiere revisión</div>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1.2fr; gap: var(--space-lg); margin-bottom: var(--space-lg);">
+        <!-- Salud de Flota (Chart Placeholder) -->
+        <div class="card">
+            <div class="card__header">
+                <h3 class="card__title">Salud de la Flota (Real-time)</h3>
+            </div>
+            <div class="card__body" style="height: 300px; display: flex; align-items: flex-end; gap: var(--space-sm); padding-top: var(--space-xl);">
+                {% for label in chart_data.labels %}
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: var(--space-sm);">
+                    <div style="width: 100%; background: var(--color-primary-500); height: {{ 40 + (loop.index0 * 10) % 50 }}px; border-radius: 2px;"></div>
+                    <span style="font-size: 0.65rem; color: var(--color-gray-500); text-transform: uppercase;">{{ label }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card__header">
+                <h3 class="card__title">Distribución por Tipo</h3>
+            </div>
+            <div class="card__body">
+                <div style="display: flex; flex-direction: column; gap: var(--space-sm);">
+                    {% for type, count in fleet_data.items() %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--color-gray-100); border-radius: var(--radius-sm);">
+                        <span style="font-weight: 600; font-size: 0.75rem; text-transform: uppercase;">{{ type }}</span>
+                        <span style="font-family: var(--font-mono); font-weight: 700;">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card">
+        <div class="card__body">
+            <h3 style="font-size: 1rem; margin-bottom: var(--space-md);">Acciones Rápidas</h3>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md);">
+                <a href="{{ url_for('events.list_events') }}" class="btn btn--ghost" style="flex-direction: column; height: 80px; background: var(--color-gray-100);">
+                    <i class="ph ph-bell" style="font-size: 1.5rem;"></i>
+                    <span>Ver Alertas</span>
+                </a>
+                <a href="{{ url_for('vehicles.list_vehicles') }}" class="btn btn--ghost" style="flex-direction: column; height: 80px; background: var(--color-gray-100);">
+                    <i class="ph ph-truck" style="font-size: 1.5rem;"></i>
+                    <span>Flota</span>
+                </a>
+                <a href="{{ url_for('sessions.list_sessions') }}" class="btn btn--ghost" style="flex-direction: column; height: 80px; background: var(--color-gray-100);">
+                    <i class="ph ph-steering-wheel" style="font-size: 1.5rem;"></i>
+                    <span>Sesiones</span>
+                </a>
+                <button class="btn btn--ghost" style="flex-direction: column; height: 80px; background: var(--color-gray-100);">
+                    <i class="ph ph-file-text" style="font-size: 1.5rem;"></i>
+                    <span>Reporte Diario</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer style="margin-top: var(--space-xl); padding: var(--space-md); background: white; border-radius: var(--radius-md); border: 1px solid var(--color-gray-200); display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--color-gray-500);">
+        <div>🚗 Sistema de Análisis para Vehículos de Emergencia • Datos en tiempo real</div>
+        <a href="#" style="font-weight: 600; color: var(--color-accent-500);">¿Necesitas ayuda? →</a>
+    </footer>
+</div>
+{% endblock %}

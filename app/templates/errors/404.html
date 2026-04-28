@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Página no encontrada - DobackSoft{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center;">
+    <h1 style="font-size: 8rem; opacity: 0.1; position: absolute; z-index: -1;">404</h1>
+    <i class="ph ph-detective" style="font-size: 5rem; color: var(--color-primary-500); margin-bottom: var(--space-xl);"></i>
+    <h2>¿Te perdiste, hermano?</h2>
+    <p style="color: var(--color-text-400); margin-top: var(--space-md); max-width: 400px;">
+        La página que buscas no existe o ha sido movida a otra dimensión.
+    </p>
+    <div style="margin-top: var(--space-2xl);">
+        <a href="/" class="btn btn--primary">
+            Volver al Inicio
+        </a>
+    </div>
+</div>
+{% endblock %}

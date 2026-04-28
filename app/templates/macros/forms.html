@@ -1,0 +1,25 @@
+{% macro render_field(field, placeholder=None) %}
+    <div class="field">
+        {{ field.label(class="field__label") }}
+        {{ field(class="field__input", placeholder=placeholder or field.label.text, **kwargs) }}
+        {% if field.errors %}
+            {% for error in field.errors %}
+                <span class="field__error">{{ error }}</span>
+            {% endfor %}
+        {% endif %}
+    </div>
+{% endmacro %}
+
+{% macro render_checkbox(field) %}
+    <div class="field">
+        <label class="field__checkbox">
+            {{ field(**kwargs) }}
+            <span class="field__label">{{ field.label.text }}</span>
+        </label>
+        {% if field.errors %}
+            {% for error in field.errors %}
+                <span class="field__error">{{ error }}</span>
+            {% endfor %}
+        {% endif %}
+    </div>
+{% endmacro %}
