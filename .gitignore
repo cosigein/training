@@ -72,6 +72,9 @@ data/
 postgres-data/
 redis-data/
 
+# Engram local state (cloud sync chunks + manifest, no se versiona)
+.engram/
+
 # Generated docs / artifacts
 *.pdf
 !docs/**/*.pdf
