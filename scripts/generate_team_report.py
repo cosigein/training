@@ -64,12 +64,30 @@ DRIVE_TEAM_FOLDER = "1vjwi97QmwcUkzVj2LtPshZmGE5AEoZFD"  # carpeta general donde
 DRIVE_EQUIPO_FOLDER = "1hOWpXO6OyKL9yGwRoxztqJW50MfTPA5p"  # carpeta donde se sube el PDF consolidado
 ANTONIO_EMAIL = "antoniohermoso92@gmail.com"  # se excluye al listar la carpeta general
 
-# Mapeo email del Drive → "key" usada en inputs_today (jesus / alejandro / etc.)
+# Mapeo email del Drive → "key" usada en inputs_today (jesus / alejandro / joel)
+# Verificado en Slack 29/04:
+#   - Joel Heikkinen <joelh.heikkinen@gmail.com>
+#   - Jesus Rodriguez Casado <burnt@burnt.ovh> (GitHub) / <burnt4023@gmail.com> (Drive)
+#   - Alejandro Millán de Lara <i12milaa@uco.es>
+#   - Jose Manuel Lopez <jlopez@cosigein.es> es el PM/coordinador, sube cosas POR
+#     Jesús/Joel cuando ellos no tienen acceso al Drive. Sus uploads se asignan al
+#     dueño según el nombre del archivo (entregable_jesus_*.pdf → Jesús, etc.).
 DRIVE_EMAIL_TO_KEY = {
     "burnt@burnt.ovh": "jesus",
     "burnt4023@gmail.com": "jesus",
     "i12milaa@uco.es": "alejandro",
-    "jlopez@cosigein.es": "joel",  # quien subió el ejemplo del 28/04 — confirmá si Joel realmente usa este mail
+    "joelh.heikkinen@gmail.com": "joel",
+}
+
+# Mapeo PROXY: cuando jlopez@cosigein.es sube por otro, deduce el dueño del filename.
+# Pattern: "entregable_<nombre>_<fecha>.pdf"
+PROXY_UPLOADER_EMAIL = "jlopez@cosigein.es"
+PROXY_FILENAME_PATTERN = re.compile(r"entregable[_-]([a-záéíóúñ]+)[_-]", re.I)
+PROXY_NAME_TO_KEY = {
+    "jesus": "jesus",
+    "jesús": "jesus",
+    "alejandro": "alejandro",
+    "joel": "joel",
 }
 
 # Mapeo author email/name → rol humano. Cualquier otro → Joel.
@@ -392,16 +410,25 @@ def main(argv: list[str]) -> int:
     if list_files_in_folder is not None:
         drive_files = list_files_in_folder(DRIVE_TEAM_FOLDER, target, exclude_owner_email=ANTONIO_EMAIL)
         for f in drive_files:
-            key = DRIVE_EMAIL_TO_KEY.get(f["owner_email"].lower())
+            owner_email = f["owner_email"].lower()
+            key = DRIVE_EMAIL_TO_KEY.get(owner_email)
+
+            # Si quien subió es el coordinador (PM proxy), deducir dueño desde filename
+            if not key and owner_email == PROXY_UPLOADER_EMAIL:
+                m = PROXY_FILENAME_PATTERN.search(f["title"].lower())
+                if m:
+                    key = PROXY_NAME_TO_KEY.get(m.group(1).lower())
+
             if not key or inputs_today.get(key) is not None:
                 continue  # no mapeado o ya tenemos input local para esa persona
+
             tmp_path = INPUTS_ROOT / target.isoformat() / f"{key}-from-drive.{('pdf' if f['mimeType'] == 'application/pdf' else 'md')}"
             tmp_path.parent.mkdir(parents=True, exist_ok=True)
             if download_file(f["id"], tmp_path, f["mimeType"]):
                 payload = read_external_input(tmp_path.parent, tmp_path.stem)
                 if payload:
                     inputs_today[key] = payload
-                    log(f"   ✓ Drive: descargado {f['title']} de {f['owner_name']} → {tmp_path.name}")
+                    log(f"   ✓ Drive: descargado {f['title']} de {f['owner_name']} → {key}")
 
     found = [k for k, v in inputs_today.items() if v is not None]
     log(f"   Inputs totales para hoy: {found if found else 'ninguno'}")
