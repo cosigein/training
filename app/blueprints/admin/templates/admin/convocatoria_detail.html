@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}{{ convocatoria.name }} - DobackSoft{% endblock %}
+
+{% block content %}
+{% set is_open = convocatoria.status.value == 'OPEN' %}
+{% set can_admin = current_user.role.value in ('ADMIN', 'SUPER_ADMIN') %}
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+    <div>
+        <h1 style="margin: 0; font-size: 1.5rem;">{{ convocatoria.name }}</h1>
+        <p style="color: var(--color-gray-500); font-size: 0.875rem; margin: 4px 0 0 0;">
+            {% set s = convocatoria.status.value %}
+            <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+                background: {% if s == 'OPEN' %}rgba(52, 152, 219, 0.1); color: #3498db;
+                           {% elif s == 'CLOSED' %}rgba(39, 174, 96, 0.1); color: #27ae60;
+                           {% elif s == 'LOCKED' %}rgba(149, 165, 166, 0.2); color: #555;
+                           {% else %}rgba(241, 196, 15, 0.1); color: #f39c12;{% endif %}">{{ s }}</span>
+            • Abierta el {{ convocatoria.openedAt.strftime('%d/%m/%Y') }}
+        </p>
+    </div>
+    <div style="display: flex; gap: var(--space-sm);">
+        <a href="{{ url_for('admin.list_convocatorias') }}" class="btn btn--ghost btn--sm">Volver</a>
+        {% if can_admin and is_open %}
+        <a href="{{ url_for('admin.edit_convocatoria_form', conv_id=convocatoria.id) }}" class="btn btn--secondary btn--sm">
+            <i class="ph ph-pencil"></i> Editar
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); margin-bottom: var(--space-lg);">
+    <div class="card">
+        <div class="card__header"><h3 class="card__title">Configuración</h3></div>
+        <div class="card__body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+                <div>
+                    <div style="font-size: 0.7rem; color: var(--color-gray-500); text-transform: uppercase;">Plazas</div>
+                    <div style="font-family: var(--font-mono); font-weight: 600; font-size: 1.1rem;">{{ convocatoria.plazas }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.7rem; color: var(--color-gray-500); text-transform: uppercase;">Inscritos</div>
+                    <div style="font-family: var(--font-mono); font-weight: 600; font-size: 1.1rem;">{{ enrollments|length }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.7rem; color: var(--color-gray-500); text-transform: uppercase;">Ruta principal</div>
+                    <div style="font-weight: 600;">{{ convocatoria.routePrincipal }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.7rem; color: var(--color-gray-500); text-transform: uppercase;">Umbral mínimo</div>
+                    <div style="font-family: var(--font-mono); font-weight: 600;">{{ "%.1f"|format(convocatoria.umbralMin or 0) }} / 10</div>
+                </div>
+            </div>
+            {% if convocatoria.description %}
+            <div style="margin-top: var(--space-md); padding-top: var(--space-md); border-top: 1px solid var(--color-gray-200);">
+                <div style="font-size: 0.7rem; color: var(--color-gray-500); text-transform: uppercase; margin-bottom: 4px;">Descripción</div>
+                <div style="font-size: 0.875rem;">{{ convocatoria.description }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card__header"><h3 class="card__title">Versiones pinned (inmutables)</h3></div>
+        <div class="card__body">
+            <div style="display: grid; grid-template-columns: 1fr; gap: var(--space-sm); font-family: var(--font-mono); font-size: 0.875rem;">
+                <div><strong>criteria:</strong> {{ convocatoria.criteriaVersion }}</div>
+                <div><strong>normalizer:</strong> {{ convocatoria.normalizerVersion }}</div>
+                <div><strong>detector:</strong> {{ convocatoria.detectorVersion }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: var(--space-lg);">
+    <div class="card__header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card__title">Alumnos inscritos ({{ enrollments|length }} de {{ convocatoria.plazas }} plazas)</h3>
+    </div>
+
+    {% if can_admin and is_open %}
+    <div style="padding: var(--space-md); border-bottom: 1px solid var(--color-gray-200);">
+        <form method="POST" action="{{ url_for('admin.add_enrollment', conv_id=convocatoria.id) }}"
+              style="display: flex; gap: var(--space-sm); align-items: end;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group" style="flex: 2; margin: 0;">
+                <label for="studentId" style="font-size: 0.75rem;">Alumno</label>
+                <select id="studentId" name="studentId" required>
+                    <option value="">— Elegir alumno —</option>
+                    {% for s in eligible_students %}
+                    <option value="{{ s.id }}">{{ s.name }} ({{ s.email }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="flex: 1; margin: 0;">
+                <label for="routeId" style="font-size: 0.75rem;">Ruta asignada</label>
+                <input type="text" id="routeId" name="routeId" placeholder="{{ convocatoria.routePrincipal }}" />
+            </div>
+            <button type="submit" class="btn btn--primary btn--sm">
+                <i class="ph ph-plus"></i> Inscribir
+            </button>
+        </form>
+    </div>
+    {% endif %}
+
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Alumno</th>
+                    <th>Email</th>
+                    <th>Ruta</th>
+                    <th>Estado</th>
+                    <th>Intentos</th>
+                    <th>Inscrito</th>
+                    {% if can_admin and is_open %}<th></th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in enrollments %}
+                <tr>
+                    <td style="font-weight: 600;">{{ e.student.name if e.student else '—' }}</td>
+                    <td style="font-size: 0.8rem; color: var(--color-gray-600);">{{ e.student.email if e.student else '—' }}</td>
+                    <td>{{ e.routeId or '—' }}</td>
+                    <td>
+                        <span style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">{{ e.status.value }}</span>
+                    </td>
+                    <td style="font-family: var(--font-mono);">{{ e.attemptsCount }}</td>
+                    <td style="font-family: var(--font-mono); font-size: 0.75rem;">{{ e.enrolledAt.strftime('%d/%m/%Y %H:%M') }}</td>
+                    {% if can_admin and is_open %}
+                    <td>
+                        <form method="POST"
+                              action="{{ url_for('admin.remove_enrollment', conv_id=convocatoria.id, enrollment_id=e.id) }}"
+                              onsubmit="return confirm('¿Quitar a {{ e.student.name if e.student else 'este alumno' }} de la convocatoria?');"
+                              style="display: inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn--icon btn--ghost" style="color: var(--color-danger);" title="Quitar">
+                                <i class="ph ph-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="{% if can_admin and is_open %}7{% else %}6{% endif %}"
+                        style="text-align: center; padding: var(--space-2xl); color: var(--color-gray-500);">
+                        Sin alumnos inscritos.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if can_admin and convocatoria.status.value in ('OPEN', 'PREVIEW') %}
+<div class="card" style="border-left: 3px solid var(--color-danger);">
+    <div class="card__body">
+        <h3 style="margin: 0 0 var(--space-sm) 0; font-size: 0.95rem;">Zona peligrosa</h3>
+        <p style="font-size: 0.85rem; color: var(--color-gray-600); margin: 0 0 var(--space-md) 0;">
+            Borrar una convocatoria elimina también todos sus inscritos y rankings provisionales.
+            Los intentos quedan archivados sin convocatoria asignada.
+        </p>
+        <form method="POST"
+              action="{{ url_for('admin.delete_convocatoria', conv_id=convocatoria.id) }}"
+              onsubmit="return confirm('Borrar la convocatoria {{ convocatoria.name }}? Esta acción no se puede deshacer.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn--secondary btn--sm" style="color: var(--color-danger); border-color: var(--color-danger);">
+                <i class="ph ph-trash"></i> Borrar convocatoria
+            </button>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

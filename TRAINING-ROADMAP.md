@@ -4,7 +4,7 @@
 > **Alcance:** SOLO el dominio Training (alumnos haciendo pruebas de conducción para oposición CMadrid). Todo lo de fleet genérico (KPIs, geofences, telemetría libre) se ignora o se descarta.
 > **Última actualización:** 2026-04-28.
 
-## ⏱️ Progreso (5/12 tareas — ~21h sobre ~77h)
+## ⏱️ Progreso (6/12 tareas — ~29h sobre ~77h)
 
 | # | Tarea | Estado |
 |---|---|---|
@@ -13,7 +13,8 @@
 | 3 | Modelos Convocatoria + Enrollment | ✅ hecho |
 | 4 | Refactor Session → Attempt | ✅ hecho |
 | 5 | Event extendido + Ranking + AuditEvent extendido | ✅ hecho |
-| 6 | CRUD Convocatoria + Enrollment (admin) | 🔄 siguiente |
+| 6 | CRUD Convocatoria + Enrollment (admin) | ✅ hecho |
+| 7 | POST /attempts (RFID) + close automático | 🔄 siguiente |
 | 7 | POST /attempts (RFID) + close automático | ⏳ pendiente |
 | 8 | Ingest + detector + scoring (THE BIG ONE) | ⏳ pendiente |
 | 9 | Cron daily-ranking + lockClosedConvocatorias | ⏳ pendiente |
@@ -297,7 +298,7 @@ El PDF describe un sistema de evaluación competitiva: el alumno se identifica p
 3. [x] **Modelos Convocatoria + Enrollment** — Crear, generar migración, agregar al `setup_db.py`. **~4h.**
 4. [x] **Refactor Session → Attempt** — Renombrar `sessionId → attemptId` en GPS/Stability/Rotativo/CAN. Agregar `enrollmentId`, `convocatoriaId`, `studentId`, `closedAt`, versiones pinned, scoreBreakdown. Migración + actualizar `import_data.py`. **~6h.**
 5. [x] **Modelo Event extendido + Ranking + AuditEvent extendido** — Crear/extender, migrar. **~4h.**
-6. [ ] **CRUD básico de Convocatoria + Enrollment (admin)** — Endpoints + templates + RBAC. **~8h.**
+6. [x] **CRUD básico de Convocatoria + Enrollment (admin)** — Endpoints + templates + RBAC. **~8h.**
 7. [ ] **POST /attempts (RFID identify) + POST /attempts/:id/close** — Lookup por kioskCode + rfidTag, crear Attempt, freeze. **~6h.**
 8. [ ] **Ingesta + detector + scoring** — `POST /attempts/:id/ingest` con dedup, función pura `detectEvents(samples)`, función pura `computeScore(events, criteria)`. **~14h.** El más gordo.
 9. [ ] **Cron daily-ranking + lockClosedConvocatorias** — Celery beat + insert-only en `Ranking`. **~4h.**

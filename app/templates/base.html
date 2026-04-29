@@ -38,8 +38,12 @@
             </div>
             
             <nav class="sidebar__nav">
+            <a href="{{ url_for('admin.list_convocatorias') }}"
+               class="sidebar__link {% if request.endpoint and 'convocatoria' in request.endpoint %}active{% endif %}">
+                <i class="ph ph-flag-banner"></i> Convocatorias
+            </a>
             <a href="{{ url_for('sessions.list_attempts') }}" class="sidebar__link {% if request.blueprint == 'sessions' %}active{% endif %}">
-                <i class="ph ph-map-pin-line"></i> Rutas / Recorridos
+                <i class="ph ph-map-pin-line"></i> Intentos
             </a>
             <a href="{{ url_for('vehicles.list_vehicles') }}" class="sidebar__link {% if request.blueprint == 'vehicles' %}active{% endif %}">
                 <i class="ph ph-truck"></i> Gestión Flota
@@ -52,7 +56,8 @@
             <a href="{{ url_for('uploads.unified_upload') }}" class="sidebar__link {{ 'active' if request.blueprint == 'uploads' }}">
                 <i class="ph ph-cloud-arrow-up"></i> Ingesta
             </a>
-            <a href="{{ url_for('admin.list_organizations') }}" class="sidebar__link {{ 'active' if request.blueprint == 'admin' }}">
+            <a href="{{ url_for('admin.list_organizations') }}"
+               class="sidebar__link {% if request.endpoint in ('admin.list_organizations', 'admin.list_users') %}active{% endif %}">
                 <i class="ph ph-shield-check"></i> Administración
             </a>
             {% endif %}

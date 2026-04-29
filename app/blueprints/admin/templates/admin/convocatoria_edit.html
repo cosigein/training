@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Editar {{ convocatoria.name }} - DobackSoft{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+    <div>
+        <h1 style="margin: 0; font-size: 1.5rem;">Editar convocatoria</h1>
+        <p style="color: var(--color-gray-500); font-size: 0.875rem; margin: 4px 0 0 0;">{{ convocatoria.name }}</p>
+    </div>
+    <a href="{{ url_for('admin.get_convocatoria_detail', conv_id=convocatoria.id) }}" class="btn btn--ghost btn--sm">Cancelar</a>
+</div>
+
+{% if convocatoria.status.value != 'OPEN' %}
+<div class="alert alert--warning" style="margin-bottom: var(--space-lg);">
+    Esta convocatoria está en estado <strong>{{ convocatoria.status.value }}</strong> y no se puede editar.
+</div>
+{% endif %}
+
+<div class="card" style="max-width: 720px;">
+    <form method="POST" action="{{ url_for('admin.update_convocatoria', conv_id=convocatoria.id) }}" class="card__body">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="form-group">
+            <label for="name">Nombre</label>
+            <input type="text" id="name" name="name" value="{{ convocatoria.name }}"
+                   {% if convocatoria.status.value != 'OPEN' %}disabled{% endif %} />
+        </div>
+
+        <div class="form-group">
+            <label for="description">Descripción</label>
+            <textarea id="description" name="description" rows="3"
+                      {% if convocatoria.status.value != 'OPEN' %}disabled{% endif %}>{{ convocatoria.description or '' }}</textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+            <div class="form-group">
+                <label for="plazas">Plazas</label>
+                <input type="number" id="plazas" name="plazas" min="1" value="{{ convocatoria.plazas }}"
+                       {% if convocatoria.status.value != 'OPEN' %}disabled{% endif %} />
+            </div>
+            <div class="form-group">
+                <label for="umbralMin">Umbral mínimo</label>
+                <input type="number" step="0.1" min="0" max="10" id="umbralMin" name="umbralMin"
+                       value="{{ convocatoria.umbralMin }}"
+                       {% if convocatoria.status.value != 'OPEN' %}disabled{% endif %} />
+            </div>
+        </div>
+
+        <h3 style="font-size: 0.95rem; margin-top: var(--space-lg); color: var(--color-gray-700);">Versiones pinned (no editables)</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md);">
+            <div class="form-group">
+                <label>criteria</label>
+                <input type="text" value="{{ convocatoria.criteriaVersion }}" disabled />
+            </div>
+            <div class="form-group">
+                <label>normalizer</label>
+                <input type="text" value="{{ convocatoria.normalizerVersion }}" disabled />
+            </div>
+            <div class="form-group">
+                <label>detector</label>
+                <input type="text" value="{{ convocatoria.detectorVersion }}" disabled />
+            </div>
+        </div>
+
+        <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-lg);">
+            <button type="submit" class="btn btn--primary"
+                    {% if convocatoria.status.value != 'OPEN' %}disabled{% endif %}>
+                <i class="ph ph-check"></i> Guardar cambios
+            </button>
+            <a href="{{ url_for('admin.get_convocatoria_detail', conv_id=convocatoria.id) }}" class="btn btn--ghost">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

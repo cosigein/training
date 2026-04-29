@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Convocatorias - DobackSoft{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+    <div>
+        <h1 style="margin: 0; font-size: 1.5rem;">Convocatorias</h1>
+        <p style="color: var(--color-gray-500); font-size: 0.875rem; margin: 4px 0 0 0;">Procesos de oposición de CMadrid</p>
+    </div>
+    {% if current_user.role.value in ('ADMIN', 'SUPER_ADMIN') %}
+    <a href="{{ url_for('admin.new_convocatoria_form') }}" class="btn btn--primary btn--sm">
+        <i class="ph ph-plus"></i> Nueva convocatoria
+    </a>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Estado</th>
+                    <th>Plazas</th>
+                    <th>Inscritos</th>
+                    <th>Ruta principal</th>
+                    <th>Abierta</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in convocatorias %}
+                <tr>
+                    <td style="font-weight: 600;">{{ c.name }}</td>
+                    <td>
+                        {% set s = c.status.value %}
+                        <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+                            background: {% if s == 'OPEN' %}rgba(52, 152, 219, 0.1); color: #3498db;
+                                       {% elif s == 'CLOSED' %}rgba(39, 174, 96, 0.1); color: #27ae60;
+                                       {% elif s == 'LOCKED' %}rgba(149, 165, 166, 0.2); color: #555;
+                                       {% else %}rgba(241, 196, 15, 0.1); color: #f39c12;{% endif %}">
+                            {{ s }}
+                        </span>
+                    </td>
+                    <td style="font-family: var(--font-mono);">{{ c.plazas }}</td>
+                    <td style="font-family: var(--font-mono);">{{ c.enrollments|length }}</td>
+                    <td>{{ c.routePrincipal }}</td>
+                    <td style="font-family: var(--font-mono); font-size: 0.75rem;">{{ c.openedAt.strftime('%d/%m/%Y') }}</td>
+                    <td>
+                        <a href="{{ url_for('admin.get_convocatoria_detail', conv_id=c.id) }}"
+                           class="btn btn--icon btn--ghost" title="Ver detalle">
+                            <i class="ph ph-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: var(--space-2xl); color: var(--color-gray-500);">
+                        Aún no hay convocatorias.
+                        {% if current_user.role.value in ('ADMIN', 'SUPER_ADMIN') %}
+                        <br><a href="{{ url_for('admin.new_convocatoria_form') }}">Crear la primera</a>.
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
