@@ -10,6 +10,10 @@
 - [Scoring configurable](decision-scoring-configurable.md) — D-SCR-001, 4 familias (estabilidad/velocidad/ruta/conducción)
 - [Multi-turno confirmado](decision-multi-turno.md) — D-MT-001, soporte para varias convocatorias en paralelo
 
+## Decisiones de implementación / frontend
+
+- [Frontend con dos layouts](decision-frontend-dual-layout.md) — D-FE-001, top-nav nuevo `/manager/*` vs sidebar viejo `DOBACKSOFT` en `/sessions/` y `/admin/*` — pendiente decisión Alejandro+Antonio antes 09/05
+
 ## Equipo y proceso
 
 - [Equipo y áreas](equipo.md) — Antonio, Jesús, Alejandro, Joel — quién toca qué
@@ -22,7 +26,16 @@
 
 ## Gotchas
 
-_Esta sección crece durante el sprint. Cuando descubras algo que costó horas, añadilo._
+- [Gotchas del sprint](gotchas-sprint.md) — 13 trampas no obvias del código y del entorno (FLASK_CONFIG vs FLASK_ENV, db.create_all() y enums, redis del VPS sin auth, AirPlay :5000, etc.)
+
+## Snapshots del proyecto
+
+- [STATE 2026-04-29](../docs/STATE-2026-04-29.md) — foto fija al cierre de día 2 del sprint: tareas hechas/pendientes, frontend findings, riesgos vivos, owners
+
+## Operativa
+
+- [SETUP-LOCAL](../docs/SETUP-LOCAL.md) — onboarding local en 10-15 minutos
+- [OPERATIONS-VPS](../docs/OPERATIONS-VPS.md) — estado real del VPS (systemd, nginx, postgres host, comandos de troubleshooting)
 
 ## Convenciones
 
