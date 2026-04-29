@@ -11,14 +11,19 @@ Stubs pendientes (siguen como `[]` por ahora):
 - Rutas catalogadas: hoy son constantes locales (`ROUTES_BY_CONV`). Cuando
   exista un modelo `Route` con vínculo a Convocatoria, reemplazar.
 """
-from flask import render_template, request, abort
+from datetime import datetime
+from flask import render_template, request, abort, redirect, url_for, flash, jsonify
 
 from app.extensions import db
 from app.models.auth import User
+from app.models.session import Attempt, AttemptStatus
+from app.models.vehicle import Vehicle
 from app.models.training import (
     Convocatoria,
     ConvocatoriaStatus,
     Enrollment,
+    TrainingAuditLog,
+    AuditAction,
 )
 from .ranking_service import (
     get_convocatorias,
@@ -261,6 +266,13 @@ def intento_detalle(attempt_id):
     if not detail:
         abort(404)
 
+    attempt = Attempt.query.filter_by(id=attempt_id, organizationId=org_id).first()
+    can_score = (
+        attempt is not None
+        and attempt.closedAt is None
+        and attempt.status in (AttemptStatus.OPEN, AttemptStatus.PROCESSING)
+    )
+
     return render_template(
         "manager/intento.html",
         active_page="matriz",
@@ -272,7 +284,190 @@ def intento_detalle(attempt_id):
         eventos=detail["eventos"],
         auditoria=detail["auditoria"],
         convocatoria=detail["convocatoria"],
+        can_score=can_score,
     )
+
+
+@manager_bp.route("/intento/<attempt_id>/upload-sensor", methods=["POST"])
+@require_role(["ADMIN"])
+def upload_sensor_data(attempt_id):
+    """Recibe el TXT del Doback Elite, parsea las mediciones y corre el pipeline completo."""
+    from app.services.pipeline.sensor_parser import parse_sensor_file
+    from app.services.pipeline import run_pipeline
+
+    org_id = _get_org_id()
+    attempt = Attempt.query.filter_by(id=attempt_id, organizationId=org_id).first()
+    if not attempt:
+        abort(404)
+
+    redirect_url = url_for("manager.intento_detalle", attempt_id=attempt_id)
+
+    if attempt.closedAt:
+        flash("Este intento ya está cerrado.", "warning")
+        return redirect(redirect_url)
+
+    f = request.files.get("sensor_file")
+    if not f or not f.filename:
+        flash("No se seleccionó ningún archivo.", "danger")
+        return redirect(redirect_url)
+
+    if not f.filename.lower().endswith(".txt"):
+        flash("Solo se aceptan archivos .txt del sensor Doback.", "danger")
+        return redirect(redirect_url)
+
+    try:
+        content = f.read().decode("utf-8", errors="replace")
+    except Exception as exc:
+        flash(f"Error al leer el archivo: {exc}", "danger")
+        return redirect(redirect_url)
+
+    actor_id = get_jwt_identity()
+
+    try:
+        parse_result = parse_sensor_file(content, attempt_id, org_id)
+    except ValueError as exc:
+        flash(str(exc), "warning")
+        return redirect(redirect_url)
+    except Exception as exc:
+        flash(f"Error al parsear el archivo: {exc}", "danger")
+        return redirect(redirect_url)
+
+    if parse_result.total_rows == 0:
+        flash("El archivo no contenía datos válidos (sin GPS fix ni datos de estabilidad).", "warning")
+        return redirect(redirect_url)
+
+    try:
+        pipeline_result = run_pipeline(attempt_id, actor_id=actor_id)
+        flash(
+            f"Datos cargados: {parse_result.summary()}. "
+            f"Score: {pipeline_result['score']} · {pipeline_result['events_detected']} eventos detectados.",
+            "success",
+        )
+    except ValueError as exc:
+        flash(f"Datos cargados ({parse_result.total_rows} filas) pero error al calcular score: {exc}", "warning")
+    except Exception as exc:
+        flash(f"Datos cargados ({parse_result.total_rows} filas) pero error en el pipeline: {exc}", "danger")
+
+    return redirect(redirect_url)
+
+
+@manager_bp.route("/intento/<attempt_id>/score", methods=["POST"])
+@require_role(["ADMIN"])
+def score_attempt(attempt_id):
+    """Dispara el pipeline detect → score → cierre para un attempt OPEN."""
+    from app.services.pipeline import run_pipeline
+
+    org_id = _get_org_id()
+    attempt = Attempt.query.filter_by(id=attempt_id, organizationId=org_id).first()
+    if not attempt:
+        abort(404)
+
+    if attempt.closedAt:
+        flash("Este intento ya está cerrado y no puede re-procesarse.", "warning")
+        return redirect(url_for("manager.intento_detalle", attempt_id=attempt_id))
+
+    actor_id = get_jwt_identity()
+    try:
+        result = run_pipeline(attempt_id, actor_id=actor_id)
+        flash(
+            f"Score calculado: {result['score']} · {result['events_detected']} eventos detectados.",
+            "success",
+        )
+    except ValueError as e:
+        flash(str(e), "warning")
+    except Exception as e:
+        flash(f"Error al procesar el intento: {e}", "danger")
+
+    return redirect(url_for("manager.intento_detalle", attempt_id=attempt_id))
+
+
+@manager_bp.route("/alumno/<student_id>/intento/nuevo", methods=["POST"])
+@require_role(["ADMIN"])
+def registrar_intento(student_id):
+    """Registra un intento con nota manual para un alumno (entrada directa sin telemetría)."""
+    org_id = _get_org_id()
+    conv_id = request.form.get("conv_id") or request.args.get("conv_id")
+    route_id = request.form.get("route_id", "").strip().upper()
+    score_str = request.form.get("score", "")
+
+    redirect_url = url_for("manager.alumno_detalle", candidato_id=student_id, conv_id=conv_id)
+
+    try:
+        score = float(score_str)
+        if not (0.0 <= score <= 10.0):
+            raise ValueError()
+    except ValueError:
+        flash("Nota inválida — debe ser un número entre 0 y 10.", "danger")
+        return redirect(redirect_url)
+
+    if not route_id:
+        flash("Debe indicar el identificador de la ruta.", "danger")
+        return redirect(redirect_url)
+
+    enrollment = Enrollment.query.filter_by(
+        studentId=student_id, convocatoriaId=conv_id, organizationId=org_id
+    ).first()
+    if not enrollment:
+        flash("El alumno no está inscripto en esa convocatoria.", "warning")
+        return redirect(redirect_url)
+
+    vehicle = Vehicle.query.filter_by(organizationId=org_id).first()
+    if not vehicle:
+        flash("No hay vehículos registrados. Creá uno antes de ingresar notas.", "warning")
+        return redirect(redirect_url)
+
+    conv = enrollment.convocatoria
+    pesos = (conv.pesosPorFamilia or {}) if conv else {}
+    if not pesos:
+        pesos = {"estabilidad": 0.40, "velocidad": 0.30, "ruta": 0.15, "conduccion": 0.15}
+    breakdown = {fam: round(score * peso, 1) for fam, peso in pesos.items()}
+
+    attempt_count = Attempt.query.filter_by(enrollmentId=enrollment.id).count()
+    now = datetime.utcnow()
+
+    attempt = Attempt(
+        organizationId=org_id,
+        vehicleId=vehicle.id,
+        enrollmentId=enrollment.id,
+        convocatoriaId=conv_id,
+        studentId=student_id,
+        routeId=route_id,
+        source="manual_entry",
+        status=AttemptStatus.CLOSED,
+        startTime=now,
+        endTime=now,
+        closedAt=now,
+        score=score,
+        scoreRaw=score,
+        scoreBreakdown=breakdown,
+        criteriaVersionPinned=conv.criteriaVersion if conv else "manual",
+        normalizerVersionPinned=conv.normalizerVersion if conv else "manual",
+        detectorVersionPinned=conv.detectorVersion if conv else "manual",
+        sequence=attempt_count + 1,
+        sessionNumber=attempt_count + 1,
+        attemptNumber=attempt_count + 1,
+        uploadedById=get_jwt_identity(),
+        dataQuality={"confidenceScore": 1.0, "source": "manual_entry"},
+    )
+    db.session.add(attempt)
+    db.session.flush()  # obtiene attempt.id antes del commit
+
+    enrollment.attemptsCount = (enrollment.attemptsCount or 0) + 1
+
+    db.session.add(TrainingAuditLog(
+        actorId=get_jwt_identity(),
+        actorRole="ADMIN",
+        action=AuditAction.ATTEMPT_CREATED,
+        resourceType="Attempt",
+        resourceId=attempt.id,
+        delta={"score": score, "route_id": route_id, "source": "manual_entry"},
+        organizationId=org_id,
+    ))
+
+    db.session.commit()
+
+    flash(f"Nota {score:.1f} registrada para la ruta {route_id}.", "success")
+    return redirect(redirect_url)
 
 
 @manager_bp.route("/auditoria/<audit_id>")

@@ -144,10 +144,34 @@
 </div>
 {% endif %}
 
-<div style="margin-top:24px">
+<div style="margin-top:24px; display:flex; gap:12px; align-items:center; flex-wrap:wrap">
     <a href="{{ url_for('manager.matriz') }}" class="mgr-action-btn mgr-action-btn--secondary">
         <i class="ph ph-arrow-left"></i> Volver a Matriz
     </a>
+
+    {% if can_score and current_user.role.value == 'ADMIN' %}
+    <!-- Upload TXT del sensor → parsear + pipeline completo -->
+    <form method="POST" action="{{ url_for('manager.upload_sensor_data', attempt_id=attempt_id) }}"
+          enctype="multipart/form-data" style="display:flex; gap:8px; align-items:center">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label style="font-size:12px; color:#94a3b8; white-space:nowrap">TXT Doback:</label>
+        <input type="file" name="sensor_file" accept=".txt" required
+               style="font-size:12px; color:#f1f5f9; background:#1e293b; border:1px solid #334155;
+                      border-radius:6px; padding:4px 8px; max-width:200px">
+        <button type="submit" class="mgr-action-btn mgr-action-btn--primary">
+            <i class="ph ph-upload"></i> Subir y calcular
+        </button>
+    </form>
+
+    <!-- Calcular score desde mediciones ya cargadas en BD -->
+    <form method="POST" action="{{ url_for('manager.score_attempt', attempt_id=attempt_id) }}"
+          onsubmit="return confirm('¿Calcular score desde las mediciones existentes y cerrar el intento?')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="mgr-action-btn mgr-action-btn--secondary">
+            <i class="ph ph-calculator"></i> Calcular score
+        </button>
+    </form>
+    {% endif %}
 </div>
 
 {% endblock %}
