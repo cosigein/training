@@ -15,7 +15,7 @@
         
         <div style="display: flex; gap: var(--space-lg); justify-content: center;">
             {% if current_user.is_authenticated %}
-                <a href="{{ url_for('sessions.list_sessions') }}" class="btn btn--primary btn--lg" style="padding: 1rem 2rem; font-size: 1.125rem;">
+                <a href="{{ url_for('sessions.list_attempts') }}" class="btn btn--primary btn--lg" style="padding: 1rem 2rem; font-size: 1.125rem;">
                     Ir a Recorridos
                 </a>
             {% else %}

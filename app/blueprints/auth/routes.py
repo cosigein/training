@@ -42,7 +42,7 @@ def login():
                 "user": {"id": user.id, "email": user.email, "name": user.name}
             })
         else:
-            response = redirect(url_for('sessions.list_sessions'))
+            response = redirect(url_for('sessions.list_attempts'))
             flash(f"Bienvenido de nuevo, {user.name}", "success")
         
         set_access_cookies(response, access_token)

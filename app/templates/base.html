@@ -38,7 +38,7 @@
             </div>
             
             <nav class="sidebar__nav">
-            <a href="{{ url_for('sessions.list_sessions') }}" class="sidebar__link {% if request.blueprint == 'sessions' %}active{% endif %}">
+            <a href="{{ url_for('sessions.list_attempts') }}" class="sidebar__link {% if request.blueprint == 'sessions' %}active{% endif %}">
                 <i class="ph ph-map-pin-line"></i> Rutas / Recorridos
             </a>
             <a href="{{ url_for('vehicles.list_vehicles') }}" class="sidebar__link {% if request.blueprint == 'vehicles' %}active{% endif %}">
