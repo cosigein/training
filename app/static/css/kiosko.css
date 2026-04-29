@@ -1,0 +1,412 @@
+/* ===================================================================
+   KIOSKO — Tablet Interface
+   Touch-optimised. Dark theme. Min touch target: 60px.
+   Requires tokens.css loaded before this file.
+   =================================================================== */
+
+/* ── RESET & ROOT ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 0;
+    background: #0a0f1a;
+    color: #f1f5f9;
+    font-family: var(--font-body);
+    font-size: 16px;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+
+/* ── FULL SCREEN ROOT ─────────────────────────────────────────────── */
+.ksk-root {
+    position: fixed;
+    inset: 0;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: #0a0f1a;
+    overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LOGIN PAGE
+   ═══════════════════════════════════════════════════════════════════ */
+
+.ksk-login-bg {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 50% 40%, #0d1e3a 0%, #050a14 70%);
+    padding: 24px;
+}
+
+.ksk-login-card {
+    background: #0d1527;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 48px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+}
+
+.ksk-brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.ksk-brand__icon {
+    width: 56px;
+    height: 56px;
+    background: #0d47a1;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+.ksk-brand__name {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 700;
+    color: #f1f5f9;
+    letter-spacing: -0.3px;
+}
+
+.ksk-brand__sub {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 3px;
+}
+
+.ksk-login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.ksk-login-form label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+}
+
+.ksk-input {
+    width: 100%;
+    height: 64px;
+    padding: 0 20px;
+    background: #0a0f1a;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: #f1f5f9;
+    font-family: var(--font-heading);
+    font-size: 28px;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 4px;
+    outline: none;
+    transition: border-color 150ms ease;
+    -webkit-appearance: none;
+}
+
+.ksk-input:focus { border-color: #1a56db; }
+.ksk-input::placeholder { color: #334155; letter-spacing: 2px; font-size: 18px; font-weight: 400; }
+
+.ksk-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 64px;
+    border-radius: 10px;
+    border: none;
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 150ms ease, transform 100ms ease;
+    text-transform: uppercase;
+}
+
+.ksk-btn:active { transform: scale(0.98); opacity: 0.9; }
+
+.ksk-btn--primary {
+    background: #0d47a1;
+    color: #fff;
+}
+
+.ksk-btn--primary:hover { background: #1565c0; }
+
+.ksk-btn--secondary {
+    background: rgba(255, 255, 255, 0.06);
+    color: #94a3b8;
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+}
+
+.ksk-btn--danger {
+    background: rgba(220, 38, 38, 0.15);
+    color: #fca5a5;
+    border: 1.5px solid rgba(220, 38, 38, 0.3);
+}
+
+.ksk-btn--ghost {
+    background: transparent;
+    color: #64748b;
+    border: 1.5px solid rgba(255,255,255,0.08);
+}
+
+.ksk-login-footer {
+    text-align: center;
+    font-size: 12px;
+    color: #334155;
+    line-height: 1.6;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   RUTAS PAGE (driver's main view)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Header bar */
+.ksk-header {
+    height: 72px;
+    background: #0d1527;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.ksk-driver-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.ksk-driver-name {
+    font-family: var(--font-heading);
+    font-size: 17px;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+
+.ksk-driver-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.ksk-badge-cat {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 4px;
+    background: rgba(13, 71, 161, 0.3);
+    border: 1px solid rgba(13, 71, 161, 0.5);
+    color: #93c5fd;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+/* Stats bar (below header) */
+.ksk-stats-bar {
+    background: #0a0f1a;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    padding: 12px 24px;
+    gap: 0;
+    flex-shrink: 0;
+}
+
+.ksk-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 0 24px;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ksk-stat:first-child { padding-left: 0; }
+.ksk-stat:last-child { border-right: none; }
+
+.ksk-stat__val {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.ksk-stat__val--blue  { color: #93c5fd; }
+.ksk-stat__val--green { color: #86efac; }
+.ksk-stat__val--amber { color: #fcd34d; }
+.ksk-stat__val--gray  { color: #94a3b8; }
+
+.ksk-stat__lbl {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #475569;
+    font-weight: 600;
+}
+
+/* Main scrollable area */
+.ksk-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Section title */
+.ksk-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #475569;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Routes grid */
+.ksk-rutas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+/* Individual route card */
+.ksk-ruta-card {
+    background: #0d1527;
+    border: 1.5px solid rgba(255, 255, 255, 0.07);
+    border-radius: 14px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 160px;
+    position: relative;
+    transition: border-color 150ms ease, background 150ms ease;
+    text-decoration: none;
+    cursor: default;
+}
+
+.ksk-ruta-card--completada {
+    border-color: rgba(22, 163, 74, 0.25);
+    cursor: pointer;
+}
+
+.ksk-ruta-card--completada:hover {
+    background: #0d1e30;
+    border-color: rgba(22, 163, 74, 0.5);
+}
+
+.ksk-ruta-card--baja {
+    border-color: rgba(217, 119, 6, 0.25);
+    cursor: pointer;
+}
+
+.ksk-ruta-card--baja:hover {
+    background: #0d1e30;
+    border-color: rgba(217, 119, 6, 0.5);
+}
+
+.ksk-ruta-card--pendiente {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.ksk-ruta-id {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    letter-spacing: 0.5px;
+}
+
+.ksk-ruta-label {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 700;
+    color: #e2e8f0;
+    line-height: 1.3;
+    flex: 1;
+}
+
+.ksk-ruta-score {
+    font-family: var(--font-heading);
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.ksk-ruta-score--pass { color: #86efac; }
+.ksk-ruta-score--warn { color: #fcd34d; }
+.ksk-ruta-score--fail { color: #fca5a5; }
+
+.ksk-ruta-status {
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.ksk-ruta-status--ok   { color: #86efac; }
+.ksk-ruta-status--warn { color: #fcd34d; }
+.ksk-ruta-status--fail { color: #fca5a5; }
+.ksk-ruta-status--pend { color: #475569; }
+
+.ksk-ruta-badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+
+.ksk-ruta-badge--lq    { background: rgba(217,119,6,.25);  color: #fcd34d; }
+.ksk-ruta-badge--audit { background: rgba(124,58,237,.25); color: #c4b5fd; }
+
+/* ── RESPONSIVE ───────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+    .ksk-rutas-grid { grid-template-columns: 1fr 1fr; }
+    .ksk-login-card { padding: 32px 24px; }
+    .ksk-stat { padding: 0 14px; }
+}
+
+@media (min-width: 1024px) {
+    .ksk-rutas-grid { grid-template-columns: repeat(4, 1fr); }
+}

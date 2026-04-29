@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ ruta.label if ruta else attempt_id }} — {{ candidato.nombre }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/kiosko.css') }}">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+
+<div class="ksk-root">
+
+    <!-- Header -->
+    <header class="ksk-header">
+        <div class="ksk-driver-info">
+            <div class="ksk-driver-name">
+                {{ ruta.label if ruta else attempt_id }}
+            </div>
+            <div class="ksk-driver-meta">
+                <span>{{ candidato.nombre }}</span>
+                <span>·</span>
+                <span>Plaza #{{ candidato.plaza }}</span>
+                <span class="ksk-badge-cat">{{ candidato.categoria }}</span>
+            </div>
+        </div>
+
+        <!-- Nota grande -->
+        <div style="display:flex; align-items:center; gap:20px;">
+            <div style="text-align:center;">
+                <div class="ksk-ruta-score {% if nota_info.nota >= 5 %}ksk-ruta-score--pass{% else %}ksk-ruta-score--fail{% endif %}"
+                     style="font-size:42px;">
+                    {{ "%.1f"|format(nota_info.nota) }}
+                </div>
+                <div style="font-size:11px; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">
+                    sobre 10
+                </div>
+            </div>
+            <a href="{{ url_for('kiosko.rutas', plaza=candidato.plaza) }}"
+               class="ksk-btn ksk-btn--secondary" style="height:44px; padding:0 20px; font-size:13px;">
+                <i class="ph ph-arrow-left"></i>
+                Volver
+            </a>
+        </div>
+    </header>
+
+    <!-- Body -->
+    <div class="ksk-body">
+
+        <!-- Calidad y flags -->
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            {% if nota_info.data_quality != 'HIGH' %}
+            <span class="ksk-ruta-badge ksk-ruta-badge--lq" style="position:static; font-size:11px; padding:5px 12px;">
+                <i class="ph ph-warning"></i>
+                Calidad de datos: {{ nota_info.data_quality }}
+                — la nota puede ser menos precisa
+            </span>
+            {% endif %}
+            {% if auditoria %}
+            <span class="ksk-ruta-badge ksk-ruta-badge--audit" style="position:static; font-size:11px; padding:5px 12px;">
+                <i class="ph ph-scales"></i>
+                Auditoría en curso · {{ auditoria.fecha_solicitud }}
+            </span>
+            {% endif %}
+        </div>
+
+        <!-- Score breakdown -->
+        <div style="background:#0d1527; border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:24px;">
+            <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#475569; margin-bottom:20px;">
+                Desglose de puntuación
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:16px;">
+                {% for item in score_breakdown %}
+                <div style="display:grid; grid-template-columns: 110px 1fr 70px; align-items:center; gap:14px;">
+                    <span style="font-size:13px; color:#94a3b8; font-weight:500;">{{ item.familia }}</span>
+                    <div style="height:10px; background:rgba(255,255,255,0.06); border-radius:5px; overflow:hidden;">
+                        <div style="height:100%; width:{{ (item.obtenido / item.maximo * 100)|int }}%;
+                                    background:#1a56db; border-radius:5px;"></div>
+                    </div>
+                    <span style="font-size:13px; font-weight:700; color:#e2e8f0; text-align:right;">
+                        {{ item.obtenido }} / {{ item.maximo }}
+                    </span>
+                </div>
+                {% endfor %}
+
+                <div style="display:flex; justify-content:space-between; align-items:center;
+                            padding-top:16px; border-top:1px solid rgba(255,255,255,0.08);
+                            font-weight:700; font-size:15px; color:#f1f5f9;">
+                    <span>TOTAL</span>
+                    <span class="ksk-ruta-score {% if nota_info.nota >= 5 %}ksk-ruta-score--pass{% else %}ksk-ruta-score--fail{% endif %}"
+                          style="font-size:24px;">
+                        {{ "%.1f"|format(nota_info.nota) }} / 10
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auditoría (si la hay) -->
+        {% if auditoria %}
+        <div style="background:#160d27; border:1px solid rgba(196,181,253,0.2); border-radius:14px; padding:20px;">
+            <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px;
+                        color:#7c3aed; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                <i class="ph ph-scales"></i> Solicitud de auditoría pendiente
+            </div>
+            <p style="font-size:14px; color:#c4b5fd; line-height:1.6; margin:0; font-style:italic;">
+                "{{ auditoria.razon }}"
+            </p>
+            <div style="font-size:11px; color:#7c3aed; margin-top:10px;">
+                Solicitada el {{ auditoria.fecha_solicitud }} a las {{ auditoria.hora_solicitud }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Botón volver grande (touch-friendly) -->
+        <a href="{{ url_for('kiosko.rutas', plaza=candidato.plaza) }}"
+           class="ksk-btn ksk-btn--ghost" style="align-self:stretch; margin-top:8px;">
+            <i class="ph ph-arrow-left"></i>
+            Volver a mis recorridos
+        </a>
+
+    </div>
+</div>
+
+</body>
+</html>

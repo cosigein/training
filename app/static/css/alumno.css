@@ -1,0 +1,545 @@
+/* ===================================================================
+   ALUMNO PORTAL — Vista del Candidato
+   Light theme. Clean, readable, personal. Requires tokens.css.
+   =================================================================== */
+
+/* ── ROOT ─────────────────────────────────────────────────────────── */
+.alu-root {
+    position: fixed;
+    inset: 0;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: #f0f4f8;
+    font-family: var(--font-body);
+    color: #1e293b;
+}
+
+/* ── HEADER ───────────────────────────────────────────────────────── */
+.alu-header {
+    height: 64px;
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 12px;
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+
+.alu-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+.alu-logo__icon {
+    width: 32px;
+    height: 32px;
+    background: #0d47a1;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.5px;
+}
+
+.alu-logo__text {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    letter-spacing: -0.2px;
+}
+
+.alu-logo__text span { color: #0d47a1; }
+
+.alu-user-chip {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px 6px 10px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+}
+
+.alu-user-chip__avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #0d47a1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.alu-user-chip__name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    white-space: nowrap;
+}
+
+.alu-user-chip__plaza {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.alu-btn-logout {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+    height: 36px;
+    border-radius: 6px;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color 150ms ease, color 150ms ease;
+    flex-shrink: 0;
+}
+
+.alu-btn-logout:hover { border-color: #0d47a1; color: #0d47a1; }
+
+/* ── BODY ─────────────────────────────────────────────────────────── */
+.alu-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+/* ── WELCOME ──────────────────────────────────────────────────────── */
+.alu-welcome {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.alu-welcome__title {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.alu-welcome__title span { color: #0d47a1; }
+
+.alu-welcome__sub {
+    font-size: 13px;
+    color: #64748b;
+    margin: 4px 0 0;
+}
+
+/* ── STATUS BADGE ─────────────────────────────────────────────────── */
+.alu-estado {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+}
+
+.alu-estado--pass {
+    background: #f0fdf4;
+    color: #15803d;
+    border: 1.5px solid #86efac;
+}
+
+.alu-estado--fail {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1.5px solid #fca5a5;
+}
+
+.alu-estado--pending {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1.5px solid #fcd34d;
+}
+
+/* ── KPI CARDS ────────────────────────────────────────────────────── */
+.alu-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+@media (max-width: 700px) { .alu-kpis { grid-template-columns: repeat(2, 1fr); } }
+
+.alu-kpi {
+    background: #fff;
+    border-radius: 10px;
+    padding: 16px;
+    border-left: 4px solid transparent;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.alu-kpi--blue  { border-left-color: #0d47a1; }
+.alu-kpi--green { border-left-color: #16a34a; }
+.alu-kpi--amber { border-left-color: #d97706; }
+.alu-kpi--gray  { border-left-color: #64748b; }
+
+.alu-kpi__label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+}
+
+.alu-kpi__value {
+    font-family: var(--font-heading);
+    font-size: 26px;
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1;
+}
+
+.alu-kpi__sub { font-size: 11px; color: #94a3b8; }
+
+/* ── PROGRESS BAR ─────────────────────────────────────────────────── */
+.alu-progress {
+    background: #fff;
+    border-radius: 10px;
+    padding: 16px 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.alu-progress__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.alu-progress__label { font-size: 13px; font-weight: 600; color: #475569; }
+.alu-progress__count {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.alu-progress__track {
+    height: 8px;
+    background: #f1f5f9;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.alu-progress__fill {
+    height: 100%;
+    background: #0d47a1;
+    border-radius: 4px;
+    transition: width 400ms ease;
+}
+
+/* ── SECTION CARD ─────────────────────────────────────────────────── */
+.alu-card {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    overflow: hidden;
+    border: 1.5px solid #e2e8f0;
+}
+
+.alu-card__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafafa;
+}
+
+.alu-card__head h2 {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.alu-card__body { padding: 0; }
+
+/* ── ROUTES LIST ──────────────────────────────────────────────────── */
+.alu-ruta-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 20px;
+    border-bottom: 1px solid #f8fafc;
+    transition: background 100ms ease;
+}
+
+.alu-ruta-row:last-child { border-bottom: none; }
+.alu-ruta-row:hover { background: #f8fafc; }
+
+.alu-ruta-id {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    width: 28px;
+    flex-shrink: 0;
+}
+
+.alu-ruta-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    flex: 1;
+    min-width: 0;
+}
+
+.alu-ruta-quality {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.alu-ruta-quality--high { background: #dcfce7; color: #15803d; }
+.alu-ruta-quality--medium { background: #fef3c7; color: #92400e; }
+.alu-ruta-quality--low { background: #fef3c7; color: #b45309; }
+
+.alu-ruta-nota {
+    font-family: var(--font-heading);
+    font-size: 20px;
+    font-weight: 800;
+    width: 48px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.alu-ruta-nota--pass { color: #16a34a; }
+.alu-ruta-nota--fail { color: #dc2626; }
+.alu-ruta-nota--pend { color: #cbd5e1; font-size: 16px; }
+
+.alu-ruta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1.5px solid #e2e8f0;
+    color: #64748b;
+    background: #fff;
+    flex-shrink: 0;
+    transition: border-color 150ms ease, color 150ms ease;
+    white-space: nowrap;
+}
+
+.alu-ruta-btn:hover { border-color: #0d47a1; color: #0d47a1; }
+
+.alu-ruta-audit-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #ede9fe;
+    color: #7c3aed;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* ── RANKING POSITION ─────────────────────────────────────────────── */
+.alu-ranking-banner {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    border: 1.5px solid #e2e8f0;
+    flex-wrap: wrap;
+}
+
+.alu-ranking-pos {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.alu-pos-number {
+    font-family: var(--font-heading);
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1;
+    color: #0d47a1;
+}
+
+.alu-pos-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.4px; }
+
+.alu-ranking-divider { width: 1px; height: 60px; background: #e2e8f0; flex-shrink: 0; }
+
+.alu-ranking-info { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+
+.alu-ranking-info__title {
+    font-family: var(--font-heading);
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.alu-ranking-info__desc { font-size: 13px; color: #64748b; line-height: 1.5; }
+
+.alu-corte-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.alu-corte-chip--dentro { background: #f0fdf4; color: #15803d; border: 1.5px solid #86efac; }
+.alu-corte-chip--fuera  { background: #fef2f2; color: #dc2626; border: 1.5px solid #fca5a5; }
+
+/* ── DISCLAIMER ───────────────────────────────────────────────────── */
+.alu-disclaimer {
+    font-size: 11px;
+    color: #94a3b8;
+    text-align: center;
+    padding: 8px 0 16px;
+    line-height: 1.6;
+}
+
+/* ── LOGIN PAGE ───────────────────────────────────────────────────── */
+.alu-login-bg {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0f4f8;
+    padding: 24px;
+}
+
+.alu-login-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 40px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 4px 24px rgba(0,0,0,.08);
+    border: 1.5px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.alu-login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.alu-login-form label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+}
+
+.alu-form-input {
+    width: 100%;
+    height: 48px;
+    padding: 0 16px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 3px;
+    color: #1e293b;
+    outline: none;
+    transition: border-color 150ms ease;
+    box-sizing: border-box;
+}
+
+.alu-form-input:focus { border-color: #0d47a1; }
+.alu-form-input::placeholder { color: #cbd5e1; font-size: 16px; letter-spacing: 1px; font-weight: 400; }
+
+.alu-form-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 48px;
+    border-radius: 8px;
+    background: #0d47a1;
+    color: #fff;
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: background 150ms ease;
+    text-decoration: none;
+}
+
+.alu-form-btn:hover { background: #1565c0; }
+
+.alu-login-footer {
+    text-align: center;
+    font-size: 12px;
+    color: #94a3b8;
+    line-height: 1.6;
+}

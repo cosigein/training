@@ -1126,3 +1126,85 @@ button.mgr-action-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
 }
+
+/* ── HEADER RIGHT GROUP ──────────────────────────────────────────── */
+.mgr-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+/* ── SECTION TITLE ───────────────────────────────────────────────── */
+.mgr-section-title {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mgr-section-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background: #dc2626;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+/* ── CONVOCATORIA SELECTOR ───────────────────────────────────────── */
+.mgr-conv-selector {
+    height: 34px;
+    padding: 0 10px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 6px;
+    background: #fff;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    outline: none;
+    cursor: pointer;
+    transition: border-color var(--transition-base);
+}
+.mgr-conv-selector:focus { border-color: #0d47a1; }
+
+/* ── PAGE HEADER ROW ─────────────────────────────────────────────── */
+.mgr-page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.mgr-page-header > div { flex: 1; min-width: 0; }
+
+/* ── CONVOCATORIA GRID (M2) ──────────────────────────────────────── */
+.mgr-conv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+}
+
+.mgr-conv-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 18px;
+    border: 1.5px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: border-color var(--transition-base);
+}
+.mgr-conv-card:hover { border-color: #0d47a1; }

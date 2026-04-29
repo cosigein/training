@@ -48,7 +48,9 @@ def create_app(config_name=None):
     from app.blueprints.reports import reports_bp
     from app.blueprints.telemetry import telemetry_bp
     from app.blueprints.manager import manager_bp
-    
+    from app.blueprints.kiosko import kiosko_bp
+    from app.blueprints.alumno_portal import alumno_bp
+
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(vehicles_bp, url_prefix="/vehicles")
     app.register_blueprint(sessions_bp, url_prefix="/sessions")
@@ -61,6 +63,8 @@ def create_app(config_name=None):
     app.register_blueprint(reports_bp, url_prefix="/reports")
     app.register_blueprint(telemetry_bp, url_prefix="/telemetry")
     app.register_blueprint(manager_bp, url_prefix="/manager")
+    app.register_blueprint(kiosko_bp, url_prefix="/kiosko")
+    app.register_blueprint(alumno_bp, url_prefix="/alumno")
     
     # Custom Filters
     @app.template_filter('datetimeformat')

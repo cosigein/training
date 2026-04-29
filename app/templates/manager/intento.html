@@ -5,8 +5,8 @@
 
 <div class="mgr-page-header">
     <div>
-        <a href="{{ url_for('manager.matriz') }}" class="mgr-back-link">
-            <i class="ph ph-arrow-left"></i> Volver a Matriz
+        <a href="{{ url_for('manager.alumno_detalle', candidato_id=candidato.id) }}" class="mgr-back-link">
+            <i class="ph ph-arrow-left"></i> Volver a recorridos de {{ candidato.nombre.split()[0] }}
         </a>
         <h1 class="mgr-page-title" style="margin-top:8px">
             {{ candidato.nombre }}
@@ -144,9 +144,14 @@
 </div>
 {% endif %}
 
-<div style="margin-top:24px">
-    <a href="{{ url_for('manager.matriz') }}" class="mgr-action-btn mgr-action-btn--secondary">
-        <i class="ph ph-arrow-left"></i> Volver a Matriz
+<div style="margin-top:24px; display:flex; gap:10px; flex-wrap:wrap;">
+    <a href="{{ url_for('manager.alumno_detalle', candidato_id=candidato.id) }}"
+       class="mgr-action-btn mgr-action-btn--secondary">
+        <i class="ph ph-list-bullets"></i> Ver todos los recorridos de {{ candidato.nombre.split()[0] }}
+    </a>
+    <a href="{{ url_for('manager.matriz', conv_id=convocatoria.id) }}"
+       class="mgr-action-btn mgr-action-btn--secondary">
+        <i class="ph ph-grid-nine"></i> Volver a Matriz
     </a>
 </div>
 

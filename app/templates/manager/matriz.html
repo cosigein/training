@@ -37,7 +37,7 @@
         <span class="mgr-kpi__sub">columnas evaluadas</span>
     </div>
     <div class="mgr-kpi mgr-kpi--green">
-        <span class="mgr-kpi__label">Celdas completadas</span>
+        <span class="mgr-kpi__label">Intentos realizados</span>
         <span class="mgr-kpi__value">
             {% set ns = namespace(n=0) %}
             {% for c in candidatos %}
@@ -47,10 +47,10 @@
             {% endfor %}
             {{ ns.n }}
         </span>
-        <span class="mgr-kpi__sub">intentos con nota</span>
+        <span class="mgr-kpi__sub">rutas con nota en la matriz</span>
     </div>
     <div class="mgr-kpi mgr-kpi--red">
-        <span class="mgr-kpi__label">Calidad baja</span>
+        <span class="mgr-kpi__label">Señal LQ <i class="ph ph-info" style="font-size:11px" title="LOW = el sensor envió datos por debajo del umbral de fiabilidad durante el intento. La nota puede ser menos precisa."></i></span>
         <span class="mgr-kpi__value">
             {% set ns2 = namespace(n=0) %}
             {% for c in candidatos %}
@@ -60,7 +60,7 @@
             {% endfor %}
             {{ ns2.n }}
         </span>
-        <span class="mgr-kpi__sub">intentos con datos LQ</span>
+        <span class="mgr-kpi__sub">intentos con datos de baja calidad</span>
     </div>
 </div>
 
