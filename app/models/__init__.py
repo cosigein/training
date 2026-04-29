@@ -5,4 +5,9 @@ from .event import Event, EventVehicle, GestorDeEvento, EjecucionEvento, AccionD
 from .ingestion import IngestionJob, IngestionHistory, ArchivoSubido, FileState, DailyProcessingReport
 from .audit import AuditLog, DailyReview, Incident, WeeklyReport, DeliverableVehicle
 from .notifications import Alert, AlertRule, Notification
-from .training import Convocatoria, Enrollment, ConvocatoriaStatus, EnrollmentStatus
+from .training import (
+    Convocatoria, Enrollment, ConvocatoriaStatus, EnrollmentStatus,
+    AttemptEvent, AttemptEventType, EventSeverity, EventSource,
+    Ranking, RankingStatus,
+    TrainingAuditLog, AuditAction,
+)

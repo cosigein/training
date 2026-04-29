@@ -85,7 +85,8 @@ class Convocatoria(db.Model):
 
     # Relaciones
     organization = db.relationship("Organization", back_populates="convocatorias")
-    enrollments = db.relationship("Enrollment", back_populates="convocatoria", cascade="all, delete-orphan")
+    enrollments = db.relationship("Enrollment", back_populates="convocatoria", cascade="all, delete-orphan", passive_deletes=True)
+    rankings = db.relationship("Ranking", back_populates="convocatoria", cascade="all, delete-orphan", passive_deletes=True)
     initiator = db.relationship("User", foreign_keys=[closureInitiatedBy], back_populates="convocatorias_initiated")
     confirmer = db.relationship("User", foreign_keys=[closureConfirmedBy], back_populates="convocatorias_confirmed")
     reverser = db.relationship("User", foreign_keys=[reversedBy])
@@ -122,3 +123,184 @@ class Enrollment(db.Model):
     convocatoria = db.relationship("Convocatoria", back_populates="enrollments")
     student = db.relationship("User", back_populates="enrollments")
     organization = db.relationship("Organization", back_populates="enrollments")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AttemptEvent — eventos de penalización detectados durante un intento (PDF §6.2)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class AttemptEventType(Enum):
+    HARSH_BRAKING = "HARSH_BRAKING"
+    SPEEDING = "SPEEDING"
+    DEVIATION = "DEVIATION"
+    ACCELERATION_LATERAL = "ACCELERATION_LATERAL"
+    HARSH_ACCELERATION = "HARSH_ACCELERATION"
+
+
+class EventSeverity(Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    CRITICAL = "CRITICAL"
+
+
+class EventSource(Enum):
+    DOBACK_ELITE = "DOBACK_ELITE"
+    WEBFLEET = "WEBFLEET"
+
+
+class AttemptEvent(db.Model):
+    """
+    Penalización detectada durante un intento.
+
+    NO confundir con el modelo legacy `Event` (en `app/models/event.py`), que
+    es del dominio fleet genérico. Este es del dominio Training: un evento que
+    resta puntos al score de un Attempt concreto.
+
+    Invariantes (PDF §6.2):
+    - `source` y `confidence` son ortogonales (D8): source = de dónde vino,
+      confidence = qué tan confiable es la detección.
+    - `penaltyPoints` lo decide el detector con la criteria_version del Attempt.
+    """
+    __tablename__ = "AttemptEvent"
+
+    id = db.Column(db.String, primary_key=True, server_default=text("gen_random_uuid()"))
+    attemptId = db.Column(db.String, db.ForeignKey("Attempt.id", ondelete="CASCADE"), nullable=False)
+    organizationId = db.Column(db.String, db.ForeignKey("Organization.id", ondelete="CASCADE"), nullable=False)
+
+    type = db.Column(db.Enum(AttemptEventType), nullable=False)
+    severity = db.Column(db.Enum(EventSeverity), nullable=False)
+    source = db.Column(db.Enum(EventSource), nullable=False)
+    confidence = db.Column(db.Float)         # 0..1
+    penaltyPoints = db.Column(db.Float, default=0.0)
+
+    timestamp = db.Column(db.DateTime, nullable=False)
+    payload = db.Column(JSONB)               # detalles específicos del detector
+
+    createdAt = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.Index("ix_attemptevent_attempt_ts", "attemptId", "timestamp"),
+        db.Index("ix_attemptevent_type", "type"),
+    )
+
+    # Relaciones
+    attempt = db.relationship("Attempt", back_populates="training_events")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Ranking — snapshot insert-only del ranking de una convocatoria (PDF §3.1, §3.2)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class RankingStatus(Enum):
+    PROVISIONAL = "PROVISIONAL"   # snapshot diario mientras la convocatoria está OPEN
+    DEFINITIVE = "DEFINITIVE"     # snapshot final al cierre (CLOSED/LOCKED)
+
+
+class Ranking(db.Model):
+    """
+    Snapshot del ranking. **Insert-only**: nunca se hace UPDATE ni DELETE.
+    El cron de las 06:00 AM (Europe/Madrid) genera un snapshot por convocatoria
+    OPEN. Al cierre, se inserta un último snapshot con `status=DEFINITIVE`.
+
+    Invariantes (PDF §3.2):
+    - Insert-only: enforced a nivel servicio/cron (sin UPDATE/DELETE).
+    - El ranking final (DEFINITIVE) no se modifica salvo `voidedAt/voidedBy/voidedReason`
+      en una reversa de cierre.
+    """
+    __tablename__ = "Ranking"
+
+    id = db.Column(db.String, primary_key=True, server_default=text("gen_random_uuid()"))
+
+    convocatoriaId = db.Column(db.String, db.ForeignKey("Convocatoria.id", ondelete="CASCADE"), nullable=False)
+    attemptId = db.Column(db.String, db.ForeignKey("Attempt.id", ondelete="SET NULL"))
+    enrollmentId = db.Column(db.String, db.ForeignKey("Enrollment.id", ondelete="SET NULL"))
+    studentId = db.Column(db.String, db.ForeignKey("User.id", ondelete="SET NULL"))
+
+    score = db.Column(db.Float, nullable=False)             # snapshot del score
+    rank = db.Column(db.Integer, nullable=False)            # puesto 1, 2, 3, ...
+    status = db.Column(db.Enum(RankingStatus), default=RankingStatus.PROVISIONAL, nullable=False)
+    snapshotAt = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    # Solo se setea cuando un cierre es revertido (PDF §9.3)
+    voidedAt = db.Column(db.DateTime)
+    voidedBy = db.Column(db.String, db.ForeignKey("User.id", ondelete="SET NULL"))
+    voidedReason = db.Column(db.Text)
+
+    createdAt = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.Index("ix_ranking_convocatoria_snapshot", "convocatoriaId", "snapshotAt"),
+        db.Index("ix_ranking_convocatoria_status", "convocatoriaId", "status"),
+    )
+
+    # Relaciones
+    convocatoria = db.relationship("Convocatoria", back_populates="rankings")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TrainingAuditLog — audit trail tipado de acciones administrativas (PDF §8.5)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class AuditAction(Enum):
+    # Convocatoria
+    CONVOCATORIA_CREATED = "CONVOCATORIA_CREATED"
+    CONVOCATORIA_EDITED = "CONVOCATORIA_EDITED"
+    CONVOCATORIA_CLOSURE_INITIATED = "CONVOCATORIA_CLOSURE_INITIATED"
+    CONVOCATORIA_CLOSURE_CONFIRMED = "CONVOCATORIA_CLOSURE_CONFIRMED"
+    CONVOCATORIA_CLOSURE_ABORTED = "CONVOCATORIA_CLOSURE_ABORTED"
+    CONVOCATORIA_CLOSURE_REVERSED = "CONVOCATORIA_CLOSURE_REVERSED"
+    # Enrollment
+    ENROLLMENT_CREATED = "ENROLLMENT_CREATED"
+    ENROLLMENT_REMOVED = "ENROLLMENT_REMOVED"
+    # Attempt
+    ATTEMPT_CREATED = "ATTEMPT_CREATED"
+    ATTEMPT_CLOSED = "ATTEMPT_CLOSED"
+    ATTEMPT_INVALIDATED = "ATTEMPT_INVALIDATED"
+    SCORE_CALCULATED = "SCORE_CALCULATED"
+    # Ranking
+    RANKING_PUBLISHED = "RANKING_PUBLISHED"
+    # GDPR
+    GDPR_EXPORT_REQUESTED = "GDPR_EXPORT_REQUESTED"
+    GDPR_FORGET_REQUESTED = "GDPR_FORGET_REQUESTED"
+    GDPR_FORGET_APPROVED = "GDPR_FORGET_APPROVED"
+    # Sistema
+    USER_ROLE_CHANGED = "USER_ROLE_CHANGED"
+    LOGIN_FAILED = "LOGIN_FAILED"
+
+
+class TrainingAuditLog(db.Model):
+    """
+    Audit trail inmutable de acciones críticas del dominio Training.
+
+    NO confundir con el modelo legacy `AuditLog` (`app/models/audit.py`), que
+    tiene un dominio distinto (decisiones de calidad de datos).
+
+    Invariantes (PDF §8.5):
+    - Insert-only — sin UPDATE ni DELETE.
+    - Si el INSERT falla, la acción que se quería auditar también debe fallar
+      (no hay acción sin trazabilidad).
+    """
+    __tablename__ = "TrainingAuditLog"
+
+    id = db.Column(db.String, primary_key=True, server_default=text("gen_random_uuid()"))
+
+    actorId = db.Column(db.String, db.ForeignKey("User.id", ondelete="SET NULL"))
+    actorRole = db.Column(db.String)         # snapshot del rol al momento (no FK)
+
+    action = db.Column(db.Enum(AuditAction), nullable=False)
+    resourceType = db.Column(db.String, nullable=False)   # "Convocatoria", "Attempt", ...
+    resourceId = db.Column(db.String, nullable=False)     # uuid del recurso afectado
+    delta = db.Column(JSONB)                              # qué cambió
+
+    ipAddress = db.Column(db.String)
+    userAgent = db.Column(db.String)
+    organizationId = db.Column(db.String, db.ForeignKey("Organization.id", ondelete="SET NULL"))
+
+    createdAt = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        db.Index("ix_traininglog_actor", "actorId"),
+        db.Index("ix_traininglog_action_ts", "action", "createdAt"),
+        db.Index("ix_traininglog_resource", "resourceType", "resourceId"),
+    )
