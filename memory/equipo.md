@@ -7,10 +7,10 @@
 
 | Persona | Rol | Área (branch namespace) | Responsabilidad principal |
 |---|---|---|---|
-| **Antonio Hermoso** | Director técnico | `wf` | Webfleet, simulator, decisiones de arquitectura, comunicación con CMadrid |
+| **Antonio Hermoso** | Director técnico | `wf` | Webfleet, decisiones de arquitectura, comunicación con CMadrid |
 | **Jesús** | Backend | `be` | API, Prisma, BullMQ, scoring engine |
 | **Alejandro** | Frontend | `fe` | React, design system, todas las pantallas |
-| **Joel** | QA + CI | `qa` | Playwright E2E, GitHub Actions, endpoint snapshot, seeds |
+| **Joel** | Simulator + QA + CI | `qa` | Simulador de scoring (D12: endpoint + UI + user guide), Playwright E2E, GitHub Actions, endpoint snapshot, seeds |
 
 ## Reglas operativas
 
