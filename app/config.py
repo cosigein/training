@@ -12,7 +12,7 @@ class BaseConfig:
     JWT_SECRET_KEY = os.environ.get("JWT_SECRET", SECRET_KEY)
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
-    JWT_TOKEN_LOCATION = ["cookies"]
+    JWT_TOKEN_LOCATION = ["cookies", "headers"]
     JWT_COOKIE_SECURE = True
     JWT_COOKIE_SAMESITE = "Lax"
     JWT_COOKIE_CSRF_PROTECT = True
@@ -42,6 +42,7 @@ class TestingConfig(BaseConfig):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL_TEST", "postgresql://localhost/doback_test")
     JWT_COOKIE_SECURE = False
+    JWT_COOKIE_CSRF_PROTECT = False
     WTF_CSRF_ENABLED = False
 
 class ProductionConfig(BaseConfig):
