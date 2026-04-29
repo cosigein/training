@@ -99,6 +99,7 @@ docs/
 ├── 📗 DOCUMENTO-EJECUTIVO.md         ← visión funcional no técnica (cliente + gestión)
 ├── 📙 PROPUESTA-CMADRID.md           ← descripción del servicio para CMadrid (SLA, GDPR, escrow)
 ├── 📔 OPERATIONS.md                  ← incidentes, rollback, secretos, DR, soporte post-cutover
+├── 📱 MOBILE-API.md                  ← contrato API JSON v1 (read-only) para clientes nativos
 └── team/
     ├── antonio.md                    ← qué hace Antonio en el sprint
     ├── jesus.md                      ← qué hace Jesús
