@@ -44,7 +44,7 @@ def require_role(roles):
                 if _wants_json():
                     return jsonify({"message": "Permisos insuficientes"}), 403
                 flash("No tenés permisos para acceder a esa sección.", "warning")
-                return redirect(url_for('sessions.list_attempts'))
+                return redirect(url_for('auth.login'))
 
             return f(*args, **kwargs)
         return decorated_function

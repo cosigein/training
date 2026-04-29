@@ -52,6 +52,13 @@
                 <i class="ph ph-warning-circle"></i> Gestor de Eventos
             </a>
 
+            {% if current_user.role.value in ('MANAGER', 'ADMIN', 'SUPER_ADMIN') %}
+            <a href="{{ url_for('manager.ranking') }}"
+               class="sidebar__link {% if request.blueprint == 'manager' %}active{% endif %}">
+                <i class="ph ph-trophy"></i> Ranking
+            </a>
+            {% endif %}
+
             {% if current_user.role.value in ('ADMIN', 'SUPER_ADMIN') %}
             <a href="{{ url_for('uploads.unified_upload') }}" class="sidebar__link {{ 'active' if request.blueprint == 'uploads' }}">
                 <i class="ph ph-cloud-arrow-up"></i> Ingesta

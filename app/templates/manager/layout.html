@@ -29,24 +29,24 @@
 
         <nav class="mgr-nav">
             <a href="{{ url_for('manager.dashboard') }}"
-               class="mgr-nav__btn {% if active_page == 'dashboard' %}active{% endif %}"
-               title="Dashboard">
+               class="mgr-nav__btn {% if active_page == 'dashboard' %}active{% endif %}">
                 <i class="ph ph-squares-four"></i>
+                <span>Dashboard</span>
             </a>
             <a href="{{ url_for('manager.convocatorias') }}"
-               class="mgr-nav__btn {% if active_page == 'convocatorias' %}active{% endif %}"
-               title="Convocatorias">
+               class="mgr-nav__btn {% if active_page == 'convocatorias' %}active{% endif %}">
                 <i class="ph ph-clipboard-text"></i>
+                <span>Convocatorias</span>
             </a>
             <a href="{{ url_for('manager.matriz') }}"
-               class="mgr-nav__btn {% if active_page == 'matriz' %}active{% endif %}"
-               title="Matriz">
+               class="mgr-nav__btn {% if active_page == 'matriz' %}active{% endif %}">
                 <i class="ph ph-grid-nine"></i>
+                <span>Matriz</span>
             </a>
             <a href="{{ url_for('manager.ranking') }}"
-               class="mgr-nav__btn {% if active_page == 'ranking' %}active{% endif %}"
-               title="Ranking">
+               class="mgr-nav__btn {% if active_page == 'ranking' %}active{% endif %}">
                 <i class="ph ph-trophy"></i>
+                <span>Ranking</span>
             </a>
         </nav>
 

@@ -13,7 +13,7 @@ Stubs pendientes (siguen como `[]` por ahora):
 """
 from datetime import datetime
 
-from flask import render_template, request
+from flask import render_template, request, request, abort
 from sqlalchemy.orm import joinedload
 
 from app.extensions import db
@@ -24,9 +24,20 @@ from app.models.training import (
     ConvocatoriaStatus,
     Enrollment,
 )
+from .ranking_service import (
+    get_convocatorias,
+    get_first_conv_id,
+    get_ranking,
+    get_matrix_data,
+    get_alumno_active_conv_id,
+    get_alumno_detail,
+    get_intento_detail,
+)
+from flask_jwt_extended import get_jwt_identity
 from app.utils.decorators import require_role
 from . import manager_bp
 
+from app.models.auth import User
 
 # ─── Catálogo local de rutas por convocatoria ──────────────────────────────
 # TODO: cuando exista el modelo `Route`, mover este catálogo a la tabla.
@@ -206,6 +217,34 @@ def _load_auditorias_pendientes():
 
 
 # ─── Helpers de presentación (consumen dicts, no BD) ───────────────────────
+# ── AUDITORÍAS MOCK ────────────────────────────────────────────────────────────
+# TODO Tarea 12: reemplazar con consultas reales a AuditRequest cuando
+# se implemente el modelo y los endpoints de auditoría.
+_AUDITORIAS_MOCK = [
+    {
+        "id": "aud-001",
+        "attempt_id": "att-003",
+        "candidato": "Carlos Rodríguez",
+        "ruta": "Paso Angosto",
+        "nota": 5.2,
+        "fecha_solicitud": "26/04/2026",
+        "hora_solicitud": "17:45",
+        "razon": "Hubo un camión en doble fila que me forzó a detenerme bruscamente sin previo aviso.",
+        "status": "PENDING",
+    },
+    {
+        "id": "aud-002",
+        "attempt_id": "att-021",
+        "candidato": "Javier Martínez",
+        "ruta": "Maniobra T",
+        "nota": 4.8,
+        "fecha_solicitud": "23/04/2026",
+        "hora_solicitud": "09:12",
+        "razon": "El sensor del camión falló intermitentemente durante la maniobra.",
+        "status": "PENDING",
+    },
+]
+
 
 def _calcular_nota_media(candidato):
     notas = [v["nota"] for v in candidato["notas"].values() if v is not None]
@@ -236,6 +275,17 @@ def _calcular_ranking(plazas, candidatos):
         entry["puesto"] = puesto
         entry["dentro_del_corte"] = puesto <= plazas
     return entries
+def _get_org_id():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    return user.organizationId if user else None
+
+
+def _resolve_conv_id(org_id):
+    conv_id = request.args.get("conv_id")
+    if not conv_id:
+        conv_id = get_first_conv_id(org_id)
+    return conv_id
 
 
 def _find_attempt_by_id(attempt_id):
@@ -265,13 +315,19 @@ def _find_attempt_by_id(attempt_id):
 
 
 # ─── RUTAS ──────────────────────────────────────────────────────────────────
+# ── RUTAS ──────────────────────────────────────────────────────────────────────
 
-@manager_bp.route('/')
+@manager_bp.route("/")
 @require_role(["MANAGER", "ADMIN"])
 def dashboard():
     convocatorias = _load_convocatorias_dicts()
     auditorias = _load_auditorias_pendientes()
     return render_template(
+        "manager/dashboard.html",
+        active_page="dashboard",
+        convocatorias=convocatorias,
+        auditorias=auditorias_pendientes,
+        pendientes_total=len(auditorias_pendientes),
         'manager/dashboard.html',
         active_page='dashboard',
         convocatorias=convocatorias,
@@ -280,17 +336,57 @@ def dashboard():
     )
 
 
-@manager_bp.route('/convocatorias')
+@manager_bp.route("/convocatorias")
 @require_role(["MANAGER", "ADMIN"])
 def convocatorias():
+    org_id = _get_org_id()
+    return render_template(
+        "manager/convocatorias.html",
+        active_page="convocatorias",
+        convocatorias=get_convocatorias(org_id),
+    )
+
+
+@manager_bp.route("/ranking")
+@require_role(["MANAGER", "ADMIN"])
+def ranking():
+    org_id = _get_org_id()
+    conv_id = _resolve_conv_id(org_id)
+    if not conv_id:
+        return render_template(
+            "manager/ranking.html",
+            active_page="ranking",
+            convocatorias=[],
+            convocatoria=None,
+            ranking=[],
+            plazas=0,
+            nota_corte=None,
+            total_candidatos=0,
+        )
+
+    conv_dict, entries = get_ranking(conv_id, org_id)
+    if not conv_dict:
+        abort(404)
+
+    plazas = conv_dict["plazas"]
+    nota_corte = entries[plazas - 1]["nota_media"] if len(entries) >= plazas else None
+
     return render_template(
         'manager/convocatorias.html',
         active_page='convocatorias',
         convocatorias=_load_convocatorias_dicts(only_active=False),
+        "manager/ranking.html",
+        active_page="ranking",
+        convocatorias=get_convocatorias(org_id),
+        convocatoria=conv_dict,
+        ranking=entries,
+        plazas=plazas,
+        nota_corte=nota_corte,
+        total_candidatos=conv_dict["total_candidatos"],
     )
 
 
-@manager_bp.route('/matriz')
+@manager_bp.route("/matriz")
 @require_role(["MANAGER", "ADMIN"])
 def matriz():
     convs = _load_convocatorias_dicts()
@@ -309,6 +405,22 @@ def matriz():
     conv_obj = Convocatoria.query.get(conv_dict["id"])
     candidatos = _load_candidatos_for(conv_obj) if conv_obj else []
 
+    org_id = _get_org_id()
+    conv_id = _resolve_conv_id(org_id)
+    if not conv_id:
+        return render_template(
+            "manager/matriz.html",
+            active_page="matriz",
+            convocatorias=[],
+            convocatoria=None,
+            candidatos=[],
+            circuitos=[],
+        )
+
+    conv_dict, candidatos, circuitos = get_matrix_data(conv_id, org_id)
+    if not conv_dict:
+        abort(404)
+
     return render_template(
         'manager/matriz.html',
         active_page='matriz',
@@ -316,10 +428,16 @@ def matriz():
         circuitos=conv_dict["rutas"],
         convocatoria=conv_dict,
         convocatorias=convs,
+        "manager/matriz.html",
+        active_page="matriz",
+        convocatorias=get_convocatorias(org_id),
+        convocatoria=conv_dict,
+        candidatos=candidatos,
+        circuitos=circuitos,
     )
 
 
-@manager_bp.route('/ranking')
+@manager_bp.route("/alumno/<candidato_id>")
 @require_role(["MANAGER", "ADMIN"])
 def ranking():
     convs = _load_convocatorias_dicts()
@@ -344,6 +462,16 @@ def ranking():
     ranking_entries = _calcular_ranking(plazas, candidatos)
     nota_corte = ranking_entries[plazas - 1]["nota_media"] if len(ranking_entries) >= plazas else None
 
+def alumno_detalle(candidato_id):
+    org_id = _get_org_id()
+    conv_id = request.args.get("conv_id") or get_alumno_active_conv_id(candidato_id, org_id)
+    if not conv_id:
+        abort(404)
+
+    conv_dict, candidato, intentos, nota_media = get_alumno_detail(candidato_id, conv_id, org_id)
+    if not candidato:
+        abort(404)
+
     return render_template(
         'manager/ranking.html',
         active_page='ranking',
@@ -353,10 +481,16 @@ def ranking():
         convocatoria=conv_dict,
         convocatorias=convs,
         total_candidatos=len(candidatos),
+        "manager/alumno.html",
+        active_page="matriz",
+        convocatoria=conv_dict,
+        candidato=candidato,
+        intentos=intentos,
+        nota_media=nota_media,
     )
 
 
-@manager_bp.route('/intento/<attempt_id>')
+@manager_bp.route("/intento/<attempt_id>")
 @require_role(["MANAGER", "ADMIN"])
 def intento_detalle(attempt_id):
     attempt, candidato, conv, ruta, nota_info = _find_attempt_by_id(attempt_id)
@@ -397,6 +531,10 @@ def intento_detalle(attempt_id):
             "source": "SENSOR", "confidence": "LOW",
             "descripcion": "Calidad de datos baja (placeholder demo).",
         })
+    org_id = _get_org_id()
+    detail = get_intento_detail(attempt_id, org_id)
+    if not detail:
+        abort(404)
 
     return render_template(
         'manager/intento.html',
@@ -409,10 +547,20 @@ def intento_detalle(attempt_id):
         eventos=eventos,
         auditoria=None,  # TODO tarea 12
         convocatoria=conv,
+        "manager/intento.html",
+        active_page="matriz",
+        candidato=detail["candidato"],
+        ruta=detail["ruta"],
+        nota_info=detail["nota_info"],
+        attempt_id=detail["attempt_id"],
+        score_breakdown=detail["score_breakdown"],
+        eventos=detail["eventos"],
+        auditoria=detail["auditoria"],
+        convocatoria=detail["convocatoria"],
     )
 
 
-@manager_bp.route('/auditoria/<audit_id>')
+@manager_bp.route("/auditoria/<audit_id>")
 @require_role(["MANAGER", "ADMIN"])
 def auditoria_detalle(audit_id):
     # TODO tarea 12: cargar desde AuditRequest. Hoy modelo no existe.
@@ -466,4 +614,13 @@ def alumno_detalle(candidato_id):
         convocatoria=conv_dict,
         intentos=intentos,
         nota_media=_calcular_nota_media(candidato),
+    )
+    # TODO Tarea 12: conectar a AuditRequest real
+    auditoria = next((a for a in _AUDITORIAS_MOCK if a["id"] == audit_id), None)
+    if not auditoria:
+        abort(404)
+    return render_template(
+        "manager/auditoria.html",
+        active_page="dashboard",
+        auditoria=auditoria,
     )
