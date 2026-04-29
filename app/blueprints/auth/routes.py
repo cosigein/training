@@ -45,6 +45,8 @@ def login():
             role = user.role.value if hasattr(user.role, 'value') else user.role
             if role == "STUDENT":
                 dest = url_for('system.alumno_dashboard')  # TODO Tarea 11: mover a blueprint alumno
+            elif role in ("MANAGER", "ADMIN", "SUPER_ADMIN"):
+                dest = url_for('manager.dashboard')
             else:
                 dest = url_for('sessions.list_attempts')
             response = redirect(dest)
