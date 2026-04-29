@@ -304,3 +304,42 @@ class TrainingAuditLog(db.Model):
         db.Index("ix_traininglog_action_ts", "action", "createdAt"),
         db.Index("ix_traininglog_resource", "resourceType", "resourceId"),
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RfidCard — tarjeta física que identifica al alumno en el kiosko (PDF §5.4)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class RfidCard(db.Model):
+    """
+    Tarjeta RFID asignada a un alumno. Una tarjeta puede revocarse y reasignarse:
+    el campo `active=false` o `revokedAt != null` la inhabilita.
+
+    Invariante:
+    - Solo puede existir UNA tarjeta activa con un `uid` dado a la vez.
+      Implementado como índice único parcial (ver `__table_args__`).
+    """
+    __tablename__ = "RfidCard"
+
+    id = db.Column(db.String, primary_key=True, server_default=text("gen_random_uuid()"))
+    uid = db.Column(db.String, nullable=False)              # ID físico del lector
+    organizationId = db.Column(db.String, db.ForeignKey("Organization.id", ondelete="CASCADE"), nullable=False)
+    assignedTo = db.Column(db.String, db.ForeignKey("User.id", ondelete="SET NULL"))
+    assignedAt = db.Column(db.DateTime)
+    revokedAt = db.Column(db.DateTime)
+    active = db.Column(db.Boolean, default=True, nullable=False)
+
+    createdAt = db.Column(db.DateTime, default=datetime.utcnow)
+    updatedAt = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        db.Index(
+            "ix_rfid_uid_active_unique",
+            "uid",
+            unique=True,
+            postgresql_where=db.text('active = true AND "revokedAt" IS NULL'),
+        ),
+        db.Index("ix_rfid_assigned", "assignedTo"),
+    )
+
+    student = db.relationship("User", foreign_keys=[assignedTo])

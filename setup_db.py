@@ -9,8 +9,10 @@ load_dotenv()
 
 from app import create_app
 from app.extensions import db
+from datetime import datetime
 from app.models.auth import User, Organization, UserRole
 from app.models.vehicle import Vehicle
+from app.models.training import RfidCard
 # Import all models to ensure they are registered
 from app.models import session, vehicle, auth, event, training
 
@@ -58,6 +60,25 @@ def get_or_create_org(name, **defaults):
     return org
 
 
+def get_or_create_rfid_card(uid, student, org_id):
+    card = RfidCard.query.filter_by(uid=uid, organizationId=org_id, active=True).first()
+    if card:
+        print(f"ℹ️  Tarjeta RFID '{uid}' ya existe.")
+        return card
+    card = RfidCard(
+        uid=uid,
+        organizationId=org_id,
+        assignedTo=student.id if student else None,
+        assignedAt=datetime.utcnow() if student else None,
+        active=True,
+    )
+    db.session.add(card)
+    db.session.flush()
+    label = student.email if student else "(libre)"
+    print(f"✅ Tarjeta RFID '{uid}' creada → {label}.")
+    return card
+
+
 def get_or_create_user(email, name, password, role, org_id):
     user = User.query.filter_by(email=email).first()
     if user:
@@ -92,8 +113,12 @@ def setup_database():
         get_or_create_user("super@cmadrid.com",    "Super Admin CMadrid", "super123",   UserRole.SUPER_ADMIN, org.id)
         get_or_create_user("admin@cmadrid.com",    "Admin CMadrid",       "admin123",   UserRole.ADMIN,       org.id)
         get_or_create_user("manager@cmadrid.com",  "Manager CMadrid",     "manager123", UserRole.MANAGER,     org.id)
-        get_or_create_user("alumno1@cmadrid.com",  "Alumno Uno",          "alumno123",  UserRole.STUDENT,     org.id)
-        get_or_create_user("alumno2@cmadrid.com",  "Alumno Dos",          "alumno123",  UserRole.STUDENT,     org.id)
+        alumno1 = get_or_create_user("alumno1@cmadrid.com", "Alumno Uno", "alumno123",  UserRole.STUDENT, org.id)
+        alumno2 = get_or_create_user("alumno2@cmadrid.com", "Alumno Dos", "alumno123",  UserRole.STUDENT, org.id)
+
+        # Tarjetas RFID de prueba (UIDs estilo Mifare 4-bytes)
+        get_or_create_rfid_card("04:A1:B2:C3", alumno1, org.id)
+        get_or_create_rfid_card("04:D4:E5:F6", alumno2, org.id)
 
         db.session.commit()
         print("🚀 Seed listo.")

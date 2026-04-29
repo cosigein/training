@@ -10,4 +10,5 @@ from .training import (
     AttemptEvent, AttemptEventType, EventSeverity, EventSource,
     Ranking, RankingStatus,
     TrainingAuditLog, AuditAction,
+    RfidCard,
 )
