@@ -33,11 +33,46 @@ def create_celery_app(app=None):
     )
     if app:
         celery.conf.update(app.config)
-        
+
         class ContextTask(celery.Task):
             def __call__(self, *args, **kwargs):
                 with app.app_context():
                     return self.run(*args, **kwargs)
-        
+
         celery.Task = ContextTask
     return celery
+
+
+import logging
+import sys
+from loguru import logger as loguru_logger
+
+
+class InterceptHandler(logging.Handler):
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            level = loguru_logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+        frame, depth = logging.currentframe(), 2
+        while frame and frame.f_code.co_filename == logging.__file__:
+            frame = frame.f_back
+            depth += 1
+        loguru_logger.opt(depth=depth, exception=record.exc_info).log(
+            level, record.getMessage()
+        )
+
+
+def init_loguru(app) -> None:
+    loguru_logger.remove()
+    loguru_logger.add(
+        sys.stderr,
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
+        level="INFO",
+        serialize=app.config.get("LOGURU_JSON", not app.debug),
+    )
+    logging.basicConfig(handlers=[InterceptHandler()], level=logging.INFO, force=True)
+    app.logger.handlers = [InterceptHandler()]
+    app.logger.propagate = False
+    for noisy in ("werkzeug", "sqlalchemy.engine", "urllib3"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
