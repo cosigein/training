@@ -329,6 +329,87 @@ def download_acta(conv_id):
     )
 
 
+# ─── GDPR (T12) ───────────────────────────────────────────────────────────────
+
+@admin_bp.route("/gdpr/forget-requests", methods=["GET"])
+@require_role(["ADMIN", "SUPER_ADMIN"])
+def gdpr_list_forget_requests():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    from app.models.training import GdprForgetRequest, GdprForgetStatus
+    status_filter = request.args.get("status")
+    q = GdprForgetRequest.query.filter_by(organizationId=user.organizationId)
+    if status_filter:
+        try:
+            q = q.filter_by(status=GdprForgetStatus(status_filter))
+        except ValueError:
+            pass
+    requests_list = q.order_by(GdprForgetRequest.requestedAt.desc()).all()
+    return jsonify([{
+        "id": r.id,
+        "studentId": r.studentId,
+        "studentName": r.student.name if r.student else "—",
+        "reason": r.reason,
+        "status": r.status.value,
+        "requestedAt": r.requestedAt.isoformat(),
+        "approvedAt": r.approvedAt.isoformat() if r.approvedAt else None,
+    } for r in requests_list]), 200
+
+
+@admin_bp.route("/gdpr/forget-requests/<string:req_id>/approve", methods=["POST"])
+@require_role(["SUPER_ADMIN"])
+def gdpr_approve_forget_request(req_id):
+    from datetime import datetime
+    from app.models.training import GdprForgetRequest, GdprForgetStatus, TrainingAuditLog, AuditAction
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+
+    fr = GdprForgetRequest.query.filter_by(id=req_id, organizationId=user.organizationId).first()
+    if not fr:
+        return jsonify({"message": "Solicitud no encontrada"}), 404
+    if fr.status != GdprForgetStatus.PENDING:
+        return jsonify({"message": f"La solicitud ya está en estado {fr.status.value}"}), 409
+
+    fr.status = GdprForgetStatus.APPROVED
+    fr.approvedBy = user_id
+    fr.approvedAt = datetime.utcnow()
+
+    from app.extensions import db as _db
+    _db.session.add(TrainingAuditLog(
+        actorId=user_id, actorRole="SUPER_ADMIN",
+        action=AuditAction.GDPR_FORGET_APPROVED,
+        resourceType="GdprForgetRequest", resourceId=req_id,
+        delta={"studentId": fr.studentId},
+        organizationId=user.organizationId,
+    ))
+    _db.session.commit()
+    return jsonify({"id": fr.id, "status": fr.status.value, "approvedAt": fr.approvedAt.isoformat()}), 200
+
+
+@admin_bp.route("/gdpr/forget-requests", methods=["POST"])
+@require_role(["ADMIN", "SUPER_ADMIN"])
+def gdpr_create_forget_request():
+    """Permite al admin registrar manualmente una solicitud GDPR de un alumno."""
+    from app.models.training import GdprForgetRequest
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    data = request.get_json() or {}
+    student_id = data.get("studentId", "")
+    reason = data.get("reason", "")
+    if not student_id:
+        return jsonify({"message": "Se requiere studentId"}), 400
+
+    from app.extensions import db as _db
+    fr = GdprForgetRequest(
+        studentId=student_id,
+        organizationId=user.organizationId,
+        reason=reason,
+    )
+    _db.session.add(fr)
+    _db.session.commit()
+    return jsonify({"id": fr.id, "status": fr.status.value}), 201
+
+
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def _convocatoria_to_dict(c):

@@ -34,6 +34,14 @@ from .ranking_service import (
     get_alumno_detail,
     get_intento_detail,
 )
+from .audit_service import (
+    list_audit_requests,
+    get_audit_request,
+    update_audit_request,
+    create_audit_request,
+    count_pending,
+    AuditRequestError,
+)
 from flask_jwt_extended import get_jwt_identity
 from app.utils.decorators import require_role
 from . import manager_bp
@@ -114,20 +122,20 @@ def _load_convocatorias_dicts(only_active=True):
     result = []
     for c in convs:
         total = db.session.query(Enrollment).filter_by(convocatoriaId=c.id).count()
-        # TODO tarea 12: contar AuditRequest pendientes por convocatoria.
-        result.append(_convocatoria_dict(c, total_candidatos=total, auditorias_pendientes=0))
+        from .audit_service import AuditRequest, AuditStatus
+        pendientes = AuditRequest.query.filter_by(
+            organizationId=org_id,
+            status=AuditStatus.PENDING,
+        ).count()
+        result.append(_convocatoria_dict(c, total_candidatos=total, auditorias_pendientes=pendientes))
     return result
 
 
 def _load_auditorias_pendientes():
-    """Stub — el modelo `AuditRequest` se implementa en tarea 12 del roadmap.
-
-    Cuando exista, reemplazar por:
-        AuditRequest.query.filter_by(status='PENDING').all()
-    y mapear cada uno al dict {id, attempt_id, candidato, ruta, nota,
-    fecha_solicitud, hora_solicitud, razon, status}.
-    """
-    return []
+    org_id = _get_org_id()
+    if not org_id:
+        return []
+    return list_audit_requests(org_id, status="PENDING")
 
 
 
@@ -473,5 +481,62 @@ def registrar_intento(student_id):
 @manager_bp.route("/auditoria/<audit_id>")
 @require_role(["MANAGER", "ADMIN"])
 def auditoria_detalle(audit_id):
-    # TODO tarea 12: cargar desde AuditRequest. Hoy modelo no existe.
-    return "Auditoría no encontrada (modelo AuditRequest pendiente — tarea 12).", 404
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    ar = get_audit_request(audit_id, user.organizationId)
+    if not ar:
+        return jsonify({"message": "Auditoría no encontrada"}), 404
+    if request.is_json:
+        return jsonify(ar), 200
+    return render_template("manager/auditoria_detalle.html", auditoria=ar, active_page="auditorias")
+
+
+@manager_bp.route("/auditoria", methods=["GET"])
+@require_role(["MANAGER", "ADMIN"])
+def auditoria_list():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    status_filter = request.args.get("status")
+    auditorias = list_audit_requests(user.organizationId, status=status_filter)
+    if request.is_json:
+        return jsonify(auditorias), 200
+    return render_template(
+        "manager/auditorias.html",
+        auditorias=auditorias,
+        active_page="auditorias",
+        pendientes_total=count_pending(user.organizationId),
+    )
+
+
+@manager_bp.route("/auditoria/<audit_id>", methods=["PATCH"])
+@require_role(["MANAGER", "ADMIN"])
+def auditoria_update(audit_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    data = request.get_json() or {}
+    new_status = data.get("status", "")
+    resolution = data.get("resolution", "")
+    try:
+        ar = update_audit_request(audit_id, user.organizationId, user_id, new_status, resolution)
+    except AuditRequestError as exc:
+        return jsonify({"message": str(exc)}), 422
+    return jsonify(ar), 200
+
+
+@manager_bp.route("/auditoria", methods=["POST"])
+@require_role(["MANAGER", "ADMIN"])
+def auditoria_create():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    data = request.get_json() or {}
+    try:
+        ar = create_audit_request(
+            org_id=user.organizationId,
+            actor_id=user_id,
+            attempt_id=data.get("attemptId", ""),
+            enrollment_id=data.get("enrollmentId", ""),
+            reason=data.get("reason", ""),
+        )
+    except AuditRequestError as exc:
+        return jsonify({"message": str(exc)}), 422
+    return jsonify(ar), 201
