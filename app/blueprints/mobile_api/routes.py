@@ -8,23 +8,31 @@ from flask_jwt_extended import (
 )
 
 from app.blueprints.auth.services import auth_service
-from app.blueprints.manager.ranking_service import get_matrix_data, get_ranking
+from app.blueprints.manager.ranking_service import (
+    get_intento_detail,
+    get_matrix_data,
+    get_ranking,
+)
 from app.blueprints.mobile_api import mobile_api_bp
 from app.blueprints.mobile_api.errors import error_response
 from app.blueprints.mobile_api.schemas import (
+    AttemptDetailSchema,
     ConvocatoriaSummarySchema,
     RankingEntrySchema,
     StandingSchema,
     UserSchema,
 )
 from app.blueprints.mobile_api.services import (
+    can_user_view_attempt,
     convocatorias_for_user,
     get_convocatoria_detail,
+    remap_attempt,
     remap_matrix_row,
     remap_ranking_entry,
 )
 from app.extensions import limiter
 from app.models.auth import User, UserRole
+from app.models.session import Attempt
 from app.models.training import Enrollment, EnrollmentStatus
 from app.utils.decorators import require_role
 
@@ -217,3 +225,26 @@ def convocatoria_matrix(conv_id):
         "circuits": [{"id": c["id"], "label": c.get("label", c["id"])} for c in circuitos],
         "rows": [remap_matrix_row(cand, circuit_ids) for cand in candidatos],
     }), 200
+
+
+@mobile_api_bp.route("/attempts/<string:attempt_id>", methods=["GET"])
+@jwt_required()
+def attempt_detail(attempt_id):
+    user, err = _current_user_or_401()
+    if err is not None:
+        return err
+
+    attempt = (
+        Attempt.query
+        .filter_by(id=attempt_id, organizationId=user.organizationId)
+        .first()
+    )
+    if attempt is None or not can_user_view_attempt(user, attempt):
+        # 404 (no 403) tanto si no existe como si no es del solicitante — no leak de existencia
+        return error_response(404, "not_found", "Intento no encontrado")
+
+    detail_dict = get_intento_detail(attempt_id, user.organizationId)
+    if detail_dict is None:
+        return error_response(404, "not_found", "Intento no encontrado")
+
+    return jsonify(AttemptDetailSchema().dump(remap_attempt(detail_dict))), 200

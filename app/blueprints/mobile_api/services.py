@@ -102,7 +102,13 @@ def get_convocatoria_detail(conv_id, user):
 
 
 def can_user_view_attempt(user, attempt):
-    raise NotImplementedError("Implementado en PR-7 (feat/be-mobile-api-attempt-detail)")
+    """MANAGER/ADMIN/SUPER_ADMIN → siempre. STUDENT → solo si propio."""
+    role = user.role.value if hasattr(user.role, "value") else user.role
+    if role in (UserRole.MANAGER.value, UserRole.ADMIN.value, UserRole.SUPER_ADMIN.value):
+        return True
+    if role == UserRole.STUDENT.value:
+        return attempt.studentId == user.id
+    return False
 
 
 def remap_ranking_entry(entry_dict):
@@ -146,5 +152,45 @@ def remap_matrix_row(candidato_dict, circuit_ids):
     }
 
 
-def _remap_attempt(attempt_dict):
-    raise NotImplementedError("Implementado en PR-7 (feat/be-mobile-api-attempt-detail)")
+def remap_attempt(attempt_dict):
+    """Convierte dict de manager.ranking_service.get_intento_detail → AttemptDetail camelCase V1."""
+    cand = attempt_dict.get("candidato") or {}
+    nota_info = attempt_dict.get("nota_info") or {}
+    ruta = attempt_dict.get("ruta") or {}
+    breakdown = attempt_dict.get("score_breakdown") or []
+    eventos = attempt_dict.get("eventos") or []
+    conv = attempt_dict.get("convocatoria") or {}
+
+    return {
+        "id": attempt_dict.get("attempt_id"),
+        "candidate": {
+            "id": cand.get("id"),
+            "name": cand.get("nombre"),
+        },
+        "route": {
+            "id": ruta.get("id"),
+            "label": ruta.get("label"),
+        },
+        "score": nota_info.get("nota"),
+        "dataQuality": nota_info.get("data_quality"),
+        "scoreBreakdown": [
+            {
+                "family": item.get("familia"),
+                "obtained": item.get("obtenido"),
+                "max": item.get("maximo"),
+            }
+            for item in breakdown
+        ],
+        "events": [
+            {
+                "type": ev.get("tipo"),
+                "severity": ev.get("severidad"),
+                "confidence": ev.get("confidence"),
+                "description": ev.get("descripcion"),
+                "timestamp": ev.get("timestamp"),
+                "source": ev.get("source"),
+            }
+            for ev in eventos
+        ],
+        "convocatoriaId": conv.get("id") if conv else None,
+    }
