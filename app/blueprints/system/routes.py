@@ -8,7 +8,9 @@ from . import system_bp
 
 @system_bp.route("/", methods=["GET"])
 def index():
-    return redirect(url_for('manager.dashboard'))
+    return redirect(url_for('sessions.list_attempts'))
+
+
 
 @system_bp.route("/settings", methods=["GET", "POST"])
 @require_role(["ADMIN", "MANAGER"])

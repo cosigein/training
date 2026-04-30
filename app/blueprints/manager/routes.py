@@ -1,7 +1,70 @@
-from flask import render_template
+"""Manager portal — vistas para MANAGER y ADMIN.
+
+Lee de la BD real (queries SQLAlchemy) y materializa la forma de dict que
+los templates ya consumen. La estructura del dict (claves `nombre`, `notas`,
+`rutas_completadas`, etc.) se mantiene compatible con los `.html` para no
+tocar UI.
+
+Stubs pendientes (siguen como `[]` por ahora):
+- Auditorías: el modelo `AuditRequest` se entrega en la tarea 12 del roadmap.
+  Cuando exista, reemplazar `_load_auditorias_pendientes()` por la query.
+- Rutas catalogadas: hoy son constantes locales (`ROUTES_BY_CONV`). Cuando
+  exista un modelo `Route` con vínculo a Convocatoria, reemplazar.
+"""
+from datetime import datetime
+from flask import render_template, request, abort, redirect, url_for, flash, jsonify
+
+from app.extensions import db
+from app.models.auth import User
+from app.models.session import Attempt, AttemptStatus
+from app.models.vehicle import Vehicle
+from app.models.training import (
+    Convocatoria,
+    ConvocatoriaStatus,
+    Enrollment,
+    TrainingAuditLog,
+    AuditAction,
+)
+from .ranking_service import (
+    get_convocatorias,
+    get_first_conv_id,
+    get_ranking,
+    get_matrix_data,
+    get_alumno_active_conv_id,
+    get_alumno_detail,
+    get_intento_detail,
+)
+from .audit_service import (
+    list_audit_requests,
+    get_audit_request,
+    update_audit_request,
+    create_audit_request,
+    count_pending,
+    AuditRequestError,
+)
+from flask_jwt_extended import get_jwt_identity
+from app.utils.decorators import require_role
 from . import manager_bp
 
-# ── DATOS MOCK (modelo Paper Maestro v6) ────────────────────────────────────
+# ─── Catálogo local de rutas por convocatoria ──────────────────────────────
+# TODO: cuando exista el modelo `Route`, mover este catálogo a la tabla.
+# Las claves son `Convocatoria.name`. El primer match gana.
+
+ROUTES_BY_CONV = {
+    "Convocatoria 2026-A": [
+        {"id": "R01", "label": "Salida Cochera"},
+        {"id": "R02", "label": "Maniobra T"},
+        {"id": "R03", "label": "Paso Angosto"},
+        {"id": "R04", "label": "Marcha Atrás"},
+        {"id": "R05", "label": "Curva Pronunciada"},
+        {"id": "R06", "label": "Emergencia Urbana"},
+        {"id": "R07", "label": "Conducción Nocturna"},
+        {"id": "R08", "label": "Terreno Irregular"},
+    ],
+    "Convocatoria 2026-B": [
+        {"id": "R01", "label": "Salida Cochera"},
+        {"id": "R02", "label": "Maniobra T"},
+        {"id": "R03", "label": "# ── DATOS MOCK (modelo Paper Maestro v6) ────────────────────────────────────
 # Representan el estado de la Convocatoria 2026-A al día de hoy.
 # Nota: las notas son 0-10 por intento; el modelo NO emite apto/no_apto
 # por intento — solo al cierre de la convocatoria.
@@ -58,11 +121,11 @@ CANDIDATOS = [
         "plaza": "001",
         "categoria": "C+E",
         "notas": {
-            "R01": {"nota": 8.8, "data_quality": "HIGH", "audit": False, "attempt_id": "att-001", "fecha": "25/04/2026", "hora": "09:32"},
-            "R02": {"nota": 7.5, "data_quality": "HIGH", "audit": False, "attempt_id": "att-002", "fecha": "26/04/2026", "hora": "10:15"},
-            "R03": {"nota": 5.2, "data_quality": "LOW",  "audit": True,  "attempt_id": "att-003", "fecha": "27/04/2026", "hora": "14:22"},
-            "R04": {"nota": 8.1, "data_quality": "HIGH", "audit": False, "attempt_id": "att-004", "fecha": "28/04/2026", "hora": "08:45"},
-            "R05": {"nota": 7.8, "data_quality": "HIGH", "audit": False, "attempt_id": "att-005", "fecha": "29/04/2026", "hora": "11:05"},
+            "R01": {"nota": 8.8, "data_quality": "HIGH", "audit": False, "attempt_id": "att-001"},
+            "R02": {"nota": 7.5, "data_quality": "HIGH", "audit": False, "attempt_id": "att-002"},
+            "R03": {"nota": 5.2, "data_quality": "LOW",  "audit": True,  "attempt_id": "att-003"},
+            "R04": {"nota": 8.1, "data_quality": "HIGH", "audit": False, "attempt_id": "att-004"},
+            "R05": {"nota": 7.8, "data_quality": "HIGH", "audit": False, "attempt_id": "att-005"},
             "R06": None, "R07": None, "R08": None,
         },
         "rutas_completadas": 5,
@@ -77,12 +140,12 @@ CANDIDATOS = [
         "plaza": "002",
         "categoria": "C",
         "notas": {
-            "R01": {"nota": 9.2, "data_quality": "HIGH", "audit": False, "attempt_id": "att-010", "fecha": "18/04/2026", "hora": "09:00"},
-            "R02": {"nota": 8.7, "data_quality": "HIGH", "audit": False, "attempt_id": "att-011", "fecha": "19/04/2026", "hora": "10:30"},
-            "R03": {"nota": 8.9, "data_quality": "HIGH", "audit": False, "attempt_id": "att-012", "fecha": "21/04/2026", "hora": "09:15"},
-            "R04": {"nota": 9.0, "data_quality": "HIGH", "audit": False, "attempt_id": "att-013", "fecha": "22/04/2026", "hora": "14:00"},
-            "R05": {"nota": 8.5, "data_quality": "HIGH", "audit": False, "attempt_id": "att-014", "fecha": "24/04/2026", "hora": "11:30"},
-            "R06": {"nota": 9.1, "data_quality": "HIGH", "audit": False, "attempt_id": "att-015", "fecha": "26/04/2026", "hora": "09:45"},
+            "R01": {"nota": 9.2, "data_quality": "HIGH", "audit": False, "attempt_id": "att-010"},
+            "R02": {"nota": 8.7, "data_quality": "HIGH", "audit": False, "attempt_id": "att-011"},
+            "R03": {"nota": 8.9, "data_quality": "HIGH", "audit": False, "attempt_id": "att-012"},
+            "R04": {"nota": 9.0, "data_quality": "HIGH", "audit": False, "attempt_id": "att-013"},
+            "R05": {"nota": 8.5, "data_quality": "HIGH", "audit": False, "attempt_id": "att-014"},
+            "R06": {"nota": 9.1, "data_quality": "HIGH", "audit": False, "attempt_id": "att-015"},
             "R07": None, "R08": None,
         },
         "rutas_completadas": 6,
@@ -97,10 +160,10 @@ CANDIDATOS = [
         "plaza": "003",
         "categoria": "C+E",
         "notas": {
-            "R01": {"nota": 7.3, "data_quality": "HIGH",   "audit": False, "attempt_id": "att-020", "fecha": "17/04/2026", "hora": "09:00"},
-            "R02": {"nota": 4.8, "data_quality": "MEDIUM", "audit": True,  "attempt_id": "att-021", "fecha": "18/04/2026", "hora": "10:30"},
-            "R03": {"nota": 3.9, "data_quality": "LOW",    "audit": False, "attempt_id": "att-022", "fecha": "20/04/2026", "hora": "14:00"},
-            "R04": {"nota": 7.1, "data_quality": "HIGH",   "audit": False, "attempt_id": "att-023", "fecha": "22/04/2026", "hora": "09:30"},
+            "R01": {"nota": 7.3, "data_quality": "HIGH", "audit": False, "attempt_id": "att-020"},
+            "R02": {"nota": 4.8, "data_quality": "MEDIUM","audit": True,  "attempt_id": "att-021"},
+            "R03": {"nota": 3.9, "data_quality": "LOW",  "audit": False, "attempt_id": "att-022"},
+            "R04": {"nota": 7.1, "data_quality": "HIGH", "audit": False, "attempt_id": "att-023"},
             "R05": None, "R06": None, "R07": None, "R08": None,
         },
         "rutas_completadas": 4,
@@ -130,13 +193,13 @@ CANDIDATOS = [
         "plaza": "005",
         "categoria": "C+E",
         "notas": {
-            "R01": {"nota": 9.4, "data_quality": "HIGH", "audit": False, "attempt_id": "att-030", "fecha": "15/04/2026", "hora": "08:30"},
-            "R02": {"nota": 9.0, "data_quality": "HIGH", "audit": False, "attempt_id": "att-031", "fecha": "17/04/2026", "hora": "10:00"},
-            "R03": {"nota": 8.7, "data_quality": "HIGH", "audit": False, "attempt_id": "att-032", "fecha": "19/04/2026", "hora": "14:15"},
-            "R04": {"nota": 9.2, "data_quality": "HIGH", "audit": False, "attempt_id": "att-033", "fecha": "21/04/2026", "hora": "09:30"},
-            "R05": {"nota": 8.9, "data_quality": "HIGH", "audit": False, "attempt_id": "att-034", "fecha": "23/04/2026", "hora": "11:00"},
-            "R06": {"nota": 9.1, "data_quality": "HIGH", "audit": False, "attempt_id": "att-035", "fecha": "25/04/2026", "hora": "08:45"},
-            "R07": {"nota": 8.8, "data_quality": "HIGH", "audit": False, "attempt_id": "att-036", "fecha": "27/04/2026", "hora": "10:30"},
+            "R01": {"nota": 9.4, "data_quality": "HIGH", "audit": False, "attempt_id": "att-030"},
+            "R02": {"nota": 9.0, "data_quality": "HIGH", "audit": False, "attempt_id": "att-031"},
+            "R03": {"nota": 8.7, "data_quality": "HIGH", "audit": False, "attempt_id": "att-032"},
+            "R04": {"nota": 9.2, "data_quality": "HIGH", "audit": False, "attempt_id": "att-033"},
+            "R05": {"nota": 8.9, "data_quality": "HIGH", "audit": False, "attempt_id": "att-034"},
+            "R06": {"nota": 9.1, "data_quality": "HIGH", "audit": False, "attempt_id": "att-035"},
+            "R07": {"nota": 8.8, "data_quality": "HIGH", "audit": False, "attempt_id": "att-036"},
             "R08": None,
         },
         "rutas_completadas": 7,
@@ -151,11 +214,11 @@ CANDIDATOS = [
         "plaza": "006",
         "categoria": "C",
         "notas": {
-            "R01": {"nota": 7.8, "data_quality": "HIGH", "audit": False, "attempt_id": "att-040", "fecha": "16/04/2026", "hora": "09:15"},
-            "R02": {"nota": 8.2, "data_quality": "HIGH", "audit": False, "attempt_id": "att-041", "fecha": "17/04/2026", "hora": "11:00"},
-            "R03": {"nota": 7.5, "data_quality": "HIGH", "audit": False, "attempt_id": "att-042", "fecha": "19/04/2026", "hora": "14:30"},
-            "R04": {"nota": 4.1, "data_quality": "LOW",  "audit": False, "attempt_id": "att-043", "fecha": "21/04/2026", "hora": "09:45"},
-            "R05": {"nota": 7.9, "data_quality": "HIGH", "audit": False, "attempt_id": "att-044", "fecha": "24/04/2026", "hora": "10:30"},
+            "R01": {"nota": 7.8, "data_quality": "HIGH", "audit": False, "attempt_id": "att-040"},
+            "R02": {"nota": 8.2, "data_quality": "HIGH", "audit": False, "attempt_id": "att-041"},
+            "R03": {"nota": 7.5, "data_quality": "HIGH", "audit": False, "attempt_id": "att-042"},
+            "R04": {"nota": 4.1, "data_quality": "LOW",  "audit": False, "attempt_id": "att-043"},
+            "R05": {"nota": 7.9, "data_quality": "HIGH", "audit": False, "attempt_id": "att-044"},
             "R06": None, "R07": None, "R08": None,
         },
         "rutas_completadas": 5,
@@ -170,11 +233,11 @@ CANDIDATOS = [
         "plaza": "007",
         "categoria": "C+E",
         "notas": {
-            "R01": {"nota": 7.1, "data_quality": "HIGH",   "audit": False, "attempt_id": "att-050", "fecha": "17/04/2026", "hora": "08:30"},
-            "R02": {"nota": 6.8, "data_quality": "HIGH",   "audit": False, "attempt_id": "att-051", "fecha": "18/04/2026", "hora": "10:00"},
-            "R03": {"nota": 3.5, "data_quality": "LOW",    "audit": False, "attempt_id": "att-052", "fecha": "20/04/2026", "hora": "14:15"},
-            "R04": {"nota": 3.2, "data_quality": "LOW",    "audit": False, "attempt_id": "att-053", "fecha": "21/04/2026", "hora": "09:30"},
-            "R05": {"nota": 3.0, "data_quality": "MEDIUM", "audit": False, "attempt_id": "att-054", "fecha": "23/04/2026", "hora": "11:00"},
+            "R01": {"nota": 7.1, "data_quality": "HIGH",   "audit": False, "attempt_id": "att-050"},
+            "R02": {"nota": 6.8, "data_quality": "HIGH",   "audit": False, "attempt_id": "att-051"},
+            "R03": {"nota": 3.5, "data_quality": "LOW",    "audit": False, "attempt_id": "att-052"},
+            "R04": {"nota": 3.2, "data_quality": "LOW",    "audit": False, "attempt_id": "att-053"},
+            "R05": {"nota": 3.0, "data_quality": "MEDIUM", "audit": False, "attempt_id": "att-054"},
             "R06": None, "R07": None, "R08": None,
         },
         "rutas_completadas": 5,
@@ -189,14 +252,14 @@ CANDIDATOS = [
         "plaza": "008",
         "categoria": "C",
         "notas": {
-            "R01": {"nota": 9.6, "data_quality": "HIGH", "audit": False, "attempt_id": "att-060", "fecha": "18/04/2026", "hora": "09:00"},
-            "R02": {"nota": 9.3, "data_quality": "HIGH", "audit": False, "attempt_id": "att-061", "fecha": "19/04/2026", "hora": "10:00"},
-            "R03": {"nota": 9.1, "data_quality": "HIGH", "audit": False, "attempt_id": "att-062", "fecha": "20/04/2026", "hora": "11:00"},
-            "R04": {"nota": 9.5, "data_quality": "HIGH", "audit": False, "attempt_id": "att-063", "fecha": "21/04/2026", "hora": "14:00"},
-            "R05": {"nota": 9.4, "data_quality": "HIGH", "audit": False, "attempt_id": "att-064", "fecha": "22/04/2026", "hora": "09:30"},
-            "R06": {"nota": 9.2, "data_quality": "HIGH", "audit": False, "attempt_id": "att-065", "fecha": "23/04/2026", "hora": "10:30"},
-            "R07": {"nota": 9.0, "data_quality": "HIGH", "audit": False, "attempt_id": "att-066", "fecha": "24/04/2026", "hora": "09:00"},
-            "R08": {"nota": 9.3, "data_quality": "HIGH", "audit": False, "attempt_id": "att-067", "fecha": "28/04/2026", "hora": "11:15"},
+            "R01": {"nota": 9.6, "data_quality": "HIGH", "audit": False, "attempt_id": "att-060"},
+            "R02": {"nota": 9.3, "data_quality": "HIGH", "audit": False, "attempt_id": "att-061"},
+            "R03": {"nota": 9.1, "data_quality": "HIGH", "audit": False, "attempt_id": "att-062"},
+            "R04": {"nota": 9.5, "data_quality": "HIGH", "audit": False, "attempt_id": "att-063"},
+            "R05": {"nota": 9.4, "data_quality": "HIGH", "audit": False, "attempt_id": "att-064"},
+            "R06": {"nota": 9.2, "data_quality": "HIGH", "audit": False, "attempt_id": "att-065"},
+            "R07": {"nota": 9.0, "data_quality": "HIGH", "audit": False, "attempt_id": "att-066"},
+            "R08": {"nota": 9.3, "data_quality": "HIGH", "audit": False, "attempt_id": "att-067"},
         },
         "rutas_completadas": 8,
         "rutas_total": 8,
@@ -210,10 +273,10 @@ CANDIDATOS = [
         "plaza": "101",
         "categoria": "C",
         "notas": {
-            "R01": {"nota": 6.8, "data_quality": "HIGH",   "audit": False, "attempt_id": "att-101", "fecha": "20/04/2026", "hora": "09:00"},
-            "R02": {"nota": 7.2, "data_quality": "MEDIUM", "audit": False, "attempt_id": "att-102", "fecha": "22/04/2026", "hora": "10:30"},
-            "R03": {"nota": 8.0, "data_quality": "HIGH",   "audit": False, "attempt_id": "att-103", "fecha": "24/04/2026", "hora": "14:00"},
-            "R04": {"nota": 5.5, "data_quality": "LOW",    "audit": True,  "attempt_id": "att-104", "fecha": "28/04/2026", "hora": "09:30"},
+            "R01": {"nota": 6.8, "data_quality": "HIGH",   "audit": False, "attempt_id": "att-101"},
+            "R02": {"nota": 7.2, "data_quality": "MEDIUM", "audit": False, "attempt_id": "att-102"},
+            "R03": {"nota": 8.0, "data_quality": "HIGH",   "audit": False, "attempt_id": "att-103"},
+            "R04": {"nota": 5.5, "data_quality": "LOW",    "audit": True,  "attempt_id": "att-104"},
         },
         "rutas_completadas": 4,
         "rutas_total": 4,
@@ -227,10 +290,10 @@ CANDIDATOS = [
         "plaza": "102",
         "categoria": "C",
         "notas": {
-            "R01": {"nota": 9.1, "data_quality": "HIGH", "audit": False, "attempt_id": "att-111", "fecha": "19/04/2026", "hora": "09:00"},
-            "R02": {"nota": 8.9, "data_quality": "HIGH", "audit": False, "attempt_id": "att-112", "fecha": "21/04/2026", "hora": "11:00"},
-            "R03": {"nota": 9.5, "data_quality": "HIGH", "audit": False, "attempt_id": "att-113", "fecha": "23/04/2026", "hora": "14:00"},
-            "R04": {"nota": 9.2, "data_quality": "HIGH", "audit": False, "attempt_id": "att-114", "fecha": "28/04/2026", "hora": "10:15"},
+            "R01": {"nota": 9.1, "data_quality": "HIGH", "audit": False, "attempt_id": "att-111"},
+            "R02": {"nota": 8.9, "data_quality": "HIGH", "audit": False, "attempt_id": "att-112"},
+            "R03": {"nota": 9.5, "data_quality": "HIGH", "audit": False, "attempt_id": "att-113"},
+            "R04": {"nota": 9.2, "data_quality": "HIGH", "audit": False, "attempt_id": "att-114"},
         },
         "rutas_completadas": 4,
         "rutas_total": 4,
@@ -244,7 +307,7 @@ CANDIDATOS = [
         "plaza": "103",
         "categoria": "C",
         "notas": {
-            "R01": {"nota": 4.5, "data_quality": "HIGH", "audit": False, "attempt_id": "att-121", "fecha": "20/04/2026", "hora": "09:00"},
+            "R01": {"nota": 4.5, "data_quality": "HIGH", "audit": False, "attempt_id": "att-121"},
             "R02": None, "R03": None, "R04": None,
         },
         "rutas_completadas": 1,
@@ -294,6 +357,10 @@ AUDITORIAS = [
     },
 ]
 
+DEFAULT_ROUTES = [
+    {"id": "R01", "label": "Ruta 1"},
+]
+
 HISTORIAL_EXTRA = {
     "001": [
         {"ruta_id": "R01", "ruta_label": "Salida Cochera", "nota": 6.5, "data_quality": "HIGH",   "fecha": "10/04/2026", "hora": "09:15", "attempt_id": "att-001-a"},
@@ -303,217 +370,469 @@ HISTORIAL_EXTRA = {
 }
 
 
-def _calcular_nota_media(candidato):
-    """Calcula la nota media de las rutas completadas."""
-    notas = [v["nota"] for v in candidato["notas"].values() if v is not None]
-    if not notas:
-        return 0.0
-    return sum(notas) / len(notas)
+def _routes_for(conv):
+    return ROUTES_BY_CONV.get(conv.name, DEFAULT_ROUTES)
 
 
-def _tiene_auditoria_pendiente(candidato_id):
-    nombre = next((c["nombre"] for c in CANDIDATOS if c["id"] == candidato_id), "")
-    return any(a["candidato"] == nombre and a["status"] == "PENDING" for a in AUDITORIAS)
+# ─── Loaders: BD → dict que el template ya espera ──────────────────────────
+
+def _format_date(dt):
+    if not dt:
+        return "—"
+    return dt.strftime("%d/%m/%Y")
 
 
-def _calcular_ranking(plazas, conv_id):
-    """Ordena candidatos por nota media descendente y calcula posición."""
-    entries = []
-    candidatos_filtrados = [c for c in CANDIDATOS if c.get("convocatoria_id") == conv_id]
-    
-    for c in candidatos_filtrados:
-        nota_media = _calcular_nota_media(c)
-        entries.append({
-            "candidato": c,
-            "nota_media": nota_media,
-            "rutas_completadas": c["rutas_completadas"],
-            "rutas_total": c["rutas_total"],
-            "tiene_auditoria": _tiene_auditoria_pendiente(c["id"]),
-        })
-
-    entries.sort(key=lambda x: x["nota_media"], reverse=True)
-
-    for i, entry in enumerate(entries):
-        puesto = i + 1
-        entry["puesto"] = puesto
-        entry["dentro_del_corte"] = puesto <= plazas
-
-    return entries
+def _format_datetime(dt):
+    if not dt:
+        return "—"
+    return dt.strftime("%d/%m/%Y %H:%M")
 
 
-# ── RUTAS ──────────────────────────────────────────────────────────────────
+def _convocatoria_dict(conv, total_candidatos, auditorias_pendientes):
+    routes = _routes_for(conv)
+    return {
+        "id": conv.id,
+        "nombre": conv.name,
+        "descripcion": conv.description or "",
+        "status": conv.status.value if conv.status else "OPEN",
+        "plazas": conv.plazas,
+        "total_candidatos": total_candidatos,
+        "fecha_cierre": _format_date(conv.closedAt) if conv.closedAt else "Sin cierre",
+        "ultima_actualizacion": _format_datetime(conv.updatedAt or conv.openedAt),
+        "auditorias_pendientes": auditorias_pendientes,
+        "rutas": routes,
+    }
 
-@manager_bp.route('/')
+
+def _load_convocatorias_dicts(only_active=True):
+    """Lista de convocatorias visibles para el manager."""
+    q = Convocatoria.query
+    if only_active:
+        q = q.filter(Convocatoria.status.in_([
+            ConvocatoriaStatus.OPEN,
+            ConvocatoriaStatus.PREVIEW,
+            ConvocatoriaStatus.CLOSING,
+        ]))
+    convs = q.order_by(Convocatoria.openedAt.desc()).all()
+
+    result = []
+    for c in convs:
+        total = db.session.query(Enrollment).filter_by(convocatoriaId=c.id).count()
+        from .audit_service import AuditRequest, AuditStatus
+        pendientes = AuditRequest.query.filter_by(
+            organizationId=org_id,
+            status=AuditStatus.PENDING,
+        ).count()
+        result.append(_convocatoria_dict(c, total_candidatos=total, auditorias_pendientes=pendientes))
+    return result
+
+
+def _load_auditorias_pendientes():
+    org_id = _get_org_id()
+    if not org_id:
+        return []
+    return list_audit_requests(org_id, status="PENDING")
+
+
+
+def _get_org_id():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    return user.organizationId if user else None
+
+
+def _resolve_conv_id(org_id):
+    conv_id = request.args.get("conv_id")
+    if not conv_id:
+        conv_id = get_first_conv_id(org_id)
+    return conv_id
+
+
+# ─── RUTAS ──────────────────────────────────────────────────────────────────
+
+@manager_bp.route("/")
+@require_role(["MANAGER", "ADMIN"])
 def dashboard():
-    pendientes_total = sum(
-        1 for a in AUDITORIAS if a["status"] == "PENDING"
-    )
+    convocatorias = _load_convocatorias_dicts()
+    auditorias = _load_auditorias_pendientes()
     return render_template(
-        'manager/dashboard.html',
-        active_page='dashboard',
-        convocatorias=CONVOCATORIAS,
-        auditorias=[a for a in AUDITORIAS if a["status"] == "PENDING"],
-        pendientes_total=pendientes_total,
+        "manager/dashboard.html",
+        active_page="dashboard",
+        convocatorias=convocatorias,
+        auditorias=auditorias,
+        pendientes_total=len(auditorias),
     )
 
 
-@manager_bp.route('/convocatorias')
+@manager_bp.route("/convocatorias")
+@require_role(["MANAGER", "ADMIN"])
 def convocatorias():
+    org_id = _get_org_id()
     return render_template(
-        'manager/convocatorias.html',
-        active_page='convocatorias',
-        convocatorias=CONVOCATORIAS,
+        "manager/convocatorias.html",
+        active_page="convocatorias",
+        convocatorias=get_convocatorias(org_id),
     )
 
 
-@manager_bp.route('/matriz')
-def matriz():
-    from flask import request
-    conv_id = request.args.get('conv_id')
-    conv = next((c for c in CONVOCATORIAS if c["id"] == conv_id), CONVOCATORIAS[0])
-    
-    candidatos_filtrados = [c for c in CANDIDATOS if c.get("convocatoria_id") == conv["id"]]
-    
-    return render_template(
-        'manager/matriz.html',
-        active_page='matriz',
-        candidatos=candidatos_filtrados,
-        circuitos=conv["rutas"],
-        convocatoria=conv,
-        convocatorias=CONVOCATORIAS,
-    )
-
-
-@manager_bp.route('/ranking')
+@manager_bp.route("/ranking")
+@require_role(["MANAGER", "ADMIN"])
 def ranking():
-    from flask import request
-    conv_id = request.args.get('conv_id')
-    conv = next((c for c in CONVOCATORIAS if c["id"] == conv_id), CONVOCATORIAS[0])
-    
-    plazas = conv["plazas"]
-    ranking_entries = _calcular_ranking(plazas, conv["id"])
-    nota_corte = None
-    if len(ranking_entries) >= plazas:
-        nota_corte = ranking_entries[plazas - 1]["nota_media"]
-        
-    candidatos_filtrados = [c for c in CANDIDATOS if c.get("convocatoria_id") == conv["id"]]
-    
+    org_id = _get_org_id()
+    conv_id = _resolve_conv_id(org_id)
+    if not conv_id:
+        return render_template(
+            "manager/ranking.html",
+            active_page="ranking",
+            convocatorias=[],
+            convocatoria=None,
+            ranking=[],
+            plazas=0,
+            nota_corte=None,
+            total_candidatos=0,
+        )
+
+    conv_dict, entries = get_ranking(conv_id, org_id)
+    if not conv_dict:
+        abort(404)
+
+    plazas = conv_dict["plazas"]
+    nota_corte = entries[plazas - 1]["nota_media"] if len(entries) >= plazas else None
+
     return render_template(
-        'manager/ranking.html',
-        active_page='ranking',
-        ranking=ranking_entries,
+        "manager/ranking.html",
+        active_page="ranking",
+        convocatorias=get_convocatorias(org_id),
+        convocatoria=conv_dict,
+        ranking=entries,
         plazas=plazas,
         nota_corte=nota_corte,
-        convocatoria=conv,
-        convocatorias=CONVOCATORIAS,
-        total_candidatos=len(candidatos_filtrados),
+        total_candidatos=conv_dict["total_candidatos"],
     )
 
 
-@manager_bp.route('/intento/<attempt_id>')
-def intento_detalle(attempt_id):
-    # Buscar el intento en los datos mock
-    candidato = None
-    ruta_info = None
-    nota_info = None
-    conv = None
+@manager_bp.route("/matriz")
+@require_role(["MANAGER", "ADMIN"])
+def matriz():
+    org_id = _get_org_id()
+    conv_id = _resolve_conv_id(org_id)
+    if not conv_id:
+        return render_template(
+            "manager/matriz.html",
+            active_page="matriz",
+            convocatorias=[],
+            convocatoria=None,
+            candidatos=[],
+            circuitos=[],
+        )
 
-    for c in CANDIDATOS:
-        for ruta_id, info in c["notas"].items():
-            if info and info.get("attempt_id") == attempt_id:
-                candidato = c
-                nota_info = info
-                conv = next((cv for cv in CONVOCATORIAS if cv["id"] == c.get("convocatoria_id")), CONVOCATORIAS[0])
-                ruta_info = next((r for r in conv["rutas"] if r["id"] == ruta_id), None)
-                break
-        if candidato:
-            break
-
-    if not candidato:
-        return "Intento no encontrado", 404
-
-    # Auditoría asociada a este intento (si la hay)
-    auditoria = next((a for a in AUDITORIAS if a["attempt_id"] == attempt_id), None)
-
-    # Score breakdown simulado
-    score_breakdown = [
-        {"familia": "Estabilidad", "obtenido": round(nota_info["nota"] * 0.40, 1), "maximo": 4.0},
-        {"familia": "Velocidad",   "obtenido": round(nota_info["nota"] * 0.30, 1), "maximo": 3.0},
-        {"familia": "Ruta",        "obtenido": round(nota_info["nota"] * 0.15, 1), "maximo": 1.5},
-        {"familia": "Conducción",  "obtenido": round(nota_info["nota"] * 0.15, 1), "maximo": 1.5},
-    ]
-
-    # Eventos detectados simulados
-    eventos = []
-    if nota_info["nota"] < 6:
-        eventos = [
-            {"tipo": "FRENADA_BRUSCA", "timestamp": "09:34:12", "severidad": 0.85,
-             "source": "SENSOR", "confidence": "HIGH",
-             "descripcion": "Deceleración de 0.42g en 0.8 segundos"},
-            {"tipo": "EXCESO_VELOCIDAD", "timestamp": "09:41:55", "severidad": 0.60,
-             "source": "WEBFLEET", "confidence": "HIGH",
-             "descripcion": "Velocidad 68 km/h en zona limitada a 50 km/h"},
-        ]
-    elif nota_info["data_quality"] == "LOW":
-        eventos = [
-            {"tipo": "ACELERACION_LATERAL", "timestamp": "09:36:22", "severidad": 0.45,
-             "source": "SENSOR", "confidence": "LOW",
-             "descripcion": "Giro lateral 0.28g — calidad datos baja"},
-        ]
+    conv_dict, candidatos, circuitos = get_matrix_data(conv_id, org_id)
+    if not conv_dict:
+        abort(404)
 
     return render_template(
-        'manager/intento.html',
-        active_page='matriz',
-        candidato=candidato,
-        ruta=ruta_info,
-        nota_info=nota_info,
-        attempt_id=attempt_id,
-        score_breakdown=score_breakdown,
-        eventos=eventos,
-        auditoria=auditoria,
-        convocatoria=conv,
+        "manager/matriz.html",
+        active_page="matriz",
+        convocatorias=get_convocatorias(org_id),
+        convocatoria=conv_dict,
+        candidatos=candidatos,
+        circuitos=circuitos,
     )
 
 
-@manager_bp.route('/auditoria/<audit_id>')
-def auditoria_detalle(audit_id):
-    auditoria = next((a for a in AUDITORIAS if a["id"] == audit_id), None)
-    if not auditoria:
-        return "Auditoría no encontrada", 404
-    return render_template(
-        'manager/auditoria.html',
-        active_page='dashboard',
-        auditoria=auditoria,
-    )
-
-
-@manager_bp.route('/alumno/<int:candidato_id>')
+@manager_bp.route("/alumno/<candidato_id>")
+@require_role(["MANAGER", "ADMIN"])
 def alumno_detalle(candidato_id):
-    candidato = next((c for c in CANDIDATOS if c["id"] == candidato_id), None)
+    org_id = _get_org_id()
+    conv_id = request.args.get("conv_id") or get_alumno_active_conv_id(candidato_id, org_id)
+    if not conv_id:
+        abort(404)
+
+    conv_dict, candidato, intentos, nota_media = get_alumno_detail(candidato_id, conv_id, org_id)
     if not candidato:
-        return "Candidato no encontrado", 404
-    
-    conv = next((cv for cv in CONVOCATORIAS if cv["id"] == candidato.get("convocatoria_id")), CONVOCATORIAS[0])
-    
-    # Calcular intentos para mostrar
-    intentos = []
-    for ruta_id, info in candidato["notas"].items():
-        if info:
-            ruta_label = next((r["label"] for r in conv["rutas"] if r["id"] == ruta_id), ruta_id)
-            intentos.append({
-                "ruta_id": ruta_id,
-                "ruta_label": ruta_label,
-                "nota": info["nota"],
-                "data_quality": info["data_quality"],
-                "audit": info["audit"],
-                "attempt_id": info["attempt_id"]
-            })
-            
+        abort(404)
+
     return render_template(
-        'manager/alumno.html',
-        active_page='matriz',
+        "manager/alumno.html",
+        active_page="matriz",
+        convocatoria=conv_dict,
         candidato=candidato,
-        convocatoria=conv,
         intentos=intentos,
-        nota_media=_calcular_nota_media(candidato)
+        nota_media=nota_media,
     )
+
+
+@manager_bp.route("/intento/<attempt_id>")
+@require_role(["MANAGER", "ADMIN"])
+def intento_detalle(attempt_id):
+    org_id = _get_org_id()
+    detail = get_intento_detail(attempt_id, org_id)
+    if not detail:
+        abort(404)
+
+    attempt = Attempt.query.filter_by(id=attempt_id, organizationId=org_id).first()
+    can_score = (
+        attempt is not None
+        and attempt.closedAt is None
+        and attempt.status in (AttemptStatus.OPEN, AttemptStatus.PROCESSING)
+    )
+
+    return render_template(
+        "manager/intento.html",
+        active_page="matriz",
+        candidato=detail["candidato"],
+        ruta=detail["ruta"],
+        nota_info=detail["nota_info"],
+        attempt_id=detail["attempt_id"],
+        score_breakdown=detail["score_breakdown"],
+        eventos=detail["eventos"],
+        auditoria=detail["auditoria"],
+        convocatoria=detail["convocatoria"],
+        can_score=can_score,
+    )
+
+
+@manager_bp.route("/intento/<attempt_id>/upload-sensor", methods=["POST"])
+@require_role(["ADMIN"])
+def upload_sensor_data(attempt_id):
+    """Recibe el TXT del Doback Elite, parsea las mediciones y corre el pipeline completo."""
+    from app.services.pipeline.sensor_parser import parse_sensor_file
+    from app.services.pipeline import run_pipeline
+
+    org_id = _get_org_id()
+    attempt = Attempt.query.filter_by(id=attempt_id, organizationId=org_id).first()
+    if not attempt:
+        abort(404)
+
+    redirect_url = url_for("manager.intento_detalle", attempt_id=attempt_id)
+
+    if attempt.closedAt:
+        flash("Este intento ya está cerrado.", "warning")
+        return redirect(redirect_url)
+
+    f = request.files.get("sensor_file")
+    if not f or not f.filename:
+        flash("No se seleccionó ningún archivo.", "danger")
+        return redirect(redirect_url)
+
+    if not f.filename.lower().endswith(".txt"):
+        flash("Solo se aceptan archivos .txt del sensor Doback.", "danger")
+        return redirect(redirect_url)
+
+    try:
+        content = f.read().decode("utf-8", errors="replace")
+    except Exception as exc:
+        flash(f"Error al leer el archivo: {exc}", "danger")
+        return redirect(redirect_url)
+
+    actor_id = get_jwt_identity()
+
+    try:
+        parse_result = parse_sensor_file(content, attempt_id, org_id)
+    except ValueError as exc:
+        flash(str(exc), "warning")
+        return redirect(redirect_url)
+    except Exception as exc:
+        flash(f"Error al parsear el archivo: {exc}", "danger")
+        return redirect(redirect_url)
+
+    if parse_result.total_rows == 0:
+        flash("El archivo no contenía datos válidos (sin GPS fix ni datos de estabilidad).", "warning")
+        return redirect(redirect_url)
+
+    try:
+        pipeline_result = run_pipeline(attempt_id, actor_id=actor_id)
+        flash(
+            f"Datos cargados: {parse_result.summary()}. "
+            f"Score: {pipeline_result['score']} · {pipeline_result['events_detected']} eventos detectados.",
+            "success",
+        )
+    except ValueError as exc:
+        flash(f"Datos cargados ({parse_result.total_rows} filas) pero error al calcular score: {exc}", "warning")
+    except Exception as exc:
+        flash(f"Datos cargados ({parse_result.total_rows} filas) pero error en el pipeline: {exc}", "danger")
+
+    return redirect(redirect_url)
+
+
+@manager_bp.route("/intento/<attempt_id>/score", methods=["POST"])
+@require_role(["ADMIN"])
+def score_attempt(attempt_id):
+    """Dispara el pipeline detect → score → cierre para un attempt OPEN."""
+    from app.services.pipeline import run_pipeline
+
+    org_id = _get_org_id()
+    attempt = Attempt.query.filter_by(id=attempt_id, organizationId=org_id).first()
+    if not attempt:
+        abort(404)
+
+    if attempt.closedAt:
+        flash("Este intento ya está cerrado y no puede re-procesarse.", "warning")
+        return redirect(url_for("manager.intento_detalle", attempt_id=attempt_id))
+
+    actor_id = get_jwt_identity()
+    try:
+        result = run_pipeline(attempt_id, actor_id=actor_id)
+        flash(
+            f"Score calculado: {result['score']} · {result['events_detected']} eventos detectados.",
+            "success",
+        )
+    except ValueError as e:
+        flash(str(e), "warning")
+    except Exception as e:
+        flash(f"Error al procesar el intento: {e}", "danger")
+
+    return redirect(url_for("manager.intento_detalle", attempt_id=attempt_id))
+
+
+@manager_bp.route("/alumno/<student_id>/intento/nuevo", methods=["POST"])
+@require_role(["ADMIN"])
+def registrar_intento(student_id):
+    """Registra un intento con nota manual para un alumno (entrada directa sin telemetría)."""
+    org_id = _get_org_id()
+    conv_id = request.form.get("conv_id") or request.args.get("conv_id")
+    route_id = request.form.get("route_id", "").strip().upper()
+    score_str = request.form.get("score", "")
+
+    redirect_url = url_for("manager.alumno_detalle", candidato_id=student_id, conv_id=conv_id)
+
+    try:
+        score = float(score_str)
+        if not (0.0 <= score <= 10.0):
+            raise ValueError()
+    except ValueError:
+        flash("Nota inválida — debe ser un número entre 0 y 10.", "danger")
+        return redirect(redirect_url)
+
+    if not route_id:
+        flash("Debe indicar el identificador de la ruta.", "danger")
+        return redirect(redirect_url)
+
+    enrollment = Enrollment.query.filter_by(
+        studentId=student_id, convocatoriaId=conv_id, organizationId=org_id
+    ).first()
+    if not enrollment:
+        flash("El alumno no está inscripto en esa convocatoria.", "warning")
+        return redirect(redirect_url)
+
+    vehicle = Vehicle.query.filter_by(organizationId=org_id).first()
+    if not vehicle:
+        flash("No hay vehículos registrados. Creá uno antes de ingresar notas.", "warning")
+        return redirect(redirect_url)
+
+    conv = enrollment.convocatoria
+    pesos = (conv.pesosPorFamilia or {}) if conv else {}
+    if not pesos:
+        pesos = {"estabilidad": 0.40, "velocidad": 0.30, "ruta": 0.15, "conduccion": 0.15}
+    breakdown = {fam: round(score * peso, 1) for fam, peso in pesos.items()}
+
+    attempt_count = Attempt.query.filter_by(enrollmentId=enrollment.id).count()
+    now = datetime.utcnow()
+
+    attempt = Attempt(
+        organizationId=org_id,
+        vehicleId=vehicle.id,
+        enrollmentId=enrollment.id,
+        convocatoriaId=conv_id,
+        studentId=student_id,
+        routeId=route_id,
+        source="manual_entry",
+        status=AttemptStatus.CLOSED,
+        startTime=now,
+        endTime=now,
+        closedAt=now,
+        score=score,
+        scoreRaw=score,
+        scoreBreakdown=breakdown,
+        criteriaVersionPinned=conv.criteriaVersion if conv else "manual",
+        normalizerVersionPinned=conv.normalizerVersion if conv else "manual",
+        detectorVersionPinned=conv.detectorVersion if conv else "manual",
+        sequence=attempt_count + 1,
+        sessionNumber=attempt_count + 1,
+        attemptNumber=attempt_count + 1,
+        uploadedById=get_jwt_identity(),
+        dataQuality={"confidenceScore": 1.0, "source": "manual_entry"},
+    )
+    db.session.add(attempt)
+    db.session.flush()  # obtiene attempt.id antes del commit
+
+    enrollment.attemptsCount = (enrollment.attemptsCount or 0) + 1
+
+    db.session.add(TrainingAuditLog(
+        actorId=get_jwt_identity(),
+        actorRole="ADMIN",
+        action=AuditAction.ATTEMPT_CREATED,
+        resourceType="Attempt",
+        resourceId=attempt.id,
+        delta={"score": score, "route_id": route_id, "source": "manual_entry"},
+        organizationId=org_id,
+    ))
+
+    db.session.commit()
+
+    flash(f"Nota {score:.1f} registrada para la ruta {route_id}.", "success")
+    return redirect(redirect_url)
+
+
+@manager_bp.route("/auditoria/<audit_id>")
+@require_role(["MANAGER", "ADMIN"])
+def auditoria_detalle(audit_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    ar = get_audit_request(audit_id, user.organizationId)
+    if not ar:
+        return jsonify({"message": "Auditoría no encontrada"}), 404
+    if request.is_json:
+        return jsonify(ar), 200
+    return render_template("manager/auditoria_detalle.html", auditoria=ar, active_page="auditorias")
+
+
+@manager_bp.route("/auditoria", methods=["GET"])
+@require_role(["MANAGER", "ADMIN"])
+def auditoria_list():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    status_filter = request.args.get("status")
+    auditorias = list_audit_requests(user.organizationId, status=status_filter)
+    if request.is_json:
+        return jsonify(auditorias), 200
+    return render_template(
+        "manager/auditorias.html",
+        auditorias=auditorias,
+        active_page="auditorias",
+        pendientes_total=count_pending(user.organizationId),
+    )
+
+
+@manager_bp.route("/auditoria/<audit_id>", methods=["PATCH"])
+@require_role(["MANAGER", "ADMIN"])
+def auditoria_update(audit_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    data = request.get_json() or {}
+    new_status = data.get("status", "")
+    resolution = data.get("resolution", "")
+    try:
+        ar = update_audit_request(audit_id, user.organizationId, user_id, new_status, resolution)
+    except AuditRequestError as exc:
+        return jsonify({"message": str(exc)}), 422
+    return jsonify(ar), 200
+
+
+@manager_bp.route("/auditoria", methods=["POST"])
+@require_role(["MANAGER", "ADMIN"])
+def auditoria_create():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    data = request.get_json() or {}
+    try:
+        ar = create_audit_request(
+            org_id=user.organizationId,
+            actor_id=user_id,
+            attempt_id=data.get("attemptId", ""),
+            enrollment_id=data.get("enrollmentId", ""),
+            reason=data.get("reason", ""),
+        )
+    except AuditRequestError as exc:
+        return jsonify({"message": str(exc)}), 422
+    return jsonify(ar), 201

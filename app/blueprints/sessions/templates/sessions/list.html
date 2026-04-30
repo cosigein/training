@@ -1,26 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Historial de Sesiones - DobackSoft{% endblock %}
+{% block title %}Historial de Intentos - CMadrid Training{% endblock %}
 
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
     <div>
-        <h1 style="margin: 0; font-size: 1.5rem;">Sesiones de Conducción</h1>
-        <p style="color: var(--color-gray-500); font-size: 0.875rem; margin: 4px 0 0 0;">Análisis detallado de recorridos y telemetría</p>
-    </div>
-    <div style="display: flex; gap: var(--space-sm);">
-        <button class="btn btn--secondary btn--sm">
-            <i class="ph ph-funnel"></i> Filtrar
-        </button>
-        <button class="btn btn--primary btn--sm">
-            <i class="ph ph-plus"></i> Nueva Sesión Manual
-        </button>
+        <h1 style="margin: 0; font-size: 1.5rem;">Intentos de evaluación</h1>
+        <p style="color: var(--color-gray-500); font-size: 0.875rem; margin: 4px 0 0 0;">Recorridos del alumnado, scoring y telemetría</p>
     </div>
 </div>
 
 <div class="card">
     <div class="card__header">
-        <h3 class="card__title">Registros Recientes</h3>
+        <h3 class="card__title">Registros recientes</h3>
     </div>
     <div class="table-container">
         <table class="table">
@@ -29,45 +21,50 @@
                     <th>Inicio</th>
                     <th>Fin</th>
                     <th>Vehículo</th>
-                    <th>Tipo</th>
+                    <th>Alumno</th>
                     <th>Estado</th>
+                    <th>Nota</th>
                     <th>Distancia</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                {% for session in sessions %}
+                {% for attempt in attempts %}
                 <tr>
-                    <td style="font-family: var(--font-mono); font-size: 0.75rem;">{{ session.startTime.strftime('%d/%m/%Y %H:%M') }}</td>
-                    <td style="font-family: var(--font-mono); font-size: 0.75rem;">{{ session.endTime.strftime('%H:%M') if session.endTime else 'En curso' }}</td>
-                    <td style="font-weight: 600;">{{ session.vehicle.name if session.vehicle else '-' }}</td>
-                    <td><span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">{{ session.type }}</span></td>
+                    <td style="font-family: var(--font-mono); font-size: 0.75rem;">{{ attempt.startTime.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td style="font-family: var(--font-mono); font-size: 0.75rem;">{{ attempt.endTime.strftime('%H:%M') if attempt.endTime else 'En curso' }}</td>
+                    <td style="font-weight: 600;">{{ attempt.vehicle.name if attempt.vehicle else '-' }}</td>
+                    <td>{{ attempt.student.name if attempt.student else '-' }}</td>
                     <td>
-                        <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; 
-                            background: {% if session.status == 'COMPLETED' %}rgba(39, 174, 96, 0.1); color: #27ae60;{% elif session.status == 'ACTIVE' %}rgba(52, 152, 219, 0.1); color: #3498db;{% else %}rgba(149, 165, 166, 0.1); color: #95a5a6;{% endif %}">
-                            {{ session.status }}
+                        {% set status_value = attempt.status.value if attempt.status else '' %}
+                        <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+                            background: {% if status_value == 'CLOSED' %}rgba(39, 174, 96, 0.1); color: #27ae60;{% elif status_value == 'OPEN' %}rgba(52, 152, 219, 0.1); color: #3498db;{% else %}rgba(149, 165, 166, 0.1); color: #95a5a6;{% endif %}">
+                            {{ status_value }}
                         </span>
                     </td>
-                    <td style="font-family: var(--font-mono);">{{ "%.1f"|format(session.distance or 0) }} km</td>
+                    <td style="font-family: var(--font-mono); font-weight: 600;">{{ "%.2f"|format(attempt.score) if attempt.score is not none else '—' }}</td>
+                    <td style="font-family: var(--font-mono);">{{ "%.1f"|format(attempt.distance or 0) }} km</td>
                     <td>
                         <div style="display: flex; gap: 4px;">
-                            <a href="{{ url_for('sessions.get_session_detail', id=session.id) }}" class="btn btn--icon btn--ghost" title="Analizar telemetría">
+                            <a href="{{ url_for('sessions.get_attempt_detail', id=attempt.id) }}" class="btn btn--icon btn--ghost" title="Analizar telemetría">
                                 <i class="ph ph-chart-scatter"></i>
                             </a>
+                            {% if current_user.role.value in ('ADMIN', 'SUPER_ADMIN') %}
                             <button type="button"
-                                    class="btn btn--icon btn--ghost js-delete-session"
-                                    data-url="{{ url_for('sessions.delete_session', id=session.id) }}"
+                                    class="btn btn--icon btn--ghost js-delete-attempt"
+                                    data-url="{{ url_for('sessions.delete_attempt', id=attempt.id) }}"
                                     style="color: var(--color-danger);"
-                                    title="Eliminar registro">
+                                    title="Eliminar intento">
                                 <i class="ph ph-trash"></i>
                             </button>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="7" style="text-align: center; padding: var(--space-2xl); color: var(--color-gray-500);">
-                        No se encontraron registros de conducción.
+                    <td colspan="8" style="text-align: center; padding: var(--space-2xl); color: var(--color-gray-500);">
+                        No se encontraron intentos.
                     </td>
                 </tr>
                 {% endfor %}
@@ -85,9 +82,9 @@
         return match ? decodeURIComponent(match[2]) : null;
     }
 
-    document.querySelectorAll('.js-delete-session').forEach(function(btn) {
+    document.querySelectorAll('.js-delete-attempt').forEach(function(btn) {
         btn.addEventListener('click', async function() {
-            if (!confirm('¿Eliminar este recorrido? Esta acción no se puede deshacer.')) return;
+            if (!confirm('¿Eliminar este intento? Esta acción no se puede deshacer.')) return;
 
             const jwtCsrf = getCookie('csrf_access_token');
             const wtfCsrf = "{{ csrf_token() }}";
@@ -118,7 +115,7 @@
                 let parsed;
                 try { parsed = JSON.parse(raw); } catch (e) { parsed = null; }
                 const detail = parsed && parsed.message ? parsed.message : raw.slice(0, 500);
-                console.error('[delete-session] status=' + res.status, parsed || raw);
+                console.error('[delete-attempt] status=' + res.status, parsed || raw);
                 alert('No se pudo eliminar (HTTP ' + res.status + '): ' + detail);
                 btn.disabled = false;
             } catch (err) {

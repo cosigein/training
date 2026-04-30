@@ -1287,7 +1287,7 @@ GET    /scoring/versions/:id                detalle
 POST   /scoring/versions                    crear (admin)
 POST   /scoring/versions/:id/activate       activar (transacción atómica)
 
-POST   /scoring/simulate                    SIMULADOR (Antonio implementa endpoint, vos lógica core puro)
+POST   /scoring/simulate                    SIMULADOR (Joel implementa endpoint, vos lógica core puro)
                                             body: {criteria_overrides, convocatoria_id}
                                             → ranking_original + ranking_simulado +
                                               candidatos_que_cruzan_corte + summary
@@ -1573,13 +1573,9 @@ Alejandro consume tus endpoints. **Reglas de comunicación:**
 - **Si Alejandro pide algo nuevo**, evaluás scope. Si entra en el sprint, lo agregás. Si no, va a Fase 2.
 - Errores HTTP consistentes: 400 (request mal formado), 401 (no autenticado), 403 (sin permisos), 404 (no existe), 409 (conflict), 422 (validación), 500 (server error).
 
-## Con Antonio (simulador)
+## Con Joel (simulador + tests + seed data + CI)
 
-- Vos exponés `packages/scoring/simulate()` como función pura el día 9 al cierre. Antonio escribe el endpoint `POST /scoring/simulate` el día 10 consumiendo tu función.
-- Si tu función cambia firma a partir del día 10, le avisás a Antonio en chat antes de mergear.
-
-## Con Joel (tests + seed data + CI)
-
+- **Simulador:** vos exponés `packages/scoring/simulate()` como función pura el día 9 al cierre. Joel escribe el endpoint `POST /scoring/simulate` el día 10 consumiendo tu función. Si tu función cambia firma a partir del día 10, le avisás a Joel en chat antes de mergear.
 - Joel hace los tests E2E que llaman a TUS endpoints. Si rompés un endpoint, avisale.
 - Joel hace los datos seed. Vos le decís qué datos necesita el sistema (cuántos enrollments, cuántos attempts cerrados, etc.).
 - El `docs/api-snapshot.md` se genera automático cada noche desde tu código vía un cron de CI que monta Joel. Confirmá con él el día 1 qué anotaciones JSDoc/decorador necesita en tu plan.

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Mi Portal — CMadrid Training{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/manager.css') }}">
+
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<div class="mgr-root">
+
+    <header class="mgr-header">
+        <a href="{{ url_for('student.dashboard') }}" class="mgr-logo">
+            <div class="mgr-logo__icon">CM</div>
+            <span class="mgr-logo__text">CMadrid <span>Training</span></span>
+        </a>
+
+        <div class="mgr-header-right" style="margin-left:auto; display:flex; align-items:center; gap:16px;">
+            <span style="font-size:14px; color:#64748b;">
+                <i class="ph ph-user-circle" style="margin-right:4px;"></i>
+                {{ user.name }}
+            </span>
+            <a href="{{ url_for('auth.logout') }}" class="mgr-btn-logout">
+                <i class="ph ph-sign-out"></i>
+                Salir
+            </a>
+        </div>
+    </header>
+
+    <main class="mgr-body">
+        {% block content %}{% endblock %}
+    </main>
+
+</div>
+
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>

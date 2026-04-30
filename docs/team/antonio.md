@@ -104,29 +104,13 @@ training/
 │           ├── circuitBreaker.ts    cuotas, retries
 │           └── tests/               fixtures + tests determinísticos
 │
-├── apps/api/src/routes/
-│   └── scoring.simulate.ts          ← TU CÓDIGO · endpoint del simulador
-│                                       Jesús expone packages/scoring/simulate()
-│                                       puro; vos escribís el wrapper HTTP
-│                                       + comparación rankings + diff
-│
-├── apps/web/src/pages/admin/
-│   └── ScoringSimulator.tsx         ← TU CÓDIGO · pantalla D12
-│                                       Alejandro te pasa componentes base
-│                                       (<ScoreBreakdown>, layouts).
-│                                       Joel escribe los E2E.
-│
-├── docs/
-│   └── SIMULATOR-USER-GUIDE.md      ← TU DOCUMENTO · 1-2 páginas en español
-│                                       para el admin de CMadrid
-│
 └── apps/worker/src/jobs/
     └── webfleetSync.ts              ← TU CÓDIGO (orquestación BullMQ)
 ```
 
 **Jesús no toca esto. Vos no tocás el resto del backend.**
 
-> **El simulador es la pieza diferencial del producto en la demo.** Lo construís vos porque lo presentás vos.
+> **El simulador (endpoint `POST /scoring/simulate`, pantalla D12, user guide) es de Joel.** Vos hacés review obligatoria del endpoint porque toca scoring y es legalmente sensible (ver §10 — invariante "decisión solo al cierre"), pero la implementación end-to-end es suya. La pieza diferencial de la demo la construye Joel; vos garantizás que no rompa invariantes y que el cliente la entiende.
 
 ---
 
@@ -470,24 +454,22 @@ MIÉRCOLES (DÍA 9) 06/05
   - Quota 80%/97%
 - Soporte ad-hoc al equipo.
 
-JUEVES (DÍA 10) 07/05 — empieza el SIMULADOR
-- Mañana (4h): endpoint POST /scoring/simulate
-    · Jesús ya tiene `packages/scoring/simulate()` puro listo (lo entregó día 9).
-    · Vos hacés el wrapper HTTP: cargar attempts cerrados de la convocatoria,
-      llamar a simulate(), construir nuevo ranking, comparar con original,
-      identificar candidatos que cruzan corte.
-- Tarde (3h): pantalla D12 ScoringSimulator.tsx
-    · Alejandro te entrega componentes base (<ScoreBreakdown>, layouts) por la mañana.
-    · Vos hacés form de override + tabla de resultado + diff.
-- Documentación cliente (PDF resumen de la demo, 1 página) — la dejás
-  para mañana viernes.
+JUEVES (DÍA 10) 07/05 — review SIMULADOR + cierre Webfleet
+- Joel arranca el simulador hoy (endpoint POST /scoring/simulate + pantalla D12).
+  Tu rol:
+    · Review obligatoria del endpoint cuando lo abra como PR (es legalmente
+      sensible: no debe mutar attempts, debe respetar criteria_version pinned,
+      no debe emitir decisión APTO/NO_APTO por intento).
+    · Disponible en chat para preguntas de scope (qué overrides aceptar,
+      qué incluir en el diff de ranking).
+- Tu trabajo propio (4h): pulir Webfleet edge cases que queden de día 9
+  + preparar la documentación cliente (PDF resumen demo, 1 página) —
+  la dejás para mañana viernes.
 
-VIERNES (DÍA 11) 08/05 — pulir SIMULADOR + cierre de semana
-- Mañana (4h): pulido del simulador.
-    · Joel corre E2E test #7 contra tu pantalla. Cualquier bug que aparezca,
-      lo arreglás vos.
-    · Escribís docs/SIMULATOR-USER-GUIDE.md (1-2 páginas, español, para
-      admin CMadrid).
+VIERNES (DÍA 11) 08/05 — review SIMULADOR final + cierre de semana
+- Mañana: review final del simulador (endpoint + UI + docs/SIMULATOR-USER-GUIDE.md
+  que escribe Joel). Dejás claro a Joel cualquier ajuste antes del internal demo
+  de las 18:00.
 - Tarde:
     · Documentación cliente (PDF resumen demo, 1 página) — enviar a CMadrid.
     · Backup completo de la DB de staging.

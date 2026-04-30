@@ -19,7 +19,7 @@
 🇪🇸 Sistema de evaluación de candidatos a conductor de camión de bomberos para CMadrid (oposición pública).
 🇬🇧 *Evaluation system for fire-truck driver candidates at CMadrid (Spanish public competitive examination).*
 
-> **Estado del repositorio:** los documentos del proyecto viven aquí. El código se construye durante el sprint, en este mismo repo. *Repo state: project documents live here, code lands during the sprint.*
+> **Estado del repositorio:** docs + código del producto en el mismo repo. La base Flask/Python ya está scaffoldeada y el sprint avanza features sobre esa base. *Repo state: docs + product code in the same repo. The Flask/Python base is scaffolded; the sprint builds features on top.*
 
 ---
 
@@ -82,7 +82,7 @@ Training es un sistema **automático y autónomo** de evaluación competitiva pa
 | **Equipo** | 4 personas trabajando desde Córdoba (Andalucía) |
 | **Sprint** | 14 días naturales · 9 días laborables (festivo 01/05) |
 | **Demo** | Lunes 11 de mayo de 2026 en Madrid (Antonio viaja) |
-| **Stack** | TypeScript · Node 20 · Express · Prisma 6 · PostgreSQL 17 · Redis · BullMQ · React 18 · Vite · Tailwind 4 · Zustand · React Query · Playwright |
+| **Stack** | Python 3.12 · Flask 3 · SQLAlchemy 2 · Alembic · GeoAlchemy2 · PostgreSQL + PostGIS · Redis · Celery · Flask-SocketIO · JWT en cookies · Jinja2 SSR · Marshmallow + pydantic · Loguru · Sentry · Playwright |
 
 ---
 
@@ -99,6 +99,7 @@ docs/
 ├── 📗 DOCUMENTO-EJECUTIVO.md         ← visión funcional no técnica (cliente + gestión)
 ├── 📙 PROPUESTA-CMADRID.md           ← descripción del servicio para CMadrid (SLA, GDPR, escrow)
 ├── 📔 OPERATIONS.md                  ← incidentes, rollback, secretos, DR, soporte post-cutover
+├── 📱 MOBILE-API.md                  ← contrato API JSON v1 (read-only) para clientes nativos
 └── team/
     ├── antonio.md                    ← qué hace Antonio en el sprint
     ├── jesus.md                      ← qué hace Jesús
@@ -153,16 +154,16 @@ docs/
 ### Pull Requests
 
 - **1 review obligatoria** del equipo.
-- **2 reviews** si tocás `prisma/schema.prisma`, middleware de auth, `package.json` raíz, CI o `docker-compose` (Antonio mandatory).
+- **2 reviews** (dueño técnico + Antonio) si tocás `migrations/`, `app/middleware/`, `app/utils/decorators.py`, `app/__init__.py` · `extensions.py` · `config.py`, `requirements*.txt`, `.github/workflows/`, o endpoints en `admin/` · `reports/` · `uploads/`.
 - **Squash merge** por defecto.
 - **CI verde** antes de merge.
 
 ### Convenciones que evitan colisiones
 
 - **Conventional commits:** `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`.
-- **Endpoint freeze diario:** Jesús pushea `docs/api-snapshot.md` cada noche con los endpoints estables. Alejandro y Joel codean contra ese snapshot.
-- **Convención `data-testid`:** `<portal>-<pantalla>-<elemento>` (Alejandro pone, Joel usa).
-- **Naming de migraciones Prisma:** `YYYYMMDD_HHMM_<verbo>_<modelo>`. Una migración por PR.
+- **Endpoint freeze diario:** un cron de Joel autogenera `docs/api-snapshot.md` cada noche desde los blueprints registrados en `app/__init__.py`. Alejandro y Joel codean contra ese snapshot.
+- **Convención `data-testid`:** `<portal>-<pantalla>-<elemento>` (Alejandro pone en templates Jinja, Joel usa en Playwright).
+- **Naming de migraciones Alembic:** mensaje del migrate `<verbo>_<modelo>` (ej: `add_role_column_user`, `init_base_models`). Una migración por PR.
 - **Daily standup:** 09:30 sharp Europe/Madrid · 15 min · inflexible · Joel habla último en inglés (3 frases).
 - **Definition of Ready** + **Definition of Done** en `CONTRIBUTING.md`.
 - **Quién aprueba qué:** `OWNERS.md`. Sin esto los 4 chocamos.
@@ -173,12 +174,13 @@ docs/
 
 ## Próximos pasos (orden cronológico)
 
-1. **Antes del kickoff:** cada persona del equipo lee su doc individual + `OWNERS.md` + `CONTRIBUTING.md`.
-2. **Día 1 — kickoff (martes 28/04 09:00):** lectura silenciosa del paper maestro (las secciones que aplican a cada uno) + Q&A.
-3. **Día 1, mañana:** scaffolding compartido entre los 4 (pnpm + workspaces + Prisma + Docker). Cada persona crea su rama `chore/setup-<nombre>` con su primer PR.
-4. **Día 1, tarde:** cada uno arranca su trabajo según su doc. Joel bootstrappea Playwright. Jesús el backend. Alejandro el frontend.
-5. **Cada viernes 17:30:** retrospectiva semanal del equipo + status update al cliente.
-6. **Demo CMadrid:** lunes 11 de mayo en Madrid (Antonio viaja).
+> El scaffolding Flask/Python ya está en `main` (factory en `app/__init__.py` + 11 blueprints + modelos SQLAlchemy + Alembic). El sprint construye features sobre esa base.
+
+1. **Cada persona** lee su doc individual + `OWNERS.md` + `CONTRIBUTING.md` antes de su primer PR.
+2. **Daily a las 09:30** (Europe/Madrid · 15 min · inflexible · Joel habla último en inglés, 3 frases).
+3. **Trabajo del día** según el issue principal de cada uno (ver tabla "Después del doc de tu rol"). Branches cortas con namespace de área (`feat/wf-...`, `feat/be-...`, `feat/fe-...`, `feat/qa-...`).
+4. **Cada viernes 17:30:** retrospectiva semanal del equipo + status update al cliente.
+5. **Demo CMadrid:** lunes 11 de mayo en Madrid (Antonio viaja).
 
 ---
 
@@ -200,17 +202,26 @@ Filtrá por la etiqueta de tu rol para ver solo los que te aplican:
 
 > 🇪🇸 Estas son las preguntas que detectamos al simular cómo lo lee cada miembro del equipo. Si todavía tenés dudas después, preguntale a Antonio.
 
-### "¿Qué tengo que tener instalado al llegar al kickoff?"
+### "¿Qué tengo que tener instalado para arrancar?"
 
-Solo 3 cosas, y NO incluye clonar el repo ni `npm install`:
+- ✅ **Python 3.12** (`python --version` debe imprimir `3.12.x`).
+- ✅ **PostgreSQL 16+** con extensión **PostGIS** (geofences usan tipos espaciales).
+- ✅ **Redis** (broker de Celery + cola SocketIO + cache + rate-limit).
+- ✅ **Aceptar la invitación al repo** en GitHub.
 
-- ✅ **Node 20 LTS** (`node --version` debe imprimir `v20.x.x`).
-- ✅ **Docker Desktop** (debe arrancar).
-- ✅ **Aceptar la invitación al repo** en GitHub (te llega cuando Antonio te invite).
+Setup local típico:
 
-Si llegás mañana sin alguno de estos, **no hay drama**: en los primeros 15 minutos del kickoff los instalamos juntos.
+```bash
+git clone git@github.com:cosigein/training.git && cd training
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
+cp .env.example .env                # rellenar SECRET_KEY, DATABASE_URL, REDIS_URL, JWT_SECRET
+flask db upgrade
+python setup_db.py && python seed_geofences.py
+python wsgi.py                      # dev server
+```
 
-> ❌ **No clones el repo, no instales dependencias del proyecto, no crees carpetas.** El scaffolding lo hacemos los 4 en pantalla compartida para que nadie quede con una versión distinta.
+Si algo falla, preguntale a Antonio o a Jesús — vale más perder 5 minutos preguntando que pelear con el setup una hora.
 
 ### "¿Tengo que leer el paper maestro entero antes de venir?"
 

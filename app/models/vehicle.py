@@ -66,8 +66,7 @@ class Vehicle(db.Model):
     brand = db.Column(db.String)
     organizationId = db.Column(db.String, db.ForeignKey("Organization.id", ondelete="CASCADE"), nullable=False)
     userId = db.Column(db.String, db.ForeignKey("User.id", ondelete="SET NULL"))
-    parkId = db.Column(db.String, db.ForeignKey("Park.id", ondelete="SET NULL"))
-    fleetId = db.Column(db.String, db.ForeignKey("Fleet.id", ondelete="SET NULL")) # Nuevo!
+    fleetId = db.Column(db.String, db.ForeignKey("Fleet.id", ondelete="SET NULL"))
     identifier = db.Column(db.String, unique=True, nullable=False)
     type = db.Column(db.Enum(VehicleType), nullable=False)
     status = db.Column(db.Enum(VehicleStatus), default=VehicleStatus.ACTIVE)
@@ -81,8 +80,7 @@ class Vehicle(db.Model):
     maintenance_schedules = db.relationship("MaintenanceSchedule", back_populates="vehicle")
     realtime_positions = db.relationship("RealtimePosition", back_populates="vehicle")
     fleet = db.relationship("Fleet", back_populates="vehicles")
-    sessions = db.relationship("Session", back_populates="vehicle")
-    park = db.relationship("Park", back_populates="vehicles")
+    attempts = db.relationship("Attempt", back_populates="vehicle")
 
 class VehicleConfiguration(db.Model):
     __tablename__ = "VehicleConfiguration"

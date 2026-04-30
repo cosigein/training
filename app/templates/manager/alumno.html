@@ -100,6 +100,28 @@
         </div>
         {% endif %}
     </div>
+
+    {% if current_user.role.value == 'ADMIN' %}
+    <form method="POST"
+          action="{{ url_for('manager.registrar_intento', student_id=candidato.id) }}?conv_id={{ convocatoria.id }}"
+          style="display:flex; gap:10px; align-items:flex-end; padding:14px 16px; border-top:1px solid #1e293b; flex-wrap:wrap">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="conv_id" value="{{ convocatoria.id }}">
+        <div>
+            <label style="display:block; font-size:11px; color:#94a3b8; margin-bottom:4px">Ruta</label>
+            <input type="text" name="route_id" placeholder="R01" required maxlength="10"
+                   style="background:#1e293b; border:1px solid #334155; color:#f1f5f9; border-radius:6px; padding:6px 10px; width:80px; font-size:13px">
+        </div>
+        <div>
+            <label style="display:block; font-size:11px; color:#94a3b8; margin-bottom:4px">Nota (0 – 10)</label>
+            <input type="number" name="score" min="0" max="10" step="0.1" placeholder="7.5" required
+                   style="background:#1e293b; border:1px solid #334155; color:#f1f5f9; border-radius:6px; padding:6px 10px; width:90px; font-size:13px">
+        </div>
+        <button type="submit" class="mgr-action-btn mgr-action-btn--primary">
+            <i class="ph ph-plus"></i> Ingresar nota
+        </button>
+    </form>
+    {% endif %}
 </div>
 
 {% endblock %}

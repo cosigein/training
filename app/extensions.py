@@ -29,15 +29,54 @@ babel = Babel()
 def create_celery_app(app=None):
     celery = Celery(
         app.import_name if app else "doback_celery",
-        broker=app.config["CELERY_BROKER_URL"] if app else "redis://localhost:6379/0"
+        broker=app.config.get("CELERY_BROKER_URL", "redis://localhost:6379/0") if app else "redis://localhost:6379/0",
     )
     if app:
-        celery.conf.update(app.config)
-        
+        # Traducir keys legado CELERY_* → formato nuevo lowercase (Celery 5.x)
+        celery.conf.update(
+            broker_url=app.config.get("CELERY_BROKER_URL"),
+            result_backend=app.config.get("CELERY_RESULT_BACKEND"),
+        )
+
         class ContextTask(celery.Task):
             def __call__(self, *args, **kwargs):
                 with app.app_context():
                     return self.run(*args, **kwargs)
-        
+
         celery.Task = ContextTask
     return celery
+
+
+import logging
+import sys
+from loguru import logger as loguru_logger
+
+
+class InterceptHandler(logging.Handler):
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            level = loguru_logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+        frame, depth = logging.currentframe(), 2
+        while frame and frame.f_code.co_filename == logging.__file__:
+            frame = frame.f_back
+            depth += 1
+        loguru_logger.opt(depth=depth, exception=record.exc_info).log(
+            level, record.getMessage()
+        )
+
+
+def init_loguru(app) -> None:
+    loguru_logger.remove()
+    loguru_logger.add(
+        sys.stderr,
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
+        level="INFO",
+        serialize=app.config.get("LOGURU_JSON", not app.debug),
+    )
+    logging.basicConfig(handlers=[InterceptHandler()], level=logging.INFO, force=True)
+    app.logger.handlers = [InterceptHandler()]
+    app.logger.propagate = False
+    for noisy in ("werkzeug", "sqlalchemy.engine", "urllib3"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)

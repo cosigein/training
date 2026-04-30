@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: imresamu/postgis-arm64:17-3.5
+    container_name: training-db
+    environment:
+      POSTGRES_USER: training
+      POSTGRES_PASSWORD: training
+      POSTGRES_DB: training_dev
+    ports:
+      - "5435:5432"
+    volumes:
+      - training_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U training -d training_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: training-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - training_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  training_postgres_data:
+  training_redis_data:

@@ -8,25 +8,30 @@
 
 | Recurso | Dueño (review obligatoria) | Quién puede proponer cambios |
 |---|---|---|
-| `package.json` raíz · `pnpm-workspace.yaml` · `tsconfig.base.json` | **Jesús** | Cualquiera |
-| `eslint.config.js` · `.prettierrc` · husky / lint-staged | **Jesús** | Cualquiera |
-| `docker-compose.dev.yml` · `docker-compose.yml` | **Jesús** | Cualquiera |
-| `.env.example` raíz (fuente única de verdad de variables) | **Jesús** | Quien necesita una variable nueva añade aquí + en el PR |
-| `prisma/schema.prisma` · migraciones Prisma | **Jesús** | Solo Jesús edita; Alejandro/Joel proponen vía issue |
-| `packages/api-types/` (tipos compartidos backend↔frontend) | **Jesús** | Jesús expone, Alejandro y Joel consumen |
-| `packages/ingestion/webfleet/` | **Antonio** | Solo Antonio edita |
-| `apps/web/` (todo el frontend) | **Alejandro** | Alejandro edita; Joel toca solo `data-testid` con su convención |
-| `apps/web/src/styles/tokens.css` · design system | **Alejandro** | Alejandro decide |
-| `apps/web/src/pages/admin/ScoringSimulator.tsx` | **Antonio** | Antonio edita; Alejandro le entrega componentes base; Joel escribe E2E test #7 contra esta pantalla |
-| `apps/api/src/routes/scoring.simulate.ts` | **Antonio** | Antonio edita; consume `packages/scoring/simulate()` de Jesús |
-| `docs/SIMULATOR-USER-GUIDE.md` | **Antonio** | Doc para admin CMadrid (español, 1-2 páginas) |
-| `apps/api/` resto (salvo `routes/health`) | **Jesús** | Jesús edita |
-| `apps/worker/src/jobs/webfleetSync.ts` | **Antonio** (define el contrato) + **Jesús** (orquesta BullMQ) | Antonio define qué llama, Jesús cómo se programa |
-| `e2e/` (Playwright tests) | **Joel** | Joel edita |
-| `seed/` · `scripts/seed.ts` | **Joel** | Joel edita; Jesús revisa coherencia con schema |
+| `requirements.txt` · `requirements-dev.txt` | **Jesús** | Quien necesita una dependencia nueva la propone en el PR |
+| `app/__init__.py` · `app/extensions.py` · `app/config.py` (factory + ext + config) | **Jesús** | Cualquiera; Antonio review obligatoria |
+| `migrations/` · `migrations/script.py.mako` (Alembic) | **Jesús** | Solo Jesús edita; otros proponen vía issue |
+| `app/models/*.py` (modelos SQLAlchemy) | **Jesús** | Solo Jesús edita; otros proponen vía issue |
+| `.env.example` (fuente única de verdad de variables) | **Jesús** | Quien necesita una variable nueva añade aquí + en el PR |
+| `app/middleware/` (auth, audit, JWT handlers) | **Jesús** | Cualquiera; Antonio review obligatoria |
+| `app/utils/decorators.py` (`require_role`, `require_org`) | **Jesús** | Cualquiera; Antonio review obligatoria |
+| `app/blueprints/<área>/routes.py` y `services.py` (resto del backend, salvo blueprints reservados a Antonio) | **Jesús** | Jesús edita |
+| `app/templates/` (base.html, errors, macros, settings) | **Alejandro** | Alejandro edita; Joel toca solo `data-testid` con su convención |
+| `app/blueprints/<área>/templates/` (templates por blueprint) | **Alejandro** | Alejandro edita |
+| `app/static/css/tokens.css` · `app/static/css/{reset,base}.css` · `app/static/css/components/*.css` (design system) | **Alejandro** | Alejandro decide |
+| `app/blueprints/manager/` (UI manager-facing: dashboard, matriz, ranking, alumno, intento, auditoría, convocatorias) | **Alejandro** mientras sirva mock data; transferencia a **Jesús** cuando se conecte a SQLAlchemy | Alejandro edita templates + presentation; Jesús revisa cuando entren queries reales |
+| `docs/STYLE-GUIDE-MANAGER.md` (style guide del portal manager) | **Alejandro** | Alejandro edita |
+| `app/blueprints/admin/` (cierre de convocatoria) | **Antonio** | Antonio edita; Alejandro entrega componentes base; Joel escribe E2E |
+| `app/blueprints/admin/` (scoring simulator — endpoint `POST /scoring/simulate` + UI D12) | **Joel** edita; **Antonio** review obligatoria (endpoint legalmente sensible) | Joel implementa; Alejandro entrega componentes base (`<ScoreBreakdown>`, layouts); Jesús expone la función pura `simulate()` |
+| `app/services/webfleet/` y `app/workers/webfleet_worker.py` (cuando existan — ingesta Webfleet + sync periódico) | **Antonio** define el contrato + **Jesús** orquesta Celery | Antonio define qué llama, Jesús cómo se programa |
+| `docs/SIMULATOR-USER-GUIDE.md` (cuando se cree) | **Joel** redacta + **Antonio** review final (cliente CMadrid) | Doc para admin CMadrid (español castellano, 1-2 páginas) |
+| `tests/` · `tests/conftest.py` · tests E2E con Playwright | **Joel** | Joel edita; Jesús revisa fixtures que tocan modelos |
+| `setup_db.py` · `seed_geofences.py` · `import_data.py` | **Joel** ejecuta y mantiene; **Jesús** revisa coherencia con modelos | Joel edita; Jesús review obligatoria |
 | `.github/workflows/*` (CI/CD) | **Joel** | Joel edita; cuando un cambio de Jesús/Alejandro rompa CI, lo arregla quien lo rompió |
+| `RBAC-FIX-PLAN.md` | **Antonio** | Plan vivo; cualquiera puede actualizar el progreso pero Antonio aprueba cambios de scope |
 | `docs/` (cualquier `.md`) | **Antonio** | Cualquiera edita; Antonio mergea |
-| `README.md` · `CONTRIBUTING.md` · `OWNERS.md` | **Antonio** | Cualquiera propone, Antonio mergea |
+| `README.md` · `CONTRIBUTING.md` · `OWNERS.md` · `CLAUDE.md` | **Antonio** | Cualquiera propone, Antonio mergea |
+| `memory/*.md` (decisiones D-XXX, invariantes) | **Antonio** | Cualquiera propone; Antonio mergea decisiones nuevas |
 
 ---
 
@@ -35,14 +40,21 @@
 Independientemente del dueño técnico, Antonio (director técnico) tiene que aprobar cualquier PR que toque:
 
 ```
-   ▶ prisma/schema.prisma            (cambios al modelo de datos)
-   ▶ apps/api/src/middleware/        (auth, multi-tenant, CSRF)
-   ▶ package.json raíz                (dependencias compartidas)
-   ▶ .github/workflows/               (CI/CD pipeline)
-   ▶ docker-compose*.yml              (infra)
-   ▶ Cualquier endpoint que toque
-     /close/*, /scoring/simulate, /gdpr/*, /admin/*
-     (los flujos legalmente sensibles)
+   ▶ migrations/                       (cambios al esquema de datos vía Alembic)
+   ▶ app/models/*.py                   (definición SQLAlchemy de los modelos)
+   ▶ app/middleware/                   (auth, audit, JWT handlers, multi-tenant, CSRF)
+   ▶ app/utils/decorators.py           (require_role, require_org — RBAC)
+   ▶ app/__init__.py                   (factory, registro de blueprints)
+   ▶ app/extensions.py                 (db, jwt, socketio, login, csrf, limiter, ...)
+   ▶ app/config.py                     (Dev/Test/Prod config, JWT cookies, secrets)
+   ▶ requirements.txt · requirements-dev.txt   (dependencias)
+   ▶ .github/workflows/                (CI/CD pipeline)
+   ▶ Cualquier endpoint en
+     app/blueprints/admin/
+     app/blueprints/reports/
+     app/blueprints/uploads/
+     o cualquier ruta de cierre de convocatoria, simulación de scoring, export legal
+     (flujos legalmente sensibles)
 ```
 
 Esto significa: **2 reviews** en estos PRs (el dueño técnico + Antonio).
@@ -66,16 +78,21 @@ Reglas:
 - Si Alejandro quiere renombrar uno → coordina con Joel ANTES de mergear (no después: rompe los tests).
 - Sin `data-testid` no hay test E2E posible — Joel puede bloquear merge si una pantalla nueva no los tiene.
 
-### Naming de migraciones Prisma (Jesús)
+### Naming de migraciones Alembic (Jesús)
 
-Formato: `YYYYMMDD_HHMM_<verbo>_<modelo>`
+El timestamp del archivo lo genera Alembic. Lo que controlamos es el mensaje del migrate:
+
+```bash
+flask db migrate -m "<verbo>_<modelo>"
+```
 
 Ejemplos:
-- `20260428_1100_init_base_models`
-- `20260429_0930_add_convocatoria_status`
-- `20260507_1530_modify_attempt_score_audit`
+- `init_base_models`
+- `add_convocatoria_status`
+- `modify_session_score_audit`
+- `add_role_column_user`
 
-**Regla:** una migración por PR. Squashes solo en la migración inicial.
+**Regla:** una migración por PR. Si tenés que renombrar / squash una migración antes de mergear, hacelo dentro del propio PR. Una vez en `main`, no se reescribe — se añade una migración nueva.
 
 ### Branch namespace por persona
 
@@ -93,7 +110,7 @@ Ejemplos:
 - `feat/fe-matrix-virtualized`
 - `feat/qa-e2e-login-flow`
 - `feat/wf-circuit-breaker`
-- `chore/cross-pnpm-workspaces`
+- `chore/cross-clean-pycache`
 
 ---
 
@@ -111,9 +128,9 @@ Si tu cambio rompe algo de otra persona (renombrar un endpoint, cambiar shape de
 
 ## Endpoint freeze diario
 
-Cada noche, un job en CI commitea automáticamente `docs/api-snapshot.md` con el listado de endpoints estables (path, método, request/response shape).
+Cada noche, un job en CI commitea automáticamente `docs/api-snapshot.md` con el listado de endpoints estables (path, método, blueprint, decoradores de rol).
 
-- **Joel** monta y mantiene el cron desde el día 2: extrae los endpoints desde el código de `apps/api/` (anotaciones JSDoc o decorador) y los serializa a Markdown.
+- **Joel** monta y mantiene el cron desde el día 2: recorre `app.url_map` de la app Flask y serializa a Markdown (incluyendo el rol requerido por endpoint).
 - Si el snapshot cambia respecto al día anterior, se mergea como commit `chore(qa): api-snapshot YYYY-MM-DD` y se postea el diff en el chat del equipo.
 - Alejandro y Joel solo escriben código contra el snapshot vigente.
 - Cambios deliberados durante el día = PR de Jesús + aviso explícito en chat con `@Alejandro @Joel`.

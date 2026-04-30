@@ -1,0 +1,147 @@
+{% extends "student/layout.html" %}
+{% block title %}Mi Portal — CMadrid Training{% endblock %}
+
+{% block content %}
+<div style="max-width:900px; margin:0 auto; padding:32px 24px;">
+
+    {# ── Cabecera ──────────────────────────────────────────────────── #}
+    <div style="margin-bottom:32px;">
+        <h1 style="font-size:22px; font-weight:700; color:#0f172a; margin-bottom:4px;">
+            Bienvenido, {{ user.name }}
+        </h1>
+        <p style="font-size:14px; color:#64748b;">
+            Aquí podés ver tus inscripciones y el resultado de tus intentos.
+        </p>
+    </div>
+
+    {% if not inscripciones %}
+    {# ── Sin inscripciones ────────────────────────────────────────── #}
+    <div style="text-align:center; padding:64px 0; color:#94a3b8;">
+        <i class="ph ph-clipboard-text" style="font-size:48px; display:block; margin-bottom:12px;"></i>
+        <p style="font-size:15px;">No estás inscripto en ninguna convocatoria activa.</p>
+    </div>
+
+    {% else %}
+    {% for insc in inscripciones %}
+    {# ── Card por convocatoria ─────────────────────────────────────── #}
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:24px; margin-bottom:24px; box-shadow:0 1px 3px rgba(0,0,0,.04);">
+
+        {# Título + estado #}
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; gap:12px; flex-wrap:wrap;">
+            <div>
+                <h2 style="font-size:17px; font-weight:700; color:#0f172a; margin-bottom:4px;">
+                    {{ insc.conv_nombre }}
+                </h2>
+                <span style="font-size:12px; font-weight:600; padding:2px 10px; border-radius:20px;
+                    {% if insc.conv_status == 'OPEN' %}background:#dbeafe; color:#1d4ed8;
+                    {% elif insc.conv_status in ('CLOSED', 'LOCKED') %}background:#f0fdf4; color:#15803d;
+                    {% else %}background:#fef9c3; color:#92400e;{% endif %}">
+                    {{ insc.conv_status }}
+                </span>
+            </div>
+
+            {# Nota media grande #}
+            <div style="text-align:right; flex-shrink:0;">
+                {% if insc.nota_media is not none %}
+                <div style="font-size:32px; font-weight:800; line-height:1;
+                    color:{% if insc.nota_media >= insc.umbral_min %}#15803d{% else %}#dc2626{% endif %};">
+                    {{ "%.1f"|format(insc.nota_media) }}
+                </div>
+                <div style="font-size:11px; color:#94a3b8; margin-top:2px;">nota media</div>
+                {% else %}
+                <div style="font-size:15px; color:#94a3b8; font-weight:600;">Sin notas aún</div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# KPIs #}
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:12px; margin-bottom:20px;">
+
+            <div style="background:#f8fafc; border-radius:8px; padding:12px 14px;">
+                <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px;">Rutas</div>
+                <div style="font-size:18px; font-weight:700; color:#1e293b;">
+                    {{ insc.rutas_completadas }} / {{ insc.rutas_total }}
+                </div>
+            </div>
+
+            {% if insc.puesto %}
+            <div style="background:{% if insc.dentro_del_corte %}#f0fdf4{% else %}#fef2f2{% endif %}; border-radius:8px; padding:12px 14px;">
+                <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px;">Posición</div>
+                <div style="font-size:18px; font-weight:700; color:{% if insc.dentro_del_corte %}#15803d{% else %}#dc2626{% endif %};">
+                    {{ insc.puesto }}° / {{ insc.total_candidatos }}
+                </div>
+            </div>
+
+            <div style="background:#f8fafc; border-radius:8px; padding:12px 14px;">
+                <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px;">Plazas</div>
+                <div style="font-size:18px; font-weight:700; color:#1e293b;">{{ insc.plazas }}</div>
+            </div>
+
+            <div style="background:{% if insc.dentro_del_corte %}#f0fdf4{% else %}#fff7ed{% endif %}; border-radius:8px; padding:12px 14px;">
+                <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px;">Estado</div>
+                <div style="font-size:13px; font-weight:700; color:{% if insc.dentro_del_corte %}#15803d{% else %}#c2410c{% endif %};">
+                    {% if insc.dentro_del_corte %}Dentro del corte{% else %}Fuera del corte{% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        {# Tabla de intentos #}
+        {% if insc.intentos %}
+        <div>
+            <div style="font-size:13px; font-weight:600; color:#475569; margin-bottom:10px;">
+                Mis intentos
+            </div>
+            <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                <thead>
+                    <tr style="border-bottom:2px solid #e2e8f0;">
+                        <th style="text-align:left; padding:8px 12px; color:#94a3b8; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.5px;">Ruta</th>
+                        <th style="text-align:center; padding:8px 12px; color:#94a3b8; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.5px;">Nota</th>
+                        <th style="text-align:center; padding:8px 12px; color:#94a3b8; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.5px;">Calidad</th>
+                        <th style="text-align:left; padding:8px 12px; color:#94a3b8; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.5px;">Fecha</th>
+                        <th style="text-align:center; padding:8px 12px; color:#94a3b8; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.5px;">Detalle</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for intento in insc.intentos %}
+                <tr style="border-bottom:1px solid #f1f5f9;" data-testid="student-dashboard-attempt-{{ loop.index }}">
+                    <td style="padding:10px 12px; font-weight:600; color:#1e293b;">{{ intento.ruta_id }}</td>
+                    <td style="padding:10px 12px; text-align:center;">
+                        <span style="font-size:15px; font-weight:700;
+                            color:{% if intento.nota >= insc.umbral_min %}#15803d{% else %}#dc2626{% endif %};">
+                            {{ "%.1f"|format(intento.nota) }}
+                        </span>
+                    </td>
+                    <td style="padding:10px 12px; text-align:center;">
+                        <span style="font-size:11px; font-weight:600; padding:2px 8px; border-radius:12px;
+                            {% if intento.data_quality == 'HIGH' %}background:#dcfce7; color:#15803d;
+                            {% elif intento.data_quality == 'MEDIUM' %}background:#fef9c3; color:#854d0e;
+                            {% else %}background:#fee2e2; color:#dc2626;{% endif %}">
+                            {{ intento.data_quality }}
+                        </span>
+                    </td>
+                    <td style="padding:10px 12px; color:#64748b;">{{ intento.fecha }}</td>
+                    <td style="padding:10px 12px; text-align:center;">
+                        <a href="{{ url_for('student.intento_detalle', attempt_id=intento.id) }}"
+                           style="font-size:12px; color:#0d47a1; font-weight:600; text-decoration:none;">
+                            Ver →
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="font-size:13px; color:#94a3b8; margin-top:8px;">
+            Todavía no tenés intentos registrados para esta convocatoria.
+        </p>
+        {% endif %}
+
+    </div>
+    {% endfor %}
+    {% endif %}
+
+</div>
+{% endblock %}
