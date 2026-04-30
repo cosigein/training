@@ -22,6 +22,11 @@
             <span class="alu-logo__text">CMadrid <span>Training</span></span>
         </a>
 
+        <button onclick="history.back()" class="alu-btn-back" title="Volver a la página anterior">
+            <i class="ph ph-arrow-left"></i>
+            Volver
+        </button>
+
         <nav class="alu-nav">
             <a href="{{ url_for('alumno.dashboard', plaza=candidato.plaza) }}"
                class="alu-nav__btn {% if active_page == 'dashboard' %}active{% endif %}">
