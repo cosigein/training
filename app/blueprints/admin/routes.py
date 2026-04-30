@@ -51,7 +51,8 @@ def list_convocatorias():
 
     if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
         return jsonify([_convocatoria_to_dict(c) for c in convocatorias])
-    return render_template("admin/convocatorias_list.html", convocatorias=convocatorias)
+    # D-FE-001 opción C: la vista lista vive en /manager/convocatorias
+    return redirect(url_for("manager.convocatorias"))
 
 
 @admin_bp.route("/convocatorias/new", methods=["GET"])

@@ -326,6 +326,25 @@ AUDITORIAS = [
 ]
 
 
+HISTORIAL_EXTRA = {
+    "001": [
+        {"ruta_id": "R01", "ruta_label": "Salida Cochera",    "nota": 6.5, "data_quality": "HIGH",   "fecha": "10/04/2026", "hora": "09:15", "attempt_id": "att-001-a"},
+        {"ruta_id": "R02", "ruta_label": "Maniobra T",        "nota": 5.8, "data_quality": "MEDIUM", "fecha": "11/04/2026", "hora": "10:00", "attempt_id": "att-002-a"},
+        {"ruta_id": "R03", "ruta_label": "Paso Angosto",      "nota": 4.1, "data_quality": "LOW",    "fecha": "12/04/2026", "hora": "11:30", "attempt_id": "att-003-a"},
+    ],
+    "002": [
+        {"ruta_id": "R01", "ruta_label": "Salida Cochera",    "nota": 7.2, "data_quality": "HIGH",   "fecha": "10/04/2026", "hora": "14:20", "attempt_id": "att-011-a"},
+        {"ruta_id": "R02", "ruta_label": "Maniobra T",        "nota": 6.9, "data_quality": "HIGH",   "fecha": "11/04/2026", "hora": "15:00", "attempt_id": "att-012-a"},
+    ],
+    "003": [],
+    "004": [],
+    "005": [],
+    "006": [],
+    "007": [],
+    "008": [],
+}
+
+
 def _calcular_nota_media(candidato):
     """Calcula la nota media de las rutas completadas."""
     notas = [v["nota"] for v in candidato["notas"].values() if v is not None]
@@ -362,6 +381,43 @@ def _calcular_ranking(plazas, conv_id):
         entry["dentro_del_corte"] = puesto <= plazas
 
     return entries
+
+
+def _get_org_id():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    return user.organizationId if user else None
+
+
+def _resolve_conv_id(org_id):
+    conv_id = request.args.get("conv_id")
+    if conv_id:
+        return conv_id
+    return get_first_conv_id(org_id)
+
+
+def _load_convocatorias_dicts():
+    return get_convocatorias(_get_org_id())
+
+
+def _load_auditorias_pendientes():
+    raw = list_audit_requests(_get_org_id(), status="PENDING")
+    result = []
+    for ar in raw:
+        fecha_hora = ar.get("createdAt", "")
+        parts = fecha_hora.split(" ")
+        attempt = ar.get("attempt") or {}
+        result.append({
+            "id": ar["id"],
+            "attempt_id": attempt.get("id", ""),
+            "candidato": ar.get("requester", "—"),
+            "ruta": attempt.get("routeId", "—"),
+            "nota": attempt.get("score") or 0,
+            "fecha_solicitud": parts[0] if parts else "—",
+            "hora_solicitud": parts[1] if len(parts) > 1 else "—",
+            "status": ar.get("status", "PENDING"),
+        })
+    return result
 
 
 # ── RUTAS ──────────────────────────────────────────────────────────────────

@@ -43,7 +43,8 @@ def create_app(config_name=None):
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
-    socketio.init_app(app, message_queue=app.config.get("REDIS_URL"), cors_allowed_origins="*")
+    mq = app.config.get("REDIS_URL") if not app.debug else None
+    socketio.init_app(app, message_queue=mq, cors_allowed_origins="*")
     login_manager.init_app(app)
     csrf.init_app(app)
     limiter.init_app(app)
@@ -66,7 +67,7 @@ def create_app(config_name=None):
     from app.blueprints.admin import admin_bp
     from app.blueprints.manager import manager_bp
     from app.blueprints.kiosko import kiosko_bp
-    from app.blueprints.student import student_bp
+    from app.blueprints.alumno_portal import alumno_bp
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(vehicles_bp, url_prefix="/vehicles")
@@ -77,7 +78,7 @@ def create_app(config_name=None):
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(manager_bp, url_prefix="/manager")
     app.register_blueprint(kiosko_bp, url_prefix="/kiosko")
-    app.register_blueprint(student_bp, url_prefix="/alumno")
+    app.register_blueprint(alumno_bp, url_prefix="/alumno")
 
     # JWT en header (no cookie) → no necesita CSRF
     from app.blueprints.mobile_api import mobile_api_bp

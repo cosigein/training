@@ -1,9 +1,40 @@
 from flask import render_template, request, redirect, url_for
+from flask_jwt_extended import get_jwt_identity
+from app.utils.decorators import require_role
+from app.models.auth import User
 from . import alumno_bp
 from app.blueprints.manager.routes import (
     CANDIDATOS, CONVOCATORIAS, AUDITORIAS, HISTORIAL_EXTRA,
     _calcular_nota_media, _calcular_ranking
 )
+
+# Mapa email → plaza (mock data). Cuando existan Enrollments en BD se reemplaza.
+_EMAIL_PLAZA = {
+    "alumno1@cmadrid.com":            "001",
+    "alumno2@cmadrid.com":            "002",
+    "carlos.rodriguez@cmadrid.com":   "001",
+    "maria.gonzalez@cmadrid.com":     "002",
+    "javier.martinez@cmadrid.com":    "003",
+    "ana.lopez@cmadrid.com":          "004",
+    "pedro.sanchez@cmadrid.com":      "005",
+    "laura.fernandez@cmadrid.com":    "006",
+    "miguel.torres@cmadrid.com":      "007",
+    "elena.ruiz@cmadrid.com":         "008",
+    "luis.gomez@cmadrid.com":         "101",
+    "sofia.herrera@cmadrid.com":      "102",
+    "diego.navarro@cmadrid.com":      "103",
+}
+
+
+def _get_candidato():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user:
+        return None
+    plaza = _EMAIL_PLAZA.get(user.email)
+    if plaza:
+        return next((c for c in CANDIDATOS if c['plaza'] == plaza), None)
+    return CANDIDATOS[0] if CANDIDATOS else None
 
 
 def _generar_pedagogico(nota, ruta_label):
@@ -136,6 +167,7 @@ def _calcular_evolucion(candidato, conv):
 
 
 @alumno_bp.route('/intento/<attempt_id>')
+@require_role(["STUDENT"])
 def intento(attempt_id):
     candidato = None
     ruta_info = None
@@ -157,7 +189,7 @@ def intento(attempt_id):
             break
 
     if not candidato:
-        return redirect(url_for('alumno.login'))
+        return redirect(url_for('auth.login'))
 
     auditoria = next((a for a in AUDITORIAS if a['attempt_id'] == attempt_id), None)
     puede_solicitar = auditoria is None
@@ -193,22 +225,16 @@ def intento(attempt_id):
 
 @alumno_bp.route('/')
 def login():
-    return render_template('alumno_portal/login.html')
-
-
-@alumno_bp.route('/entrar', methods=['POST'])
-def entrar():
-    plaza = request.form.get('plaza', '').strip()
-    return redirect(url_for('alumno.dashboard', plaza=plaza))
+    return redirect(url_for('auth.login'))
 
 
 @alumno_bp.route('/dashboard')
+@require_role(["STUDENT"])
 def dashboard():
-    plaza = request.args.get('plaza', '')
-    candidato = next((c for c in CANDIDATOS if c['plaza'] == plaza), None)
+    candidato = _get_candidato()
 
     if not candidato:
-        return redirect(url_for('alumno.login'))
+        return redirect(url_for('auth.login'))
 
     conv = next(
         (cv for cv in CONVOCATORIAS if cv['id'] == candidato.get('convocatoria_id')),
@@ -251,12 +277,12 @@ def dashboard():
 
 
 @alumno_bp.route('/historial')
+@require_role(["STUDENT"])
 def historial():
-    plaza = request.args.get('plaza', '')
-    candidato = next((c for c in CANDIDATOS if c['plaza'] == plaza), None)
+    candidato = _get_candidato()
 
     if not candidato:
-        return redirect(url_for('alumno.login'))
+        return redirect(url_for('auth.login'))
 
     conv = next(
         (cv for cv in CONVOCATORIAS if cv['id'] == candidato.get('convocatoria_id')),
@@ -312,12 +338,12 @@ def historial():
 
 
 @alumno_bp.route('/evolucion')
+@require_role(["STUDENT"])
 def evolucion():
-    plaza = request.args.get('plaza', '')
-    candidato = next((c for c in CANDIDATOS if c['plaza'] == plaza), None)
+    candidato = _get_candidato()
 
     if not candidato:
-        return redirect(url_for('alumno.login'))
+        return redirect(url_for('auth.login'))
 
     conv = next(
         (cv for cv in CONVOCATORIAS if cv['id'] == candidato.get('convocatoria_id')),
@@ -340,6 +366,7 @@ def evolucion():
 
 
 @alumno_bp.route('/intento/<attempt_id>/auditoria')
+@require_role(["STUDENT"])
 def solicitar_auditoria(attempt_id):
     candidato = None
     nota_info = None
@@ -358,7 +385,7 @@ def solicitar_auditoria(attempt_id):
             break
 
     if not candidato:
-        return redirect(url_for('alumno.login'))
+        return redirect(url_for('auth.login'))
 
     auditoria_existente = next((a for a in AUDITORIAS if a['attempt_id'] == attempt_id), None)
     if auditoria_existente:

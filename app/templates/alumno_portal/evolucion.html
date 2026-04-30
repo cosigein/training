@@ -17,7 +17,7 @@
 
     <!-- Header -->
     <header class="alu-header">
-        <a href="{{ url_for('alumno.login') }}" class="alu-logo">
+        <a href="{{ url_for('alumno.dashboard') }}" class="alu-logo">
             <div class="alu-logo__icon">CM</div>
             <span class="alu-logo__text">CMadrid <span>Training</span></span>
         </a>
@@ -44,7 +44,7 @@
             <span class="alu-user-chip__name">{{ candidato.nombre.split()[0] }}</span>
             <span class="alu-user-chip__plaza">#{{ candidato.plaza }}</span>
         </div>
-        <a href="{{ url_for('alumno.login') }}" class="alu-btn-logout">
+        <a href="{{ url_for('auth.logout') }}" class="alu-btn-logout">
             <i class="ph ph-sign-out"></i>
             Salir
         </a>

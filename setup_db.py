@@ -87,7 +87,7 @@ def get_or_create_user(email, name, password, role, org_id):
     user = User(
         name=name,
         email=email,
-        password=generate_password_hash(password),
+        password=generate_password_hash(password, method="pbkdf2:sha256"),
         role=role,
         organizationId=org_id,
         status="ACTIVE"

@@ -12,7 +12,7 @@ from app.extensions import db
 from app.models.auth import User, Organization, UserRole
 from app.models.vehicle import Vehicle
 # Import all models to ensure they are registered
-from app.models import session, vehicle, auth, geofence, kpi, event, report
+from app.models import session, vehicle, auth, event, training, audit, ingestion, notifications
 
 def create_database_if_not_exists():
     print("🔍 Verificando existencia de la base de datos...")

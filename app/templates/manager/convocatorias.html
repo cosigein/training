@@ -59,6 +59,11 @@
             <a href="{{ url_for('manager.ranking', conv_id=conv.id) }}" class="mgr-action-btn mgr-action-btn--primary">
                 <i class="ph ph-trophy"></i> Ranking
             </a>
+            {% if current_user.is_authenticated and current_user.role.value in ('ADMIN', 'SUPER_ADMIN') %}
+            <a href="{{ url_for('admin.get_convocatoria_detail', conv_id=conv.id) }}" class="mgr-action-btn mgr-action-btn--secondary">
+                <i class="ph ph-pencil-simple"></i> Gestionar
+            </a>
+            {% endif %}
         </div>
 
     </div>
