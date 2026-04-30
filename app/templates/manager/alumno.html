@@ -8,7 +8,7 @@
         <a href="{{ url_for('manager.matriz') }}" class="mgr-back-link">
             <i class="ph ph-arrow-left"></i> Volver a Matriz
         </a>
-        <h1 class="mgr-page-title" style="margin-top:8px">Perfil de Aspirante</h1>
+        <h1 class="mgr-page-title mgr-mt-8">Perfil de Aspirante</h1>
         <p class="mgr-page-subtitle">
             Convocatoria {{ convocatoria.nombre }}
         </p>
@@ -18,18 +18,18 @@
     </span>
 </div>
 
-<div class="mgr-card" style="margin-bottom: 20px;">
+<div class="mgr-card mgr-mb-20">
     <div class="mgr-card__header">
         <h3><i class="ph ph-user"></i> Detalles del candidato</h3>
     </div>
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+    <div class="mgr-grid-4">
         <div>
             <span class="mgr-label">Nombre completo</span>
-            <div style="font-weight: 600; font-size: 15px; margin-top: 4px;">{{ candidato.nombre }}</div>
+            <div class="mgr-text-bold mgr-text-15 mgr-mt-4">{{ candidato.nombre }}</div>
         </div>
         <div>
             <span class="mgr-label">Número de Plaza</span>
-            <div style="font-weight: 600; font-size: 15px; margin-top: 4px;">#{{ candidato.plaza }}</div>
+            <div class="mgr-text-bold mgr-text-15 mgr-mt-4">#{{ candidato.plaza }}</div>
         </div>
         <div>
             <span class="mgr-label">Categoría</span>
@@ -39,7 +39,7 @@
         </div>
         <div>
             <span class="mgr-label">Nota Media Actual</span>
-            <div style="font-family: var(--font-heading); font-size: 24px; font-weight: 700; color: {% if nota_media >= 5 %}#16a34a{% else %}#dc2626{% endif %}; margin-top: 4px;">
+            <div class="mgr-score-large mgr-mt-4 {% if nota_media >= 5 %}mgr-color-success{% else %}mgr-color-danger{% endif %}">
                 {{ "%.2f"|format(nota_media) }}
             </div>
         </div>
@@ -53,15 +53,15 @@
     
     <div class="mgr-conv-list">
         {% for intento in intentos %}
-        <div class="mgr-conv-row" style="padding: 12px 16px;">
+        <div class="mgr-conv-row mgr-conv-row--compact">
             <div class="mgr-conv-row__main">
                 <div class="mgr-conv-row__title">
                     <strong>{{ intento.ruta_label }}</strong>
-                    <span style="font-size: 11px; color: #64748b; font-family: monospace;">({{ intento.ruta_id }})</span>
+                    <span class="mgr-text-mono-muted">({{ intento.ruta_id }})</span>
                 </div>
             </div>
             
-            <div class="mgr-conv-row__stats" style="align-items: center; gap: 24px;">
+            <div class="mgr-conv-row__stats mgr-flex-center-gap">
                 {% if intento.audit %}
                 <span class="mgr-audit-chip" title="Auditoría pendiente">
                     <i class="ph ph-scales"></i>
@@ -70,11 +70,11 @@
                 
                 {% if intento.data_quality == 'LOW' %}
                 <span class="mgr-matrix-badge mgr-matrix-badge--low" title="Calidad de datos baja">
-                    LQ <i class="ph ph-warning" style="font-size:10px"></i>
+                    LQ <i class="ph ph-warning mgr-text-10"></i>
                 </span>
                 {% elif intento.data_quality == 'HIGH' %}
                 <span class="mgr-matrix-badge mgr-matrix-badge--high" title="Calidad de datos alta">
-                    HQ <i class="ph ph-check" style="font-size:10px"></i>
+                    HQ <i class="ph ph-check mgr-text-10"></i>
                 </span>
                 {% else %}
                 <span class="mgr-matrix-badge mgr-matrix-badge--pending" title="Calidad de datos media">
@@ -82,7 +82,7 @@
                 </span>
                 {% endif %}
                 
-                <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 700; color: {% if intento.nota >= 5 %}#16a34a{% else %}#dc2626{% endif %}; width: 60px; text-align: right;">
+                <div class="mgr-score-row-val {% if intento.nota >= 5 %}mgr-color-success{% else %}mgr-color-danger{% endif %}">
                     {{ "%.1f"|format(intento.nota) }}
                 </div>
                 
@@ -100,6 +100,28 @@
         </div>
         {% endif %}
     </div>
+
+    {% if current_user.role.value == 'ADMIN' %}
+    <form method="POST"
+          action="{{ url_for('manager.registrar_intento', student_id=candidato.id) }}?conv_id={{ convocatoria.id }}"
+          style="display:flex; gap:10px; align-items:flex-end; padding:14px 16px; border-top:1px solid #1e293b; flex-wrap:wrap">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="conv_id" value="{{ convocatoria.id }}">
+        <div>
+            <label style="display:block; font-size:11px; color:#94a3b8; margin-bottom:4px">Ruta</label>
+            <input type="text" name="route_id" placeholder="R01" required maxlength="10"
+                   style="background:#1e293b; border:1px solid #334155; color:#f1f5f9; border-radius:6px; padding:6px 10px; width:80px; font-size:13px">
+        </div>
+        <div>
+            <label style="display:block; font-size:11px; color:#94a3b8; margin-bottom:4px">Nota (0 – 10)</label>
+            <input type="number" name="score" min="0" max="10" step="0.1" placeholder="7.5" required
+                   style="background:#1e293b; border:1px solid #334155; color:#f1f5f9; border-radius:6px; padding:6px 10px; width:90px; font-size:13px">
+        </div>
+        <button type="submit" class="mgr-action-btn mgr-action-btn--primary">
+            <i class="ph ph-plus"></i> Ingresar nota
+        </button>
+    </form>
+    {% endif %}
 </div>
 
 {% endblock %}

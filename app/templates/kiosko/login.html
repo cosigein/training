@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CMadrid Training · Kiosko</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/kiosko.css') }}">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+
+<body>
+
+    <div class="ksk-login-bg">
+        <div class="ksk-login-card">
+
+            <div class="ksk-brand">
+                <div class="ksk-brand__icon">CM</div>
+                <div>
+                    <div class="ksk-brand__name">CMadrid <span style="color:#1a56db">Training</span></div>
+                    <div class="ksk-brand__sub">Sistema de evaluación · Bomberos CMadrid</div>
+                </div>
+            </div>
+
+            <form class="ksk-login-form" action="{{ url_for('kiosko.rutas') }}" method="get">
+                <label for="plaza">Número de plaza</label>
+                <input type="text" id="plaza" name="plaza" class="ksk-input" placeholder="001" maxlength="6"
+                    autocomplete="off" autofocus>
+                <button type="submit" class="ksk-btn ksk-btn--primary">
+                    <i class="ph ph-arrow-right-bold"></i>
+                    ACCEDER
+                </button>
+            </form>
+
+            <div class="ksk-login-footer">
+                Convocatoria 2026 · Bomberos CMadrid<br>
+                Introduce tu número de plaza para continuar
+            </div>
+
+        </div>
+    </div>
+
+</body>
+
+</html>

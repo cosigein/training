@@ -36,3 +36,4 @@ email-validator
 cryptography
 Authlib
 wtforms
+apscheduler

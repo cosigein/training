@@ -4,6 +4,25 @@
 > **Alcance:** SOLO el dominio Training (alumnos haciendo pruebas de conducción para oposición CMadrid). Todo lo de fleet genérico (KPIs, geofences, telemetría libre) se ignora o se descarta.
 > **Última actualización:** 2026-04-28.
 
+## ⏱️ Progreso (7/12 tareas — ~35h sobre ~77h)
+
+| # | Tarea | Estado |
+|---|---|---|
+| 1 | Extender User + RBAC (STUDENT, SUPER_ADMIN) | ✅ hecho |
+| 2 | Limpiar Flask actual (geofences/telemetry/kpis/reports) | ✅ hecho |
+| 3 | Modelos Convocatoria + Enrollment | ✅ hecho |
+| 4 | Refactor Session → Attempt | ✅ hecho |
+| 5 | Event extendido + Ranking + AuditEvent extendido | ✅ hecho |
+| 6 | CRUD Convocatoria + Enrollment (admin) | ✅ hecho |
+| 7 | RfidCard + POST /kiosko/tap + cierre manual | ✅ hecho |
+| 8 | Ingest + detector + scoring (THE BIG ONE) | 🔄 siguiente |
+| 7 | POST /attempts (RFID) + close automático | ⏳ pendiente |
+| 8 | Ingest + detector + scoring (THE BIG ONE) | ⏳ pendiente |
+| 9 | Cron daily-ranking + lockClosedConvocatorias | ⏳ pendiente |
+| 10 | Cierre 3 pasos + acta PDF + reversa 24h | ⏳ pendiente |
+| 11 | Dashboard STUDENT + Matriz MANAGER | ⏳ pendiente |
+| 12 | Auditoría + GDPR export | ⏳ pendiente |
+
 ---
 
 ## 0. Resumen (3 frases)
@@ -14,9 +33,9 @@ El PDF describe un sistema de evaluación competitiva: el alumno se identifica p
 
 ## 1. Modelo de datos
 
-### Convocatoria (PDF §2, §3.1) — ❌ falta
-- [ ] **Convocatoria**
-  - Estado actual: no existe.
+### Convocatoria (PDF §2, §3.1) — ✅ hecho
+- [x] **Convocatoria** — `app/models/training.py:Convocatoria`, tabla `Convocatoria` creada, `ConvocatoriaStatus` enum con OPEN/PREVIEW/CLOSING/CLOSED/LOCKED.
+  - Estado actual: existe.
   - Campos clave:
     - `id`, `organizationId` (FK), `name`
     - `routePrincipal` (string, ruta del desempate)
@@ -30,15 +49,15 @@ El PDF describe un sistema de evaluación competitiva: el alumno se identifica p
     - `reverseWindowUntil` (datetime, +24h tras cierre)
   - Relaciones: `has_many :enrollments`, `has_many :attempts` (vía enrollment).
 
-### Enrollment (PDF §2) — ❌ falta
-- [ ] **Enrollment**
-  - Estado actual: no existe.
+### Enrollment (PDF §2) — ✅ hecho
+- [x] **Enrollment** — `app/models/training.py:Enrollment`, tabla `Enrollment`, unique(`convocatoriaId`, `studentId`) verificada.
+  - Estado actual: existe.
   - Campos: `id`, `convocatoriaId`, `studentId`, `routeId`, `status` (ACTIVE / COMPLETED / INVALIDATED), `attempts_count`.
   - Constraint: `unique(convocatoriaId, studentId)` — un alumno una sola vez por convocatoria.
 
-### Attempt (= Session reconvertida) (PDF §2, §6) — ⚠️ parcial
-- [ ] **Attempt**
-  - Estado actual: existe `Session` en `app/models/session.py` con `trainingStatus` y `trainingMetadata`. Reusar y extender.
+### Attempt (= Session reconvertida) (PDF §2, §6) — ✅ hecho
+- [x] **Attempt** — clase y tabla renombradas a `Attempt`, hijos pasan `sessionId → attemptId`, `AttemptStatus` enum (OPEN/PROCESSING/CLOSED/ABANDONED/ABORTED_TECHNICAL/INVALIDATED).
+  - Estado actual: refactor completo en `app/models/session.py:Attempt`.
   - Campos a añadir:
     - `enrollmentId` (FK, requerido)
     - `convocatoriaId`, `studentId` (desnormalizados para queries de ranking)
@@ -52,16 +71,8 @@ El PDF describe un sistema de evaluación competitiva: el alumno se identifica p
     - `auditLog` (JSONB array)
   - **INVARIANTE:** una vez `closedAt` se setea, `score` no cambia (DB trigger + service-layer guard).
 
-### Event (PDF §6.2) — ⚠️ parcial
-- [ ] **Event**
-  - Estado actual: existe `app/models/event.py`.
-  - Campos a añadir:
-    - `attemptId` (FK)
-    - `type` (enum: HARSH_BRAKING, SPEEDING, DEVIATION, ACCELERATION_LATERAL, HARSH_ACCELERATION)
-    - `severity` (enum: LOW / MEDIUM / HIGH / CRITICAL)
-    - `confidence` (float 0-1)
-    - `source` (DOBACK_ELITE / WEBFLEET)
-    - `penaltyPoints` (float)
+### Event (PDF §6.2) — ✅ hecho
+- [x] **AttemptEvent** — `app/models/training.py:AttemptEvent`. Modelo nuevo del dominio Training (NO se mezcla con `Event` legacy). Tiene `attemptId`, `type` (AttemptEventType), `severity` (EventSeverity), `source` (EventSource), `confidence` (float), `penaltyPoints` (float), `timestamp`, `payload` (JSONB). Índices en `(attemptId, timestamp)` y `(type)`.
 
 ### RawSample (PDF §2) — ⚠️ parcial
 - [ ] **RawSample** (canonicalizar)
@@ -69,28 +80,15 @@ El PDF describe un sistema de evaluación competitiva: el alumno se identifica p
   - Decisión: o (a) consolidar en una tabla `RawSample` con `payload JSONB`, o (b) dejar 4 tablas y mapear conceptualmente. **Recomendación: dejar las 4** (tipado fuerte, queries más rápidas).
   - Añadir: `attemptId` (renombre de `sessionId`), `source` (DOBACK_ELITE / WEBFLEET), `data_freshness` (FRESH / STALE / MISSING).
 
-### Ranking (PDF §3.1, §3.2) — ❌ falta
-- [ ] **Ranking** (insert-only log)
-  - Estado actual: no existe.
-  - Campos: `id`, `convocatoriaId`, `attemptId`, `studentId`, `score` (snapshot), `rank` (int), `status` (PROVISIONAL / DEFINITIVE), `snapshotAt` (datetime, 6:00 AM), `createdAt`.
-  - **INVARIANTE:** insert-only, sin UPDATE ni DELETE. Snapshot diario.
+### Ranking (PDF §3.1, §3.2) — ✅ hecho
+- [x] **Ranking** — `app/models/training.py:Ranking`. Insert-only por convención de servicio (cron de tarea 9). Campos: `convocatoriaId`, `attemptId`, `enrollmentId`, `studentId`, `score`, `rank`, `status` (RankingStatus PROVISIONAL/DEFINITIVE), `snapshotAt`, más `voidedAt/By/Reason` para reversa de cierre. Índices en `(convocatoriaId, snapshotAt)` y `(convocatoriaId, status)`.
 
-### AuditEvent (PDF §8.5) — ⚠️ parcial
-- [ ] **AuditEvent**
-  - Estado actual: existe `app/models/audit.py`.
-  - Validar / extender:
-    - `actor` (FK User), `action` (enum amplio: ATTEMPT_CREATED, SCORE_CALCULATED, ATTEMPT_CLOSED, CONVOCATORIA_CLOSED, RANKING_PUBLISHED, ENROLLMENT_CREATED, CLOSURE_INITIATED, CLOSURE_CONFIRMED, CLOSURE_REVERSED, GDPR_EXPORT, GDPR_FORGET).
-    - `resource_type`, `resource_id`, `delta` (JSONB), `timestamp`, `ip_address`.
-  - **INVARIANTE:** sin UPDATE ni DELETE.
+### AuditEvent (PDF §8.5) — ✅ hecho
+- [x] **TrainingAuditLog** — `app/models/training.py:TrainingAuditLog`. Modelo nuevo (NO se mezcla con `AuditLog` legacy de quality decisions). Campos: `actorId` (FK User), `actorRole` (snapshot), `action` (AuditAction enum con 17 valores), `resourceType`, `resourceId`, `delta` (JSONB), `ipAddress`, `userAgent`, `organizationId`, `createdAt`. Sin `updatedAt` (insert-only). Índices en `actor`, `(action, createdAt)`, `(resourceType, resourceId)`.
 
-### User / Roles (PDF §4, §5) — ⚠️ parcial
-- [ ] **User**
-  - Estado actual: enum `UserRole` con `ADMIN / MANAGER / OPERATOR / VIEWER` en `app/models/auth.py:9`.
-  - Cambios requeridos:
-    - Agregar `STUDENT` (alias `ALUMNO`) y `SUPER_ADMIN` al enum.
-    - Campo `student_profile_id` opcional (si role = STUDENT).
-    - Campo `managed_convocatorias` (JSONB array de IDs) para MANAGER scope.
-    - `OPERATOR` y `VIEWER` se pueden mantener pero no aplican al dominio Training.
+### User / Roles (PDF §4, §5) — ✅ hecho
+- [x] **User** — UserRole enum extendido, campos nuevos agregados, `require_role` y `require_org` con detección HTML/JSON.
+  - Estado actual: `app/models/auth.py:UserRole` con SUPER_ADMIN, ADMIN, MANAGER, STUDENT, OPERATOR (legacy), VIEWER (legacy). `User.managedConvocatorias` (JSONB), `User.studentProfileId` (string nullable).
 
 ---
 
@@ -296,13 +294,13 @@ El PDF describe un sistema de evaluación competitiva: el alumno se identifica p
 
 > Dependencias claras. Hacer en orden, no saltearse pasos. Estimaciones honestas (junior) — ajustar al equipo real.
 
-1. [ ] **Extender User model + RBAC** — Agregar `STUDENT`, `SUPER_ADMIN` al enum. Extender `require_role` con ownership y `managed_convocatorias`. Re-seed admins/manager + crear un STUDENT en `setup_db.py`. **~4h.**
-2. [ ] **Limpiar el Flask actual** — Borrar blueprints/modelos del §8. Migración Alembic con `drop_table`. Liberar mental load del proyecto. **~3h.**
-3. [ ] **Modelos Convocatoria + Enrollment** — Crear, generar migración, agregar al `setup_db.py`. **~4h.**
-4. [ ] **Refactor Session → Attempt** — Renombrar `sessionId → attemptId` en GPS/Stability/Rotativo/CAN. Agregar `enrollmentId`, `convocatoriaId`, `studentId`, `closedAt`, versiones pinned, scoreBreakdown. Migración + actualizar `import_data.py`. **~6h.**
-5. [ ] **Modelo Event extendido + Ranking + AuditEvent extendido** — Crear/extender, migrar. **~4h.**
-6. [ ] **CRUD básico de Convocatoria + Enrollment (admin)** — Endpoints + templates + RBAC. **~8h.**
-7. [ ] **POST /attempts (RFID identify) + POST /attempts/:id/close** — Lookup por kioskCode + rfidTag, crear Attempt, freeze. **~6h.**
+1. [x] **Extender User model + RBAC** — Agregar `STUDENT`, `SUPER_ADMIN` al enum. Extender `require_role` con ownership y `managed_convocatorias`. Re-seed admins/manager + crear un STUDENT en `setup_db.py`. **~4h.**
+2. [x] **Limpiar el Flask actual** — Borrar blueprints/modelos del §8. Migración Alembic con `drop_table`. Liberar mental load del proyecto. **~3h.**
+3. [x] **Modelos Convocatoria + Enrollment** — Crear, generar migración, agregar al `setup_db.py`. **~4h.**
+4. [x] **Refactor Session → Attempt** — Renombrar `sessionId → attemptId` en GPS/Stability/Rotativo/CAN. Agregar `enrollmentId`, `convocatoriaId`, `studentId`, `closedAt`, versiones pinned, scoreBreakdown. Migración + actualizar `import_data.py`. **~6h.**
+5. [x] **Modelo Event extendido + Ranking + AuditEvent extendido** — Crear/extender, migrar. **~4h.**
+6. [x] **CRUD básico de Convocatoria + Enrollment (admin)** — Endpoints + templates + RBAC. **~8h.**
+7. [x] **POST /attempts (RFID identify) + POST /attempts/:id/close** — Lookup por kioskCode + rfidTag, crear Attempt, freeze. **~6h.** (Decisión: **sin cron de timeout** — cierre por evento puro. Edge case "último del día" se maneja con cierre manual desde el dashboard.)
 8. [ ] **Ingesta + detector + scoring** — `POST /attempts/:id/ingest` con dedup, función pura `detectEvents(samples)`, función pura `computeScore(events, criteria)`. **~14h.** El más gordo.
 9. [ ] **Cron daily-ranking + lockClosedConvocatorias** — Celery beat + insert-only en `Ranking`. **~4h.**
 10. [ ] **Cierre 3 pasos + acta PDF + reversa 24h** — Endpoints + templates + WeasyPrint + SHA256. **~10h.**

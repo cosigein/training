@@ -5,11 +5,9 @@
 
 /* ── ROOT ─────────────────────────────────────────────────────────── */
 .mgr-root {
-    position: fixed;
-    inset: 0;
-    height: 100dvh;
     display: flex;
     flex-direction: column;
+    min-height: 100dvh;
     background: #f0f4f8;
     font-family: var(--font-body);
     color: #1e293b;
@@ -26,7 +24,9 @@
     gap: 12px;
     flex-shrink: 0;
     box-shadow: 0 1px 3px rgba(0,0,0,.06);
-    z-index: 10;
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 .mgr-logo {
@@ -69,24 +69,36 @@
 }
 
 .mgr-nav__btn {
-    width: 40px;
     height: 40px;
+    padding: 0 14px;
     border-radius: 8px;
     border: none;
     background: transparent;
     cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 7px;
     color: #64748b;
     transition: background var(--transition-base), color var(--transition-base);
-    font-size: 20px;
     text-decoration: none;
     flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.mgr-nav__btn i {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.mgr-nav__btn span {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.1px;
 }
 
 .mgr-nav__btn:hover { background: #f1f5f9; color: #1e293b; }
 .mgr-nav__btn.active { background: #0d47a1; color: #fff; }
+.mgr-nav__btn.active:hover { background: #0a3a8a; }
 
 .mgr-btn-logout {
     display: flex;
@@ -109,11 +121,32 @@
 
 .mgr-btn-logout:hover { border-color: #0d47a1; color: #0d47a1; }
 
+/* ── BACK BUTTON ──────────────────────────────────────────────────── */
+.mgr-btn-back {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+    height: 36px;
+    border-radius: 6px;
+    border: 1.5px solid #e2e8f0;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color var(--transition-base), color var(--transition-base), background var(--transition-base);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.mgr-btn-back i { font-size: 16px; }
+.mgr-btn-back:hover { border-color: #0d47a1; color: #0d47a1; background: #eff6ff; }
+
 /* ── BODY / MAIN AREA ─────────────────────────────────────────────── */
 .mgr-body {
     flex: 1;
-    overflow-y: auto;
-    padding: 24px;
+    padding: 0;
     display: flex;
     flex-direction: column;
     gap: 18px;
@@ -246,8 +279,7 @@
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0,0,0,.06);
-    overflow: auto;
-    flex: 1;
+    overflow-x: auto;
 }
 
 .mgr-table {
@@ -411,7 +443,7 @@
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0,0,0,.06);
-    overflow: auto;
+    overflow-x: auto;
 }
 
 .mgr-matrix {
@@ -500,8 +532,7 @@
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0,0,0,.06);
-    overflow: auto;
-    flex: 1;
+    overflow-x: auto;
 }
 
 .mgr-rank-table {
@@ -1126,3 +1157,166 @@ button.mgr-action-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
 }
+
+/* ── HEADER RIGHT GROUP ──────────────────────────────────────────── */
+.mgr-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+/* ── SECTION TITLE ───────────────────────────────────────────────── */
+.mgr-section-title {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mgr-section-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background: #dc2626;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+/* ── CONVOCATORIA SELECTOR ───────────────────────────────────────── */
+.mgr-conv-selector {
+    height: 34px;
+    padding: 0 10px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 6px;
+    background: #fff;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    outline: none;
+    cursor: pointer;
+    transition: border-color var(--transition-base);
+}
+.mgr-conv-selector:focus { border-color: #0d47a1; }
+
+/* ── PAGE HEADER ROW ─────────────────────────────────────────────── */
+.mgr-page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.mgr-page-header > div { flex: 1; min-width: 0; }
+
+/* ── CONVOCATORIA GRID (M2) ──────────────────────────────────────── */
+.mgr-conv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+}
+
+.mgr-conv-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 18px;
+    border: 1.5px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: border-color var(--transition-base);
+}
+.mgr-conv-card:hover { border-color: #0d47a1; }
+
+/* ── UTILITIES ────────────────────────────────────────────────────── */
+.mgr-mt-4 { margin-top: 4px; }
+.mgr-mt-8 { margin-top: 8px; }
+.mgr-mb-20 { margin-bottom: 20px; }
+
+.mgr-text-bold { font-weight: 600; }
+.mgr-text-15 { font-size: 15px; }
+.mgr-text-11 { font-size: 11px; }
+
+.mgr-text-mono-muted {
+    font-size: 11px;
+    color: #64748b;
+    font-family: var(--font-mono);
+}
+
+.mgr-flex-center-gap {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+/* ── LAYOUT HELPERS ───────────────────────────────────────────────── */
+.mgr-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+/* ── SCORE DISPLAYS ───────────────────────────────────────────────── */
+.mgr-score-large {
+    font-family: var(--font-heading);
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.mgr-score-row-val {
+    font-family: var(--font-heading);
+    font-size: 20px;
+    font-weight: 700;
+    width: 60px;
+    text-align: right;
+}
+
+.mgr-color-success { color: #16a34a; }
+.mgr-color-danger { color: #dc2626; }
+
+.mgr-text-10 { font-size: 10px; }
+.mgr-conv-row--compact { padding: 12px 16px; }
+
+/* ── KPI CLICABLE ─────────────────────────────────────────────────── */
+a.mgr-kpi--link {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: box-shadow 150ms ease, transform 150ms ease;
+}
+a.mgr-kpi--link:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,.12);
+    transform: translateY(-1px);
+}
+
+.mgr-mt-16 { margin-top: 16px; }
+.mgr-mt-24 { margin-top: 24px; }
+.mgr-gap-8 { gap: 8px; }
+.mgr-gap-12 { gap: 12px; }
+.mgr-flex-wrap { flex-wrap: wrap; }
+.mgr-align-center { align-items: center; }
+
+.mgr-input-file {
+    font-size: 12px;
+    color: #f1f5f9;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 4px 8px;
+    max-width: 200px;
+}
+
+.mgr-text-12 { font-size: 12px; }
+.mgr-color-muted { color: #94a3b8; }

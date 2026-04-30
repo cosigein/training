@@ -5,7 +5,10 @@
 
 <div class="mgr-page-header">
     <div>
-        <h1 class="mgr-page-title" style="display:flex; align-items:center; gap:12px;">
+        <a href="{{ url_for('manager.dashboard') }}" class="mgr-back-link">
+            <i class="ph ph-arrow-left"></i> Volver al Dashboard
+        </a>
+        <h1 class="mgr-page-title" style="display:flex; align-items:center; gap:12px; margin-top:8px;">
             Ranking de clasificación
             <select class="mgr-conv-selector" onchange="window.location.href='?conv_id=' + this.value">
                 {% for c in convocatorias %}

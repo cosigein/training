@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mis Rutas — {{ candidato.nombre }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/kiosko.css') }}">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+
+<div class="ksk-root">
+
+    <!-- Header: driver info + logout -->
+    <header class="ksk-header">
+        <div class="ksk-driver-info">
+            <div class="ksk-driver-name">{{ candidato.nombre }}</div>
+            <div class="ksk-driver-meta">
+                <span>Plaza #{{ candidato.plaza }}</span>
+                <span class="ksk-badge-cat">{{ candidato.categoria }}</span>
+                <span>{{ convocatoria.nombre }}</span>
+            </div>
+        </div>
+        <a href="{{ url_for('kiosko.login') }}" class="ksk-btn ksk-btn--danger" style="height:44px; padding:0 20px; font-size:13px">
+            <i class="ph ph-sign-out"></i>
+            SALIR
+        </a>
+    </header>
+
+    <!-- Stats bar -->
+    <div class="ksk-stats-bar">
+        <div class="ksk-stat">
+            <span class="ksk-stat__val ksk-stat__val--blue">
+                {{ "%.2f"|format(nota_media) if nota_media > 0 else "—" }}
+            </span>
+            <span class="ksk-stat__lbl">Media actual</span>
+        </div>
+        <div class="ksk-stat">
+            <span class="ksk-stat__val ksk-stat__val--green">
+                {{ candidato.rutas_completadas }} / {{ candidato.rutas_total }}
+            </span>
+            <span class="ksk-stat__lbl">Rutas completadas</span>
+        </div>
+        <div class="ksk-stat">
+            <span class="ksk-stat__val ksk-stat__val--amber">{{ candidato.sesiones }}</span>
+            <span class="ksk-stat__lbl">Sesiones</span>
+        </div>
+        <div class="ksk-stat">
+            <span class="ksk-stat__val ksk-stat__val--gray">{{ candidato.ultima }}</span>
+            <span class="ksk-stat__lbl">Última sesión</span>
+        </div>
+    </div>
+
+    <!-- Main body -->
+    <div class="ksk-body">
+
+        <span class="ksk-section-label">
+            Circuitos de conducción · {{ convocatoria.nombre }}
+        </span>
+
+        <div class="ksk-rutas-grid">
+            {% for ruta in rutas %}
+            {% set info = ruta.info %}
+
+            {% if info %}
+                {% if info.nota >= 5 %}
+                    {% set card_class = 'ksk-ruta-card--completada' %}
+                    {% set score_class = 'ksk-ruta-score--pass' %}
+                    {% set status_class = 'ksk-ruta-status--ok' %}
+                    {% set status_icon = 'ph-check-circle' %}
+                    {% set status_text = 'Completada' %}
+                {% else %}
+                    {% set card_class = 'ksk-ruta-card--baja' %}
+                    {% set score_class = 'ksk-ruta-score--fail' %}
+                    {% set status_class = 'ksk-ruta-status--fail' %}
+                    {% set status_icon = 'ph-x-circle' %}
+                    {% set status_text = 'Por mejorar' %}
+                {% endif %}
+
+                {% if info.data_quality == 'LOW' %}{% set card_class = card_class + ' ksk-ruta-card--baja' %}{% endif %}
+
+                <a href="{{ url_for('kiosko.intento', attempt_id=ruta.attempt_id) }}"
+                   class="ksk-ruta-card {{ card_class }}">
+
+                    {% if info.audit %}
+                    <span class="ksk-ruta-badge ksk-ruta-badge--audit">
+                        <i class="ph ph-scales"></i> Auditoría
+                    </span>
+                    {% elif info.data_quality == 'LOW' %}
+                    <span class="ksk-ruta-badge ksk-ruta-badge--lq">
+                        <i class="ph ph-warning"></i> LQ
+                    </span>
+                    {% endif %}
+
+                    <span class="ksk-ruta-id">{{ ruta.id }}</span>
+                    <span class="ksk-ruta-label">{{ ruta.label }}</span>
+                    <span class="ksk-ruta-score {{ score_class }}">{{ "%.1f"|format(info.nota) }}</span>
+                    <span class="ksk-ruta-status {{ status_class }}">
+                        <i class="ph {{ status_icon }}"></i> {{ status_text }}
+                    </span>
+                </a>
+
+            {% else %}
+                <div class="ksk-ruta-card ksk-ruta-card--pendiente">
+                    <span class="ksk-ruta-id">{{ ruta.id }}</span>
+                    <span class="ksk-ruta-label">{{ ruta.label }}</span>
+                    <span class="ksk-ruta-score" style="color:#1e3a5f; font-size:24px">— / 10</span>
+                    <span class="ksk-ruta-status ksk-ruta-status--pend">
+                        <i class="ph ph-clock"></i> Pendiente
+                    </span>
+                </div>
+            {% endif %}
+
+            {% endfor %}
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

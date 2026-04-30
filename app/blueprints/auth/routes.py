@@ -42,7 +42,14 @@ def login():
                 "user": {"id": user.id, "email": user.email, "name": user.name}
             })
         else:
-            response = redirect(url_for('sessions.list_attempts'))
+            role = user.role.value if hasattr(user.role, 'value') else user.role
+            if role == "STUDENT":
+                dest = url_for('alumno.dashboard')
+            elif role in ("MANAGER", "ADMIN", "SUPER_ADMIN"):
+                dest = url_for('manager.dashboard')
+            else:
+                dest = url_for('sessions.list_attempts')
+            response = redirect(dest)
             flash(f"Bienvenido de nuevo, {user.name}", "success")
         
         set_access_cookies(response, access_token)

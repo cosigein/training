@@ -10,6 +10,8 @@ from . import system_bp
 def index():
     return redirect(url_for('sessions.list_attempts'))
 
+
+
 @system_bp.route("/settings", methods=["GET", "POST"])
 @require_role(["ADMIN", "MANAGER"])
 def settings():

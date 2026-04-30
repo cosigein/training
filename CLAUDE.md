@@ -178,6 +178,20 @@ Vida útil < 1 día. Si crece, partir.
 ### Comunicación con CMadrid
 **Solo Antonio.** Cualquier comunicación al cliente pasa únicamente por él.
 
+## Cliente nativo Apple — regla permanente (D-IOS-001)
+
+El cliente nativo Apple del backend Training vive en `/Users/antoniohermoso/IOS/Dobacksoft Training` (repo git separado). Tiene **scope cerrado**:
+
+- **Plataformas IN:** iPhone, iPad, Apple Watch.
+- **Plataformas OUT:** macOS (sin Mac Catalyst), visionOS / Vision Pro, ningún otro target.
+- **Frameworks IN:** Swift puro + SwiftUI + Apple frameworks (URLSession, Keychain, WatchKit, UserNotifications, Combine, async/await).
+- **Frameworks OUT:** React Native, Flutter, Capacitor, Cordova, KMM, Mac Catalyst, cualquier herramienta cross-platform. **100% nativo, sin excepciones.**
+- **Web NO se replica:** el portal Jinja sigue siendo el cliente principal de MANAGER/ADMIN. La app móvil consume `/api/v1/*` read-only. NO duplicamos funcionalidad operacional pesada en móvil.
+
+Si alguien (Antonio incluido) propone macOS / Vision / cross-platform, la respuesta es: "ver `memory/decision-ios-platform-rule.md` y `architecture/ios-platform-rule` en engram". Cambiar la regla requiere revertir esa decisión explícitamente.
+
+Detalle vivo: [`memory/decision-ios-platform-rule.md`](memory/decision-ios-platform-rule.md).
+
 ## Comandos del proyecto (referencia rápida)
 
 ```bash

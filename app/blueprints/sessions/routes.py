@@ -1,6 +1,6 @@
-from flask import jsonify, request, render_template, current_app
+from flask import jsonify, request, render_template, current_app, redirect, url_for, flash
 from . import sessions_bp
-from .services import attempt_service
+from .services import attempt_service, AttemptError
 from app.utils.decorators import jwt_required, get_jwt_identity, require_role
 from app.models.auth import User
 from app.extensions import db
@@ -101,6 +101,93 @@ def delete_attempt(id):
     if not deleted:
         return jsonify({"message": "Intento no encontrado o sin permisos"}), 404
     return "", 204
+
+
+@sessions_bp.route("/<string:id>/close", methods=["POST"])
+@require_role(["ADMIN", "SUPER_ADMIN"])
+def close_attempt(id):
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    try:
+        att = attempt_service.close_attempt(id, user.organizationId, user_id)
+    except AttemptError as exc:
+        if request.is_json:
+            return jsonify({"message": str(exc)}), 422
+        flash(str(exc), "danger")
+        return redirect(url_for("sessions.get_attempt_detail", id=id))
+
+    if not att:
+        if request.is_json:
+            return jsonify({"message": "Intento no encontrado"}), 404
+        return render_template("errors/404.html"), 404
+
+    if request.is_json:
+        return jsonify({"id": att.id, "status": att.status.value, "closedAt": att.closedAt.isoformat()})
+    flash("Intento cerrado.", "success")
+    return redirect(url_for("sessions.get_attempt_detail", id=att.id))
+
+
+@sessions_bp.route("/<string:id>/invalidate", methods=["POST"])
+@require_role(["ADMIN", "SUPER_ADMIN"])
+def invalidate_attempt(id):
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    data = request.get_json() if request.is_json else request.form.to_dict()
+    reason = (data.get("reason") or "").strip()
+
+    try:
+        att = attempt_service.invalidate_attempt(id, user.organizationId, user_id, reason)
+    except AttemptError as exc:
+        if request.is_json:
+            return jsonify({"message": str(exc)}), 422
+        flash(str(exc), "danger")
+        return redirect(url_for("sessions.get_attempt_detail", id=id))
+
+    if not att:
+        if request.is_json:
+            return jsonify({"message": "Intento no encontrado"}), 404
+        return render_template("errors/404.html"), 404
+
+    if request.is_json:
+        return jsonify({
+            "id": att.id, "status": att.status.value,
+            "invalidatedAt": att.invalidatedAt.isoformat(),
+            "invalidatedReason": att.invalidatedReason,
+        })
+    flash("Intento invalidado.", "success")
+    return redirect(url_for("sessions.get_attempt_detail", id=att.id))
+
+
+@sessions_bp.route("/<string:id>/upload", methods=["POST"])
+@require_role(["ADMIN", "SUPER_ADMIN"])
+def upload_sensor_file(id):
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+
+    if "file" not in request.files:
+        return jsonify({"message": "Se requiere un campo 'file' en el formulario multipart"}), 400
+
+    f = request.files["file"]
+    if not f.filename:
+        return jsonify({"message": "Nombre de archivo inválido"}), 400
+
+    try:
+        content = f.read().decode("utf-8", errors="replace")
+        result = attempt_service.upload_sensor_file(id, user.organizationId, user_id, content, f.filename)
+    except AttemptError as exc:
+        return jsonify({"message": str(exc)}), 422
+
+    return jsonify({
+        "attemptId": id,
+        "gpsRows": result.gps_rows,
+        "stabilityRows": result.stability_rows,
+        "rotativoRows": result.rotativo_rows,
+        "canRows": result.can_rows,
+        "totalRows": result.total_rows,
+        "skippedNoFix": result.gps_skipped_no_fix,
+        "errors": result.errors,
+        "summary": result.summary(),
+    }), 200
 
 
 @sessions_bp.route("/<string:id>/gps", methods=["GET"])

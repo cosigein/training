@@ -114,6 +114,7 @@ class Attempt(db.Model):
     quality_metrics = db.relationship("DataQualityMetrics", back_populates="attempt", uselist=False, cascade="all, delete-orphan")
     upload_logs = db.relationship("AttemptUploadLog", back_populates="attempt", cascade="all, delete-orphan")
     evidence = db.relationship("Evidence", back_populates="attempt", cascade="all, delete-orphan")
+    training_events = db.relationship("AttemptEvent", back_populates="attempt", cascade="all, delete-orphan", passive_deletes=True)
 
 
 # Aliases legacy para no romper imports existentes durante el refactor incremental.

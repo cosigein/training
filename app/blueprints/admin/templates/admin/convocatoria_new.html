@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Nueva convocatoria - CMadrid Training{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+    <div>
+        <h1 style="margin: 0; font-size: 1.5rem;">Nueva convocatoria</h1>
+        <p style="color: var(--color-gray-500); font-size: 0.875rem; margin: 4px 0 0 0;">Definir un proceso de oposición.</p>
+    </div>
+    <a href="{{ url_for('admin.list_convocatorias') }}" class="btn btn--ghost btn--sm">Cancelar</a>
+</div>
+
+<div class="card" style="max-width: 720px;">
+    <form method="POST" action="{{ url_for('admin.create_convocatoria') }}" class="card__body">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="form-group">
+            <label for="name">Nombre <span style="color: var(--color-danger);">*</span></label>
+            <input type="text" id="name" name="name" required maxlength="120"
+                   value="{{ form.name if form else '' }}"
+                   placeholder="Ej: Oposición conductor 2026 — Madrid" />
+        </div>
+
+        <div class="form-group">
+            <label for="description">Descripción</label>
+            <textarea id="description" name="description" rows="3"
+                      placeholder="Notas internas (opcional)">{{ form.description if form else '' }}</textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+            <div class="form-group">
+                <label for="routePrincipal">Ruta principal <span style="color: var(--color-danger);">*</span></label>
+                <input type="text" id="routePrincipal" name="routePrincipal" required
+                       value="{{ form.routePrincipal if form else '' }}"
+                       placeholder="ROUTE_001" />
+            </div>
+            <div class="form-group">
+                <label for="plazas">Plazas <span style="color: var(--color-danger);">*</span></label>
+                <input type="number" id="plazas" name="plazas" required min="1"
+                       value="{{ form.plazas if form else '' }}" />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="umbralMin">Umbral mínimo (0 a 10)</label>
+            <input type="number" step="0.1" min="0" max="10" id="umbralMin" name="umbralMin"
+                   value="{{ form.umbralMin if form else '5.0' }}" />
+        </div>
+
+        <h3 style="font-size: 0.95rem; margin-top: var(--space-lg); color: var(--color-gray-700);">
+            Versionado pinned (inmutable post-creación)
+        </h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md);">
+            <div class="form-group">
+                <label for="criteriaVersion">criteria <span style="color: var(--color-danger);">*</span></label>
+                <input type="text" id="criteriaVersion" name="criteriaVersion" required
+                       value="{{ form.criteriaVersion if form else 'v1.0.0' }}" />
+            </div>
+            <div class="form-group">
+                <label for="normalizerVersion">normalizer <span style="color: var(--color-danger);">*</span></label>
+                <input type="text" id="normalizerVersion" name="normalizerVersion" required
+                       value="{{ form.normalizerVersion if form else 'v1.0.0' }}" />
+            </div>
+            <div class="form-group">
+                <label for="detectorVersion">detector <span style="color: var(--color-danger);">*</span></label>
+                <input type="text" id="detectorVersion" name="detectorVersion" required
+                       value="{{ form.detectorVersion if form else 'v1.0.0' }}" />
+            </div>
+        </div>
+
+        <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-lg);">
+            <button type="submit" class="btn btn--primary">
+                <i class="ph ph-check"></i> Crear convocatoria
+            </button>
+            <a href="{{ url_for('admin.list_convocatorias') }}" class="btn btn--ghost">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

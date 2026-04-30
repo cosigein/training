@@ -27,32 +27,42 @@
             <span class="mgr-logo__text">CMadrid <span>Training</span></span>
         </a>
 
+        <button onclick="history.back()" class="mgr-btn-back" title="Volver a la página anterior">
+            <i class="ph ph-arrow-left"></i>
+            Volver
+        </button>
+
         <nav class="mgr-nav">
             <a href="{{ url_for('manager.dashboard') }}"
-               class="mgr-nav__btn {% if active_page == 'dashboard' %}active{% endif %}"
-               title="Dashboard">
+               class="mgr-nav__btn {% if active_page == 'dashboard' %}active{% endif %}">
                 <i class="ph ph-squares-four"></i>
+                <span>Inicio</span>
             </a>
             <a href="{{ url_for('manager.convocatorias') }}"
-               class="mgr-nav__btn {% if active_page == 'convocatorias' %}active{% endif %}"
-               title="Convocatorias">
+               class="mgr-nav__btn {% if active_page == 'convocatorias' %}active{% endif %}">
                 <i class="ph ph-clipboard-text"></i>
+                <span>Convocatorias</span>
             </a>
             <a href="{{ url_for('manager.matriz') }}"
-               class="mgr-nav__btn {% if active_page == 'matriz' %}active{% endif %}"
-               title="Matriz">
+               class="mgr-nav__btn {% if active_page == 'matriz' %}active{% endif %}">
                 <i class="ph ph-grid-nine"></i>
+                <span>Candidatos</span>
             </a>
             <a href="{{ url_for('manager.ranking') }}"
-               class="mgr-nav__btn {% if active_page == 'ranking' %}active{% endif %}"
-               title="Ranking">
+               class="mgr-nav__btn {% if active_page == 'ranking' %}active{% endif %}">
                 <i class="ph ph-trophy"></i>
+                <span>Ranking</span>
+            </a>
+            <a href="{{ url_for('manager.auditoria_list') }}"
+               class="mgr-nav__btn {% if active_page == 'auditorias' %}active{% endif %}">
+                <i class="ph ph-magnifying-glass"></i>
+                <span>Auditorías</span>
             </a>
         </nav>
 
         <div class="mgr-header-right">
             {% block header_extra %}{% endblock %}
-            <a href="{{ url_for('auth.login') }}" class="mgr-btn-logout">
+            <a href="{{ url_for('auth.logout') }}" class="mgr-btn-logout">
                 <i class="ph ph-sign-out"></i>
                 Salir
             </a>

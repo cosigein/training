@@ -19,7 +19,9 @@
 <!-- Tarjetas de convocatoria -->
 <div class="mgr-conv-list">
     {% for conv in convocatorias %}
-    <div class="mgr-conv-row" data-status="{{ conv.status|lower }}">
+    <div class="mgr-conv-row mgr-conv-row--clickable"
+         data-status="{{ conv.status|lower }}"
+         data-href="{{ url_for('manager.matriz', conv_id=conv.id) }}">
 
         <div class="mgr-conv-row__main">
             <div class="mgr-conv-row__title">
@@ -51,12 +53,17 @@
         </div>
 
         <div class="mgr-conv-row__actions">
-            <a href="{{ url_for('manager.matriz') }}" class="mgr-action-btn mgr-action-btn--secondary">
+            <a href="{{ url_for('manager.matriz', conv_id=conv.id) }}" class="mgr-action-btn mgr-action-btn--secondary">
                 <i class="ph ph-grid-nine"></i> Matriz
             </a>
-            <a href="{{ url_for('manager.ranking') }}" class="mgr-action-btn mgr-action-btn--primary">
+            <a href="{{ url_for('manager.ranking', conv_id=conv.id) }}" class="mgr-action-btn mgr-action-btn--primary">
                 <i class="ph ph-trophy"></i> Ranking
             </a>
+            {% if current_user.is_authenticated and current_user.role.value in ('ADMIN', 'SUPER_ADMIN') %}
+            <a href="{{ url_for('admin.get_convocatoria_detail', conv_id=conv.id) }}" class="mgr-action-btn mgr-action-btn--secondary">
+                <i class="ph ph-pencil-simple"></i> Gestionar
+            </a>
+            {% endif %}
         </div>
 
     </div>
@@ -72,7 +79,6 @@
 
 {% block extra_js %}
 <script>
-// Filtro por status
 document.querySelectorAll('[data-filter-status]').forEach(pill => {
     pill.addEventListener('click', () => {
         document.querySelectorAll('[data-filter-status]').forEach(p => p.classList.remove('active'));
@@ -81,6 +87,13 @@ document.querySelectorAll('[data-filter-status]').forEach(pill => {
         document.querySelectorAll('.mgr-conv-row').forEach(row => {
             row.style.display = (status === 'all' || row.dataset.status === status) ? '' : 'none';
         });
+    });
+});
+document.querySelectorAll('.mgr-conv-row--clickable').forEach(row => {
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', e => {
+        if (e.target.closest('a')) return;
+        window.location.href = row.dataset.href;
     });
 });
 </script>

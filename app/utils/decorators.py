@@ -5,6 +5,9 @@ from app.models.auth import User
 
 
 def _wants_json():
+    # /api/* es siempre JSON — clientes nativos no negocian Accept ni mandan is_json
+    if request.path.startswith("/api/"):
+        return True
     if request.is_json:
         return True
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -44,7 +47,7 @@ def require_role(roles):
                 if _wants_json():
                     return jsonify({"message": "Permisos insuficientes"}), 403
                 flash("No tenés permisos para acceder a esa sección.", "warning")
-                return redirect(url_for('sessions.list_attempts'))
+                return redirect(url_for('auth.login'))
 
             return f(*args, **kwargs)
         return decorated_function
