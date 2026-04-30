@@ -66,6 +66,7 @@ def create_app(config_name=None):
     from app.blueprints.admin import admin_bp
     from app.blueprints.manager import manager_bp
     from app.blueprints.kiosko import kiosko_bp
+    from app.blueprints.student import student_bp
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(vehicles_bp, url_prefix="/vehicles")
@@ -76,6 +77,7 @@ def create_app(config_name=None):
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(manager_bp, url_prefix="/manager")
     app.register_blueprint(kiosko_bp, url_prefix="/kiosko")
+    app.register_blueprint(student_bp, url_prefix="/alumno")
 
     # JWT en header (no cookie) → no necesita CSRF
     from app.blueprints.mobile_api import mobile_api_bp
