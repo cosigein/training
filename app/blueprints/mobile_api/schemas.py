@@ -7,7 +7,7 @@ anidada, el handler construye el dict antes de `schema.dump(...)`.
 Implementación por PR:
 - UserSchema, AuthLoginResponseSchema → PR-2 ✅
 - ConvocatoriaSummarySchema → PR-3 ✅
-- StandingSchema → PR-4
+- StandingSchema → PR-4 ✅ (SIN withinCutoff, decisión GDPR)
 - RankingEntrySchema → PR-6
 - AttemptDetailSchema → PR-7
 """
@@ -48,7 +48,19 @@ class ConvocatoriaSummarySchema(Schema):
 
 
 class StandingSchema(Schema):
-    pass
+    """Posición individual del STUDENT en una convocatoria.
+
+    SIN `withinCutoff` ni equivalentes (decisión GDPR art. 22 — el cliente
+    calcula `position <= plazas` localmente si lo necesita).
+    """
+    convocatoriaId = fields.String(dump_only=True)
+    position = fields.Integer(dump_only=True)
+    totalCandidates = fields.Integer(dump_only=True)
+    plazas = fields.Integer(dump_only=True)
+    score = fields.Float(dump_only=True)
+    attemptsCompleted = fields.Integer(dump_only=True)
+    attemptsTotal = fields.Integer(dump_only=True)
+    status = fields.String(dump_only=True)
 
 
 class RankingEntrySchema(Schema):
