@@ -1,23 +1,43 @@
 import os
+import time
 import warnings
 # Silenciar advertencias de Eventlet y Limiter para un arranque limpio
 warnings.filterwarnings("ignore", message="Eventlet is deprecated")
 warnings.filterwarnings("ignore", category=UserWarning, module="flask_limiter")
 
-from flask import Flask, request
+from flask import Flask, g, request
+from loguru import logger
 from app.config import config
 from app.extensions import (
-    db, migrate, jwt, socketio, login_manager, 
-    csrf, limiter, cors, compress, cache, talisman, 
-    babel, create_celery_app
+    db, migrate, jwt, socketio, login_manager,
+    csrf, limiter, cors, compress, cache, talisman,
+    babel, create_celery_app, init_loguru,
 )
+
+
+def _init_sentry(app) -> None:
+    dsn = os.getenv("SENTRY_DSN")
+    if not dsn:
+        return
+    import sentry_sdk
+    from sentry_sdk.integrations.flask import FlaskIntegration
+    from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+    sentry_sdk.init(
+        dsn=dsn,
+        integrations=[FlaskIntegration(), SqlalchemyIntegration()],
+        traces_sample_rate=0.1,
+        send_default_pii=False,
+        environment=os.getenv("FLASK_ENV", "development"),
+        release=os.getenv("APP_VERSION", "training@dev"),
+    )
 
 def create_app(config_name=None):
     if config_name is None:
         config_name = os.environ.get("FLASK_CONFIG", "default")
-    
+
     app = Flask(__name__)
     app.config.from_object(config[config_name])
+    _init_sentry(app)
     
     # Init extensions
     db.init_app(app)
@@ -34,7 +54,8 @@ def create_app(config_name=None):
     if not app.debug:
         talisman.init_app(app)
     babel.init_app(app)
-    
+    init_loguru(app)
+
     # Register blueprints
     from app.blueprints.auth import auth_bp
     from app.blueprints.vehicles import vehicles_bp
@@ -82,5 +103,21 @@ def create_app(config_name=None):
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(user_id)
+
+    @app.before_request
+    def _start_timer():
+        g._t0 = time.time()
+
+    @app.after_request
+    def _log_request(response):
+        duration_ms = int((time.time() - getattr(g, "_t0", time.time())) * 1000)
+        logger.info(
+            "request_handled method={} path={} status={} duration_ms={}",
+            request.method,
+            request.path,
+            response.status_code,
+            duration_ms,
+        )
+        return response
 
     return app
