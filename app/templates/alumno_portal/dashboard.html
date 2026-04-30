@@ -22,6 +22,21 @@
             <span class="alu-logo__text">CMadrid <span>Training</span></span>
         </a>
 
+        <nav class="alu-nav">
+            <a href="{{ url_for('alumno.dashboard', plaza=candidato.plaza) }}"
+               class="alu-nav__btn {% if active_page == 'dashboard' %}active{% endif %}">
+                <i class="ph ph-house"></i> <span>Mis resultados</span>
+            </a>
+            <a href="{{ url_for('alumno.historial', plaza=candidato.plaza) }}"
+               class="alu-nav__btn {% if active_page == 'historial' %}active{% endif %}">
+                <i class="ph ph-clock-counter-clockwise"></i> <span>Historial</span>
+            </a>
+            <a href="{{ url_for('alumno.evolucion', plaza=candidato.plaza) }}"
+               class="alu-nav__btn {% if active_page == 'evolucion' %}active{% endif %}">
+                <i class="ph ph-trend-up"></i> <span>Evolución</span>
+            </a>
+        </nav>
+
         <div class="alu-user-chip">
             <div class="alu-user-chip__avatar">
                 {{ candidato.nombre[0] }}{{ candidato.nombre.split()[1][0] if candidato.nombre.split()|length > 1 else '' }}
@@ -29,7 +44,6 @@
             <span class="alu-user-chip__name">{{ candidato.nombre.split()[0] }}</span>
             <span class="alu-user-chip__plaza">#{{ candidato.plaza }}</span>
         </div>
-
         <a href="{{ url_for('alumno.login') }}" class="alu-btn-logout">
             <i class="ph ph-sign-out"></i>
             Salir
@@ -38,6 +52,22 @@
 
     <!-- Body -->
     <div class="alu-body">
+
+        <!-- Banner auditoría resuelta -->
+        {% if auditoria_resuelta %}
+        <div class="alu-banner alu-banner--resolved">
+            <i class="ph ph-check-circle alu-banner__icon"></i>
+            <div>
+                <div class="alu-banner__title">Tu auditoría fue revisada</div>
+                <div class="alu-banner__body">
+                    Circuito: <strong>{{ auditoria_resuelta.ruta }}</strong> ·
+                    Resolución: <strong>{{ auditoria_resuelta.resolucion }}</strong> ·
+                    {{ auditoria_resuelta.fecha_resolucion }} —
+                    "{{ auditoria_resuelta.comentario_manager }}"
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Welcome + estado provisional -->
         <div class="alu-welcome">
@@ -137,62 +167,89 @@
         {% endif %}
 
         <!-- Detalle de rutas -->
-        <div class="alu-card">
-            <div class="alu-card__head">
-                <h2>
-                    <i class="ph ph-map-trifold"></i>
-                    Mis circuitos
-                </h2>
-                <span style="font-size:12px; color:#94a3b8">
-                    {{ candidato.rutas_completadas }} completados · {{ candidato.rutas_total - candidato.rutas_completadas }} pendientes
+        <div>
+            <!-- Resumen completados -->
+            <div class="alu-completados-card">
+                <div class="alu-completados-card__left">
+                    <span class="alu-completados-card__num">{{ candidato.rutas_completadas }}</span>
+                    <span class="alu-completados-card__sep">/</span>
+                    <span class="alu-completados-card__total">{{ candidato.rutas_total }}</span>
+                    <span class="alu-completados-card__label">circuitos completados</span>
+                </div>
+                <div class="alu-completados-card__bar">
+                    <div class="alu-completados-card__fill"
+                         style="width:{{ (candidato.rutas_completadas / candidato.rutas_total * 100)|int if candidato.rutas_total > 0 else 0 }}%">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leyenda de colores -->
+            <div class="alu-rutas-leyenda">
+                <span class="alu-rutas-leyenda__item alu-rutas-leyenda__item--pass">
+                    <span class="alu-rutas-leyenda__dot"></span> Aprobado (≥ 5)
+                </span>
+                <span class="alu-rutas-leyenda__item alu-rutas-leyenda__item--fail">
+                    <span class="alu-rutas-leyenda__dot"></span> Suspenso (< 5)
+                </span>
+                <span class="alu-rutas-leyenda__item alu-rutas-leyenda__item--aud">
+                    <span class="alu-rutas-leyenda__dot"></span> En revisión
+                </span>
+                <span class="alu-rutas-leyenda__item alu-rutas-leyenda__item--pend">
+                    <span class="alu-rutas-leyenda__dot"></span> Pendiente
                 </span>
             </div>
-            <div class="alu-card__body">
+
+            <div class="alu-rutas-grid">
                 {% for ruta in rutas %}
-                <div class="alu-ruta-row">
 
-                    <span class="alu-ruta-id">{{ ruta.id }}</span>
-                    <span class="alu-ruta-label">{{ ruta.label }}</span>
-
-                    {% if ruta.info %}
-                        <!-- Calidad de datos -->
-                        <span class="alu-ruta-quality alu-ruta-quality--{{ ruta.info.data_quality|lower }}"
-                              title="Calidad de datos del sensor">
-                            {% if ruta.info.data_quality == 'HIGH' %}
-                                <i class="ph ph-check"></i> HQ
-                            {% elif ruta.info.data_quality == 'MEDIUM' %}
-                                MQ
-                            {% else %}
-                                <i class="ph ph-warning"></i> LQ
-                            {% endif %}
+                {% if ruta.info %}
+                    {% if ruta.info.audit %}
+                        {% set card_mod = 'aud' %}
+                    {% elif ruta.info.nota >= 5 %}
+                        {% set card_mod = 'pass' %}
+                    {% else %}
+                        {% set card_mod = 'fail' %}
+                    {% endif %}
+                <a href="{{ url_for('alumno.intento', attempt_id=ruta.info.attempt_id) }}"
+                   class="alu-ruta-card alu-ruta-card--{{ card_mod }}">
+                    <span class="alu-ruta-card__id">{{ ruta.id }}</span>
+                    <span class="alu-ruta-card__label">{{ ruta.label }}</span>
+                    <span class="alu-ruta-card__nota {% if ruta.info.nota >= 5 %}alu-ruta-card__nota--pass{% else %}alu-ruta-card__nota--fail{% endif %}">
+                        {{ "%.1f"|format(ruta.info.nota) }}
+                    </span>
+                    <div class="alu-ruta-card__meta">
+                        <span class="alu-ruta-quality alu-ruta-quality--{{ ruta.info.data_quality|lower }}">
+                            {% if ruta.info.data_quality == 'HIGH' %}<i class="ph ph-check"></i> HQ
+                            {% elif ruta.info.data_quality == 'MEDIUM' %}MQ
+                            {% else %}<i class="ph ph-warning"></i> LQ{% endif %}
                         </span>
-
-                        <!-- Auditoría pendiente -->
+                        {% if ruta.info.fecha %}
+                        <span class="alu-ruta-card__fecha">
+                            <i class="ph ph-calendar-blank"></i> {{ ruta.info.fecha[:5] }}
+                        </span>
+                        {% endif %}
                         {% if ruta.info.audit %}
                         <span class="alu-ruta-audit-chip">
                             <i class="ph ph-scales"></i> En revisión
                         </span>
                         {% endif %}
+                    </div>
+                    <span class="alu-ruta-card__cta">
+                        <i class="ph ph-eye"></i> Ver detalle
+                    </span>
+                </a>
 
-                        <!-- Nota -->
-                        <span class="alu-ruta-nota {% if ruta.info.nota >= 5 %}alu-ruta-nota--pass{% else %}alu-ruta-nota--fail{% endif %}">
-                            {{ "%.1f"|format(ruta.info.nota) }}
-                        </span>
-
-                        <!-- Botón ver detalle -->
-                        <a href="{{ url_for('alumno.intento', attempt_id=ruta.info.attempt_id) }}"
-                           class="alu-ruta-btn">
-                            <i class="ph ph-eye"></i> Ver detalle
-                        </a>
-
-                    {% else %}
-                        <span class="alu-ruta-nota alu-ruta-nota--pend">—</span>
-                        <span style="font-size:12px; color:#94a3b8; flex-shrink:0; min-width:90px; text-align:right;">
-                            <i class="ph ph-clock"></i> Pendiente
-                        </span>
-                    {% endif %}
-
+                {% else %}
+                <div class="alu-ruta-card alu-ruta-card--pend">
+                    <span class="alu-ruta-card__id">{{ ruta.id }}</span>
+                    <span class="alu-ruta-card__label">{{ ruta.label }}</span>
+                    <span class="alu-ruta-card__nota alu-ruta-card__nota--pend">—</span>
+                    <span class="alu-ruta-card__pend">
+                        <i class="ph ph-clock"></i> Pendiente
+                    </span>
                 </div>
+                {% endif %}
+
                 {% endfor %}
             </div>
         </div>
@@ -200,7 +257,7 @@
         <!-- Nota legal -->
         <p class="alu-disclaimer">
             Resultados <strong>provisionales</strong>. No tienen efecto jurídico hasta la publicación oficial al cierre de la convocatoria ({{ convocatoria.fecha_cierre }}).
-            Si crees que hay un error en tu nota, contacta al equipo evaluador o solicita una auditoría desde la vista de detalle del intento.
+            Si creés que hay un error en tu nota, podés solicitarlo desde la vista de detalle de cada circuito.
         </p>
 
     </div>

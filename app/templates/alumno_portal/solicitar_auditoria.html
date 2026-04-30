@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitar auditoría — CMadrid Training</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/alumno.css') }}">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+
+<div class="alu-root">
+
+    <!-- Header -->
+    <header class="alu-header">
+        <a href="{{ url_for('alumno.login') }}" class="alu-logo">
+            <div class="alu-logo__icon">CM</div>
+            <span class="alu-logo__text">CMadrid <span>Training</span></span>
+        </a>
+
+        <nav class="alu-nav">
+            <a href="{{ url_for('alumno.dashboard', plaza=candidato.plaza) }}"
+               class="alu-nav__btn {% if active_page == 'dashboard' %}active{% endif %}">
+                <i class="ph ph-house"></i> <span>Mis resultados</span>
+            </a>
+            <a href="{{ url_for('alumno.historial', plaza=candidato.plaza) }}"
+               class="alu-nav__btn {% if active_page == 'historial' %}active{% endif %}">
+                <i class="ph ph-clock-counter-clockwise"></i> <span>Historial</span>
+            </a>
+            <a href="{{ url_for('alumno.evolucion', plaza=candidato.plaza) }}"
+               class="alu-nav__btn {% if active_page == 'evolucion' %}active{% endif %}">
+                <i class="ph ph-trend-up"></i> <span>Evolución</span>
+            </a>
+        </nav>
+
+        <div class="alu-user-chip">
+            <div class="alu-user-chip__avatar">
+                {{ candidato.nombre[0] }}{{ candidato.nombre.split()[1][0] if candidato.nombre.split()|length > 1 else '' }}
+            </div>
+            <span class="alu-user-chip__name">{{ candidato.nombre.split()[0] }}</span>
+            <span class="alu-user-chip__plaza">#{{ candidato.plaza }}</span>
+        </div>
+        <a href="{{ url_for('alumno.login') }}" class="alu-btn-logout">
+            <i class="ph ph-sign-out"></i>
+            Salir
+        </a>
+    </header>
+
+    <!-- Body -->
+    <div class="alu-body">
+
+        <div>
+            <a href="{{ url_for('alumno.intento', attempt_id=attempt_id) }}"
+               class="alu-ruta-btn" style="margin-bottom:12px; display:inline-flex;">
+                <i class="ph ph-arrow-left"></i> Volver al intento
+            </a>
+            <h1 class="alu-welcome__title" style="margin-top:10px;">Solicitar auditoría</h1>
+            <p class="alu-welcome__sub">
+                <strong>{{ ruta.label if ruta else attempt_id }}</strong>
+                {% if nota_info.fecha %}
+                · {{ nota_info.fecha[:5] }} {{ nota_info.hora }}
+                {% endif %}
+                · nota <strong>{{ "%.1f"|format(nota_info.nota) }}</strong>
+            </p>
+        </div>
+
+        <!-- Info -->
+        <div style="padding:16px 20px; background:#eff6ff; border-radius:10px; border:1.5px solid #bfdbfe;
+                    font-size:13px; color:#1e40af; line-height:1.6;">
+            <strong><i class="ph ph-info"></i> ¿Qué es una auditoría?</strong><br>
+            Si creés que el sistema registró un error en tu nota (por ejemplo, un obstáculo externo, un fallo del sensor, o una situación imprevista), podés solicitar que el manager revise manualmente tu intento.
+            <br><br>
+            Tu solicitud debe incluir una descripción clara de lo que ocurrió. El manager analizará los datos del sensor y te dará una respuesta.
+        </div>
+
+        <!-- Error -->
+        {% if error %}
+        <div class="alu-audit-error">
+            <i class="ph ph-warning"></i> {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- Formulario -->
+        <div class="alu-card">
+            <div class="alu-card__head">
+                <h2><i class="ph ph-scales"></i> Tu solicitud</h2>
+            </div>
+            <div class="alu-card__body" style="padding:24px;">
+                <form class="alu-audit-form"
+                      action="{{ url_for('alumno.solicitar_auditoria', attempt_id=attempt_id) }}"
+                      method="get">
+
+                    <div>
+                        <label for="razon">Explicá qué ocurrió (mínimo 30 caracteres)</label>
+                        <textarea
+                            id="razon"
+                            name="razon"
+                            class="alu-audit-textarea"
+                            placeholder="Describí lo que pasó durante el recorrido que creés que pudo afectar tu nota. Por ejemplo: un obstáculo inesperado, una condición del terreno, un fallo del vehículo..."
+                            oninput="updateCounter(this)"
+                        >{{ razon_previa }}</textarea>
+                        <div class="alu-audit-counter" id="counter">
+                            <span id="char-count">{{ razon_previa|length }}</span> / 30 mínimo
+                        </div>
+                    </div>
+
+                    <div style="padding:14px 16px; background:#fef3c7; border:1.5px solid #fcd34d;
+                                border-radius:8px; font-size:12px; color:#92400e; line-height:1.6;">
+                        <strong><i class="ph ph-warning"></i> Importante:</strong>
+                        Las notas son <strong>inmutables</strong>. Una auditoría no garantiza que la nota cambie.
+                        El manager solo puede confirmar la nota original, rechazar la solicitud, o crear un nuevo intento de reevaluación en casos justificados.
+                    </div>
+
+                    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                        <a href="{{ url_for('alumno.intento', attempt_id=attempt_id) }}"
+                           class="alu-ruta-btn" style="height:48px; padding:0 20px; font-size:14px;">
+                            <i class="ph ph-x"></i> Cancelar
+                        </a>
+                        <button type="submit" class="alu-form-btn" style="flex:1; min-width:160px;">
+                            <i class="ph ph-paper-plane-tilt"></i> Enviar solicitud
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+
+        <p class="alu-disclaimer">
+            Tu solicitud será visible para el manager responsable de la convocatoria.
+            Recibirás la respuesta en tu dashboard al iniciar sesión.
+        </p>
+
+    </div>
+</div>
+
+<script>
+function updateCounter(el) {
+    const count = el.value.length;
+    const span = document.getElementById('char-count');
+    const counter = document.getElementById('counter');
+    span.textContent = count;
+    counter.className = 'alu-audit-counter' + (count >= 30 ? ' ok' : '');
+}
+// Init on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const ta = document.getElementById('razon');
+    if (ta) updateCounter(ta);
+});
+</script>
+
+</body>
+</html>

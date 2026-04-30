@@ -21,6 +21,22 @@
             <div class="alu-logo__icon">CM</div>
             <span class="alu-logo__text">CMadrid <span>Training</span></span>
         </a>
+
+        <nav class="alu-nav">
+            <a href="{{ url_for('alumno.dashboard', plaza=candidato.plaza) }}"
+               class="alu-nav__btn {% if active_page == 'dashboard' %}active{% endif %}">
+                <i class="ph ph-house"></i> <span>Mis resultados</span>
+            </a>
+            <a href="{{ url_for('alumno.historial', plaza=candidato.plaza) }}"
+               class="alu-nav__btn {% if active_page == 'historial' %}active{% endif %}">
+                <i class="ph ph-clock-counter-clockwise"></i> <span>Historial</span>
+            </a>
+            <a href="{{ url_for('alumno.evolucion', plaza=candidato.plaza) }}"
+               class="alu-nav__btn {% if active_page == 'evolucion' %}active{% endif %}">
+                <i class="ph ph-trend-up"></i> <span>Evolución</span>
+            </a>
+        </nav>
+
         <div class="alu-user-chip">
             <div class="alu-user-chip__avatar">
                 {{ candidato.nombre[0] }}{{ candidato.nombre.split()[1][0] if candidato.nombre.split()|length > 1 else '' }}
@@ -51,12 +67,23 @@
             </p>
         </div>
 
+        <!-- Banner auditoría solicitada -->
+        {% if auditoria_solicitada %}
+        <div class="alu-banner alu-banner--audit">
+            <i class="ph ph-scales alu-banner__icon"></i>
+            <div>
+                <div class="alu-banner__title">Auditoría solicitada correctamente</div>
+                <div class="alu-banner__body">Tu solicitud fue registrada. El manager la revisará y recibirás una respuesta en tu dashboard al iniciar sesión.</div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Nota + flags -->
         <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
             <div class="alu-kpi alu-kpi--{% if nota_info.nota >= 5 %}green{% else %}blue{% endif %}"
                  style="flex:0 0 auto; min-width:140px;">
                 <span class="alu-kpi__label">Tu nota</span>
-                <span class="alu-kpi__value {% if nota_info.nota >= 5 %}{% else %}{% endif %}"
+                <span class="alu-kpi__value"
                       style="color:{% if nota_info.nota >= 5 %}#16a34a{% else %}#dc2626{% endif %}">
                     {{ "%.1f"|format(nota_info.nota) }}
                 </span>
@@ -75,7 +102,7 @@
             </div>
             {% endif %}
 
-            {% if auditoria %}
+            {% if auditoria and auditoria.status == 'PENDING' %}
             <div style="display:flex; align-items:center; gap:8px; padding:10px 16px;
                         background:#ede9fe; border:1.5px solid #c4b5fd; border-radius:8px;
                         font-size:13px; color:#7c3aed;">
@@ -83,6 +110,18 @@
                 <div>
                     <strong>Auditoría en curso</strong><br>
                     <span style="font-size:12px;">Tu solicitud del {{ auditoria.fecha_solicitud }} está siendo revisada por el manager.</span>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if auditoria and auditoria.status == 'RESOLVED' %}
+            <div style="display:flex; align-items:center; gap:8px; padding:10px 16px;
+                        background:#f0fdf4; border:1.5px solid #86efac; border-radius:8px;
+                        font-size:13px; color:#166534;">
+                <i class="ph ph-check-circle" style="font-size:18px;"></i>
+                <div>
+                    <strong>Auditoría resuelta</strong><br>
+                    <span style="font-size:12px;">{{ auditoria.resolucion }} · {{ auditoria.fecha_resolucion }}</span>
                 </div>
             </div>
             {% endif %}
@@ -121,8 +160,54 @@
             </div>
         </div>
 
-        <!-- Razón de auditoría (si la solicitó él mismo) -->
-        {% if auditoria %}
+        <!-- Bloque pedagógico ¿Por qué? -->
+        <div class="alu-ped">
+            <div class="alu-ped__head">
+                <i class="ph ph-question" style="font-size:18px; color:#0d47a1;"></i>
+                <h2>¿Por qué obtuve esta nota?</h2>
+            </div>
+            <div class="alu-ped__body">
+
+                <div class="alu-ped__resumen">{{ pedagogico.resumen }}</div>
+
+                {% if pedagogico.infracciones %}
+                <div>
+                    <div class="alu-ped__section-title">Incidencias detectadas</div>
+                    {% for inf in pedagogico.infracciones %}
+                    <div class="alu-ped__infraccion">
+                        <span class="alu-ped__infraccion-title">
+                            <strong>{{ inf.cantidad }}x</strong> {{ inf.tipo }}
+                        </span>
+                        <span class="alu-ped__infraccion-zona">
+                            <i class="ph ph-map-pin"></i> {{ inf.zona }}
+                        </span>
+                        <span class="alu-ped__infraccion-impacto">
+                            → Esto restó {{ inf.puntos }} puntos de {{ inf.familia }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div style="font-size:13px; color:#16a34a; padding:12px 16px; background:#f0fdf4; border-radius:8px;">
+                    <i class="ph ph-check-circle"></i> Sin incidencias detectadas en este recorrido.
+                </div>
+                {% endif %}
+
+                <div>
+                    <div class="alu-ped__section-title">¿Qué podés mejorar?</div>
+                    {% for sug in pedagogico.sugerencias %}
+                    <div class="alu-ped__sugerencia">
+                        <i class="ph ph-arrow-right"></i>
+                        {{ sug }}
+                    </div>
+                    {% endfor %}
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Solicitud de auditoría -->
+        {% if auditoria and auditoria.status == 'PENDING' %}
         <div class="alu-card" style="border-color:#c4b5fd;">
             <div class="alu-card__head" style="background:#f5f3ff;">
                 <h2 style="color:#7c3aed;"><i class="ph ph-scales"></i> Tu solicitud de auditoría</h2>
@@ -140,6 +225,23 @@
                     Estado: <strong style="color:#7c3aed;">PENDIENTE DE RESOLUCIÓN</strong>
                 </p>
             </div>
+        </div>
+        {% endif %}
+
+        <!-- Botón solicitar auditoría -->
+        {% if puede_solicitar and not auditoria_solicitada %}
+        <div style="display:flex; align-items:center; gap:12px; padding:16px 20px;
+                    background:#fff; border-radius:10px; border:1.5px solid #e2e8f0;
+                    box-shadow:0 1px 3px rgba(0,0,0,.06);">
+            <i class="ph ph-scales" style="font-size:22px; color:#7c3aed; flex-shrink:0;"></i>
+            <div style="flex:1;">
+                <div style="font-size:13px; font-weight:600; color:#1e293b;">¿Creés que hay un error en esta nota?</div>
+                <div style="font-size:12px; color:#64748b; margin-top:2px;">Podés solicitar una revisión por parte del manager. Se requiere una justificación mínima de 30 caracteres.</div>
+            </div>
+            <a href="{{ url_for('alumno.solicitar_auditoria', attempt_id=attempt_id) }}"
+               class="alu-form-btn" style="width:auto; padding:0 20px; flex-shrink:0;">
+                <i class="ph ph-scales"></i> Solicitar auditoría
+            </a>
         </div>
         {% endif %}
 

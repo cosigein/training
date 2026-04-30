@@ -47,8 +47,8 @@ class TestingConfig(BaseConfig):
 class ProductionConfig(BaseConfig):
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
-    # En producción asegurar que JWT_COOKIE_SECURE sea True
     JWT_COOKIE_SECURE = True
+    PREFERRED_URL_SCHEME = "https"
 
 config = {
     "development": DevelopmentConfig,

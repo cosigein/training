@@ -1208,3 +1208,64 @@ button.mgr-action-btn:disabled {
     transition: border-color var(--transition-base);
 }
 .mgr-conv-card:hover { border-color: #0d47a1; }
+
+/* ── UTILITIES ────────────────────────────────────────────────────── */
+.mgr-mt-4 { margin-top: 4px; }
+.mgr-mt-8 { margin-top: 8px; }
+.mgr-mb-20 { margin-bottom: 20px; }
+
+.mgr-text-bold { font-weight: 600; }
+.mgr-text-15 { font-size: 15px; }
+.mgr-text-11 { font-size: 11px; }
+
+.mgr-text-mono-muted {
+    font-size: 11px;
+    color: #64748b;
+    font-family: var(--font-mono);
+}
+
+.mgr-flex-center-gap {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+/* ── LAYOUT HELPERS ───────────────────────────────────────────────── */
+.mgr-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+/* ── SCORE DISPLAYS ───────────────────────────────────────────────── */
+.mgr-score-large {
+    font-family: var(--font-heading);
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.mgr-score-row-val {
+    font-family: var(--font-heading);
+    font-size: 20px;
+    font-weight: 700;
+    width: 60px;
+    text-align: right;
+}
+
+.mgr-color-success { color: #16a34a; }
+.mgr-color-danger { color: #dc2626; }
+
+.mgr-text-10 { font-size: 10px; }
+.mgr-conv-row--compact { padding: 12px 16px; }
+
+/* ── KPI CLICABLE ─────────────────────────────────────────────────── */
+a.mgr-kpi--link {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: box-shadow 150ms ease, transform 150ms ease;
+}
+a.mgr-kpi--link:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,.12);
+    transform: translateY(-1px);
+}

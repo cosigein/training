@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evolución — {{ candidato.nombre }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/alumno.css') }}">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+
+<div class="alu-root">
+
+    <!-- Header -->
+    <header class="alu-header">
+        <a href="{{ url_for('alumno.login') }}" class="alu-logo">
+            <div class="alu-logo__icon">CM</div>
+            <span class="alu-logo__text">CMadrid <span>Training</span></span>
+        </a>
+
+        <nav class="alu-nav">
+            <a href="{{ url_for('alumno.dashboard', plaza=candidato.plaza) }}"
+               class="alu-nav__btn {% if active_page == 'dashboard' %}active{% endif %}">
+                <i class="ph ph-house"></i> <span>Mis resultados</span>
+            </a>
+            <a href="{{ url_for('alumno.historial', plaza=candidato.plaza) }}"
+               class="alu-nav__btn {% if active_page == 'historial' %}active{% endif %}">
+                <i class="ph ph-clock-counter-clockwise"></i> <span>Historial</span>
+            </a>
+            <a href="{{ url_for('alumno.evolucion', plaza=candidato.plaza) }}"
+               class="alu-nav__btn {% if active_page == 'evolucion' %}active{% endif %}">
+                <i class="ph ph-trend-up"></i> <span>Evolución</span>
+            </a>
+        </nav>
+
+        <div class="alu-user-chip">
+            <div class="alu-user-chip__avatar">
+                {{ candidato.nombre[0] }}{{ candidato.nombre.split()[1][0] if candidato.nombre.split()|length > 1 else '' }}
+            </div>
+            <span class="alu-user-chip__name">{{ candidato.nombre.split()[0] }}</span>
+            <span class="alu-user-chip__plaza">#{{ candidato.plaza }}</span>
+        </div>
+        <a href="{{ url_for('alumno.login') }}" class="alu-btn-logout">
+            <i class="ph ph-sign-out"></i>
+            Salir
+        </a>
+    </header>
+
+    <!-- Body -->
+    <div class="alu-body">
+
+        <div>
+            <h1 class="alu-welcome__title">Tu evolución</h1>
+            <p class="alu-welcome__sub">
+                {{ convocatoria.nombre }} · nota media general:
+                <strong>{{ "%.2f"|format(nota_media) if nota_media > 0 else "—" }}</strong>
+            </p>
+        </div>
+
+        {% if evolucion %}
+
+        <!-- Resumen mejor / peor -->
+        {% if mejor and peor and mejor.ruta_id != peor.ruta_id %}
+        <div class="alu-evo-summary">
+            <div class="alu-evo-highlight alu-evo-highlight--mejor">
+                <span class="alu-evo-highlight__label"><i class="ph ph-trophy"></i> Tu mejor circuito</span>
+                <span class="alu-evo-highlight__name">{{ mejor.label }}</span>
+                <span class="alu-evo-highlight__nota">{{ "%.1f"|format(mejor.nota) }}</span>
+                <span style="font-size:12px; color:#94a3b8;">
+                    {{ mejor.texto_tendencia }}
+                </span>
+            </div>
+            <div class="alu-evo-highlight alu-evo-highlight--peor">
+                <span class="alu-evo-highlight__label"><i class="ph ph-target"></i> Circuito a mejorar</span>
+                <span class="alu-evo-highlight__name">{{ peor.label }}</span>
+                <span class="alu-evo-highlight__nota">{{ "%.1f"|format(peor.nota) }}</span>
+                <span style="font-size:12px; color:#94a3b8;">
+                    {{ peor.texto_tendencia }}
+                </span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Grid de rutas -->
+        <div>
+            <div style="font-size:13px; font-weight:600; color:#475569; margin-bottom:12px;">
+                Detalle por circuito
+            </div>
+            <div class="alu-evo-grid">
+                {% for item in evolucion %}
+                <a href="{{ url_for('alumno.intento', attempt_id=item.attempt_id) }}"
+                   class="alu-evo-card alu-evo-card--{{ item.color }}">
+                    <span class="alu-evo-card__id">{{ item.ruta_id }}</span>
+                    <span class="alu-evo-card__label">{{ item.label }}</span>
+                    <span class="alu-evo-card__nota">{{ "%.1f"|format(item.nota) }}</span>
+
+                    <span class="alu-evo-card__tendencia">
+                        <i class="ph {{ item.icono }}"></i>
+                        {{ item.texto_tendencia }}
+                    </span>
+
+                    {% if item.nota_previa is not none %}
+                    <span class="alu-evo-card__media">
+                        Intento anterior: {{ "%.1f"|format(item.nota_previa) }}
+                    </span>
+                    {% endif %}
+
+                    <span class="alu-evo-card__media">
+                        {% if item.diff_media > 0 %}+{% endif %}{{ item.diff_media }} vs tu media
+                    </span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Leyenda -->
+        <div style="display:flex; gap:16px; flex-wrap:wrap; padding:14px 20px;
+                    background:#fff; border-radius:10px; border:1.5px solid #e2e8f0;
+                    font-size:12px; color:#64748b;">
+            <span><i class="ph ph-trend-up" style="color:#16a34a;"></i> Subiendo vs intento anterior</span>
+            <span><i class="ph ph-trend-down" style="color:#dc2626;"></i> Bajando vs intento anterior</span>
+            <span><i class="ph ph-minus" style="color:#94a3b8;"></i> Estable</span>
+            <span><i class="ph ph-flag" style="color:#0d47a1;"></i> Primer intento</span>
+        </div>
+
+        {% else %}
+        <div class="alu-card">
+            <div class="alu-card__body" style="padding:48px 20px; text-align:center;">
+                <i class="ph ph-trend-up" style="font-size:40px; color:#cbd5e1; display:block; margin-bottom:12px;"></i>
+                <div style="font-size:15px; font-weight:600; color:#64748b;">Aún no hay datos de evolución</div>
+                <div style="font-size:13px; color:#94a3b8; margin-top:6px;">Completá al menos un circuito para ver tu evolución.</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <a href="{{ url_for('alumno.dashboard', plaza=candidato.plaza) }}"
+           class="alu-ruta-btn" style="align-self:flex-start;">
+            <i class="ph ph-arrow-left"></i> Volver a mis resultados
+        </a>
+
+        <p class="alu-disclaimer">
+            Indicadores provisionales basados en los intentos registrados hasta la fecha.
+        </p>
+
+    </div>
+</div>
+
+</body>
+</html>
