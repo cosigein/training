@@ -8,17 +8,20 @@ from flask_jwt_extended import (
 )
 
 from app.blueprints.auth.services import auth_service
-from app.blueprints.manager.ranking_service import get_ranking
+from app.blueprints.manager.ranking_service import get_matrix_data, get_ranking
 from app.blueprints.mobile_api import mobile_api_bp
 from app.blueprints.mobile_api.errors import error_response
 from app.blueprints.mobile_api.schemas import (
     ConvocatoriaSummarySchema,
+    RankingEntrySchema,
     StandingSchema,
     UserSchema,
 )
 from app.blueprints.mobile_api.services import (
     convocatorias_for_user,
     get_convocatoria_detail,
+    remap_matrix_row,
+    remap_ranking_entry,
 )
 from app.extensions import limiter
 from app.models.auth import User, UserRole
@@ -173,3 +176,44 @@ def convocatoria_detail(conv_id):
     if not detail:
         return error_response(404, "not_found", "Convocatoria no encontrada")
     return jsonify(ConvocatoriaSummarySchema().dump(detail)), 200
+
+
+@mobile_api_bp.route("/convocatorias/<string:conv_id>/ranking", methods=["GET"])
+@require_role(_ADMIN_ROLES)
+@limiter.limit("30/minute")
+def convocatoria_ranking(conv_id):
+    user, err = _current_user_or_401()
+    if err is not None:
+        return err
+
+    summary = get_convocatoria_detail(conv_id, user)
+    if not summary:
+        return error_response(404, "not_found", "Convocatoria no encontrada")
+
+    _, entries = get_ranking(conv_id, user.organizationId)
+    entry_schema = RankingEntrySchema(many=True)
+    return jsonify({
+        "convocatoria": ConvocatoriaSummarySchema().dump(summary),
+        "entries": entry_schema.dump([remap_ranking_entry(e) for e in entries]),
+    }), 200
+
+
+@mobile_api_bp.route("/convocatorias/<string:conv_id>/matrix", methods=["GET"])
+@require_role(_ADMIN_ROLES)
+@limiter.limit("30/minute")
+def convocatoria_matrix(conv_id):
+    user, err = _current_user_or_401()
+    if err is not None:
+        return err
+
+    summary = get_convocatoria_detail(conv_id, user)
+    if not summary:
+        return error_response(404, "not_found", "Convocatoria no encontrada")
+
+    _, candidatos, circuitos = get_matrix_data(conv_id, user.organizationId)
+    circuit_ids = [c["id"] for c in circuitos]
+    return jsonify({
+        "convocatoria": ConvocatoriaSummarySchema().dump(summary),
+        "circuits": [{"id": c["id"], "label": c.get("label", c["id"])} for c in circuitos],
+        "rows": [remap_matrix_row(cand, circuit_ids) for cand in candidatos],
+    }), 200

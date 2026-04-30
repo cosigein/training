@@ -8,7 +8,7 @@ Implementación por PR:
 - UserSchema, AuthLoginResponseSchema → PR-2 ✅
 - ConvocatoriaSummarySchema → PR-3 ✅
 - StandingSchema → PR-4 ✅ (SIN withinCutoff, decisión GDPR)
-- RankingEntrySchema → PR-6
+- RankingEntrySchema → PR-6 ✅ (SIN withinCutoff, idem)
 - AttemptDetailSchema → PR-7
 """
 
@@ -64,7 +64,12 @@ class StandingSchema(Schema):
 
 
 class RankingEntrySchema(Schema):
-    pass
+    """Entrada de ranking (admin/manager). SIN withinCutoff (decisión D-API-001)."""
+    position = fields.Integer(dump_only=True)
+    candidate = fields.Dict(dump_only=True)
+    score = fields.Float(dump_only=True)
+    attemptsCompleted = fields.Integer(dump_only=True)
+    attemptsTotal = fields.Integer(dump_only=True)
 
 
 class AttemptDetailSchema(Schema):
