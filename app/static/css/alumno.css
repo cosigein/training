@@ -228,6 +228,18 @@
     line-height: 1;
 }
 
+.alu-kpi__value--pass { color: #16a34a; }
+.alu-kpi__value--fail { color: #dc2626; }
+
+.alu-total-score {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.alu-total-score--pass { color: #16a34a; }
+.alu-total-score--fail { color: #dc2626; }
+
 .alu-kpi__sub { font-size: 11px; color: #94a3b8; }
 
 /* ── PROGRESS BAR ─────────────────────────────────────────────────── */
@@ -239,6 +251,19 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.alu-score-track {
+    height: 8px;
+    background: #f1f5f9;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.alu-score-fill {
+    height: 100%;
+    background: #0d47a1;
+    border-radius: 4px;
 }
 
 .alu-progress__header {

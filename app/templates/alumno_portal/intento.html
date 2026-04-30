@@ -88,8 +88,7 @@
             <div class="alu-kpi alu-kpi--{% if nota_info.nota >= 5 %}green{% else %}blue{% endif %}"
                  style="flex:0 0 auto; min-width:140px;">
                 <span class="alu-kpi__label">Tu nota</span>
-                <span class="alu-kpi__value"
-                      style="color:{% if nota_info.nota >= 5 %}#16a34a{% else %}#dc2626{% endif %}">
+                <span class="alu-kpi__value {% if nota_info.nota >= 5 %}alu-kpi__value--pass{% else %}alu-kpi__value--fail{% endif %}">
                     {{ "%.1f"|format(nota_info.nota) }}
                 </span>
                 <span class="alu-kpi__sub">sobre 10 puntos</span>
@@ -142,9 +141,8 @@
                     {% for item in score_breakdown %}
                     <div style="display:grid; grid-template-columns: 110px 1fr 70px; align-items:center; gap:12px;">
                         <span style="font-size:13px; color:#64748b; font-weight:500;">{{ item.familia }}</span>
-                        <div style="height:8px; background:#f1f5f9; border-radius:4px; overflow:hidden;">
-                            <div style="height:100%; width:{{ (item.obtenido / item.maximo * 100)|int }}%;
-                                        background:#0d47a1; border-radius:4px;"></div>
+                        <div class="alu-score-track">
+                            <div class="alu-score-fill" {{ {'style': 'width: ' ~ ((item.obtenido / item.maximo * 100)|int) ~ '%;'} | xmlattr }}></div>
                         </div>
                         <span style="font-size:13px; font-weight:700; color:#1e293b; text-align:right;">
                             {{ item.obtenido }} / {{ item.maximo }}
@@ -156,8 +154,7 @@
                                 padding-top:14px; border-top:2px solid #e2e8f0;
                                 font-weight:700; font-size:14px; color:#1e293b;">
                         <span>TOTAL</span>
-                        <span style="font-family:var(--font-heading); font-size:22px; font-weight:800;
-                                     color:{% if nota_info.nota >= 5 %}#16a34a{% else %}#dc2626{% endif %}">
+                        <span class="alu-total-score {% if nota_info.nota >= 5 %}alu-total-score--pass{% else %}alu-total-score--fail{% endif %}">
                             {{ "%.1f"|format(nota_info.nota) }} / 10
                         </span>
                     </div>
