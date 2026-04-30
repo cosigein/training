@@ -158,6 +158,38 @@ def invalidate_attempt(id):
     return redirect(url_for("sessions.get_attempt_detail", id=att.id))
 
 
+@sessions_bp.route("/<string:id>/upload", methods=["POST"])
+@require_role(["ADMIN", "SUPER_ADMIN"])
+def upload_sensor_file(id):
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+
+    if "file" not in request.files:
+        return jsonify({"message": "Se requiere un campo 'file' en el formulario multipart"}), 400
+
+    f = request.files["file"]
+    if not f.filename:
+        return jsonify({"message": "Nombre de archivo inválido"}), 400
+
+    try:
+        content = f.read().decode("utf-8", errors="replace")
+        result = attempt_service.upload_sensor_file(id, user.organizationId, user_id, content, f.filename)
+    except AttemptError as exc:
+        return jsonify({"message": str(exc)}), 422
+
+    return jsonify({
+        "attemptId": id,
+        "gpsRows": result.gps_rows,
+        "stabilityRows": result.stability_rows,
+        "rotativoRows": result.rotativo_rows,
+        "canRows": result.can_rows,
+        "totalRows": result.total_rows,
+        "skippedNoFix": result.gps_skipped_no_fix,
+        "errors": result.errors,
+        "summary": result.summary(),
+    }), 200
+
+
 @sessions_bp.route("/<string:id>/gps", methods=["GET"])
 @require_role(["ADMIN", "MANAGER", "SUPER_ADMIN"])
 def get_attempt_gps(id):

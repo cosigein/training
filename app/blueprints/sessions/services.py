@@ -1,7 +1,7 @@
 from datetime import datetime
-from app.models.session import Attempt, AttemptStatus, GpsMeasurement, CanMeasurement
+from app.models.session import Attempt, AttemptStatus, GpsMeasurement, CanMeasurement, AttemptUploadLog
 from app.models.event import EjecucionEvento
-from app.models.training import TrainingAuditLog, AuditAction
+from app.models.training import TrainingAuditLog, AuditAction, AttemptEvent
 from app.extensions import db
 
 
@@ -40,26 +40,65 @@ class AttemptService:
 
     @staticmethod
     def close_attempt(attempt_id, org_id, actor_id):
+        from app.services.pipeline.pipeline import run_pipeline
+
         att = Attempt.query.filter_by(id=attempt_id, organizationId=org_id).first()
         if not att:
             return None
-        if att.status != AttemptStatus.OPEN:
+        if att.status not in (AttemptStatus.OPEN, AttemptStatus.PROCESSING):
             raise AttemptError(
                 f"El intento está en estado {att.status.value}, ya fue cerrado o invalidado."
             )
-        now = datetime.utcnow()
-        att.status = AttemptStatus.CLOSED
-        att.closedAt = now
-        att.endTime = att.endTime or now
-        db.session.add(TrainingAuditLog(
-            actorId=actor_id, actorRole="ADMIN",
-            action=AuditAction.ATTEMPT_CLOSED,
-            resourceType="Attempt", resourceId=att.id,
-            delta={"reason": "MANUAL_CLOSE"},
-            organizationId=org_id,
-        ))
-        db.session.commit()
-        return att
+        try:
+            run_pipeline(attempt_id, actor_id=actor_id)
+        except ValueError as exc:
+            raise AttemptError(str(exc)) from exc
+
+        return Attempt.query.get(attempt_id)
+
+    @staticmethod
+    def upload_sensor_file(attempt_id, org_id, actor_id, content, filename):
+        """
+        Parsea un archivo TXT del sensor Doback Elite y persiste las mediciones.
+
+        Idempotente: re-subir el mismo archivo sobreescribe las mediciones previas
+        (parse_sensor_file borra y re-inserta). No cierra el attempt.
+
+        Returns:
+            ParseResult con estadísticas.
+        Raises:
+            AttemptError si el attempt no existe, es de otra org, o ya está cerrado.
+        """
+        from app.services.pipeline.sensor_parser import parse_sensor_file
+
+        att = Attempt.query.filter_by(id=attempt_id, organizationId=org_id).first()
+        if not att:
+            raise AttemptError("Intento no encontrado.")
+        if att.closedAt:
+            raise AttemptError("El intento ya está cerrado — no se pueden ingresar datos.")
+
+        try:
+            result = parse_sensor_file(content, attempt_id, org_id)
+            db.session.add(AttemptUploadLog(
+                attemptId=attempt_id,
+                userId=actor_id,
+                status="SUCCESS",
+                source=filename,
+            ))
+            db.session.commit()
+        except Exception as exc:
+            db.session.rollback()
+            db.session.add(AttemptUploadLog(
+                attemptId=attempt_id,
+                userId=actor_id,
+                status="ERROR",
+                source=filename,
+                error=str(exc)[:500],
+            ))
+            db.session.commit()
+            raise AttemptError(f"Error al procesar el archivo: {exc}") from exc
+
+        return result
 
     @staticmethod
     def invalidate_attempt(attempt_id, org_id, actor_id, reason):
