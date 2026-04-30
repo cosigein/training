@@ -68,14 +68,7 @@
                 <span><i class="ph ph-calendar"></i> Cierre: {{ conv.fecha_cierre }}</span>
             </div>
 
-            <div class="mgr-conv-card__actions">
-                <a href="{{ url_for('manager.matriz', conv_id=conv.id) }}" class="mgr-action-btn mgr-action-btn--secondary">
-                    <i class="ph ph-grid-nine"></i> Ver Matriz
-                </a>
-                <a href="{{ url_for('manager.ranking', conv_id=conv.id) }}" class="mgr-action-btn mgr-action-btn--primary">
-                    <i class="ph ph-trophy"></i> Ver Ranking
-                </a>
-            </div>
+
         </div>
         {% endfor %}
     </div>
@@ -101,7 +94,7 @@
             </thead>
             <tbody>
             {% for aud in auditorias %}
-            <tr>
+            <tr class="mgr-clickable-row" data-href="{{ url_for('manager.auditoria_detalle', audit_id=aud.id) }}">
                 <td>
                     <div class="mgr-alumno">
                         <span class="mgr-alumno__name">{{ aud.candidato }}</span>
@@ -146,6 +139,12 @@ document.querySelectorAll('.mgr-conv-card--clickable').forEach(card => {
     card.addEventListener('click', e => {
         if (e.target.closest('a')) return;
         window.location.href = card.dataset.href;
+    });
+});
+document.querySelectorAll('.mgr-clickable-row').forEach(row => {
+    row.addEventListener('click', e => {
+        if (e.target.closest('a')) return;
+        window.location.href = row.dataset.href;
     });
 });
 </script>

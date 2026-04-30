@@ -2,7 +2,7 @@
 {% block title %}Mi Portal — CMadrid Training{% endblock %}
 
 {% block content %}
-<div style="max-width:900px; margin:0 auto; padding:32px 24px;">
+<div class="mgr-body-inner">
 
     {# ── Cabecera ──────────────────────────────────────────────────── #}
     <div style="margin-bottom:32px;">
@@ -105,7 +105,9 @@
                 </thead>
                 <tbody>
                 {% for intento in insc.intentos %}
-                <tr style="border-bottom:1px solid #f1f5f9;" data-testid="student-dashboard-attempt-{{ loop.index }}">
+                <tr class="mgr-clickable-row" style="border-bottom:1px solid #f1f5f9;" 
+                    data-testid="student-dashboard-attempt-{{ loop.index }}"
+                    data-href="{{ url_for('student.intento_detalle', attempt_id=intento.id) }}">
                     <td style="padding:10px 12px; font-weight:600; color:#1e293b;">{{ intento.ruta_id }}</td>
                     <td style="padding:10px 12px; text-align:center;">
                         <span style="font-size:15px; font-weight:700;
@@ -144,4 +146,14 @@
     {% endif %}
 
 </div>
+{% block extra_js %}
+<script>
+document.querySelectorAll('.mgr-clickable-row').forEach(row => {
+    row.addEventListener('click', e => {
+        if (e.target.closest('a')) return;
+        window.location.href = row.dataset.href;
+    });
+});
+</script>
+{% endblock %}
 {% endblock %}

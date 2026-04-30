@@ -3,67 +3,74 @@
 
 {% block content %}
 
-<div class="mgr-page-header">
-    <div>
-        <a href="{{ url_for('manager.dashboard') }}" class="mgr-back-link">
-            <i class="ph ph-arrow-left"></i> Volver al Dashboard
-        </a>
-        <h1 class="mgr-page-title" style="display:flex; align-items:center; gap:12px; margin-top:8px;">
-            Matriz de evaluación
-            <select class="mgr-conv-selector" onchange="window.location.href='?conv_id=' + this.value">
-                {% for c in convocatorias %}
-                <option value="{{ c.id }}" {% if c.id == convocatoria.id %}selected{% endif %}>
-                    {{ c.nombre }}
-                </option>
-                {% endfor %}
-            </select>
-        </h1>
-        <p class="mgr-page-subtitle">
-            {{ candidatos|length }} candidatos · {{ circuitos|length }} circuitos
-        </p>
-    </div>
-    <a href="{{ url_for('manager.ranking') }}" class="mgr-action-btn mgr-action-btn--primary">
-        <i class="ph ph-trophy"></i> Ver Ranking
-    </a>
-</div>
+{% set ns = namespace(aprobados=0, suspensos=0, sin_terminar=0, completados=0) %}
+{% for c in candidatos %}
+    {% set notas_c = [] %}
+    {% for v in c.notas.values() %}
+        {% if v is not none %}{% set _ = notas_c.append(v.nota) %}{% endif %}
+    {% endfor %}
+    
+    {% set is_comp = (notas_c|length == circuitos|length and circuitos|length > 0) %}
+    {% set has_not = (notas_c|length > 0) %}
+    {% set med = (notas_c|sum / notas_c|length) if has_not else 0 %}
+    {% set is_apr = (has_not and med >= 5) %}
+    
+    {% if is_comp %}
+        {% set ns.completados = ns.completados + 1 %}
+    {% else %}
+        {% set ns.sin_terminar = ns.sin_terminar + 1 %}
+    {% endif %}
+    
+    {% if has_not %}
+        {% if is_apr %}
+            {% set ns.aprobados = ns.aprobados + 1 %}
+        {% else %}
+            {% set ns.suspensos = ns.suspensos + 1 %}
+        {% endif %}
+    {% endif %}
+{% endfor %}
 
-<!-- KPIs rápidos -->
-<div class="mgr-kpis">
-    <div class="mgr-kpi mgr-kpi--blue">
-        <span class="mgr-kpi__label">Candidatos</span>
-        <span class="mgr-kpi__value">{{ candidatos|length }}</span>
-        <span class="mgr-kpi__sub">filas en matriz</span>
-    </div>
-    <div class="mgr-kpi mgr-kpi--gray">
-        <span class="mgr-kpi__label">Circuitos</span>
-        <span class="mgr-kpi__value">{{ circuitos|length }}</span>
-        <span class="mgr-kpi__sub">columnas evaluadas</span>
-    </div>
-    <div class="mgr-kpi mgr-kpi--green">
-        <span class="mgr-kpi__label">Intentos realizados</span>
-        <span class="mgr-kpi__value">
-            {% set ns = namespace(n=0) %}
-            {% for c in candidatos %}
-                {% for v in c.notas.values() %}
-                    {% if v is not none %}{% set ns.n = ns.n + 1 %}{% endif %}
-                {% endfor %}
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; background: #fff; padding: 6px 12px; border-radius: 6px; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,.04);">
+    
+    <!-- Título y Selector -->
+    <div style="display:flex; align-items:center; gap:8px;">
+        <h1 class="mgr-page-title" style="margin:0; font-size:15px; display:flex; align-items:center; gap:6px;">
+            <i class="ph ph-grid-nine" style="color:#0d47a1;"></i> Matriz
+        </h1>
+        <select class="mgr-conv-selector" onchange="window.location.href='?conv_id=' + this.value" style="height:24px; font-size:11px; padding:0 6px; border:1px solid #e2e8f0; border-radius:4px; outline:none; background:#f8fafc; cursor:pointer;">
+            {% for c in convocatorias %}
+            <option value="{{ c.id }}" {% if c.id == convocatoria.id %}selected{% endif %}>
+                {{ c.nombre }}
+            </option>
             {% endfor %}
-            {{ ns.n }}
-        </span>
-        <span class="mgr-kpi__sub">rutas con nota en la matriz</span>
+        </select>
+        <span style="font-size:10px; color:#94a3b8; margin-left:4px;">{{ candidatos|length }} cand. · {{ circuitos|length }} circ.</span>
     </div>
-    <div class="mgr-kpi mgr-kpi--red">
-        <span class="mgr-kpi__label">Señal LQ <i class="ph ph-info" style="font-size:11px" title="LOW = el sensor envió datos por debajo del umbral de fiabilidad durante el intento. La nota puede ser menos precisa."></i></span>
-        <span class="mgr-kpi__value">
-            {% set ns2 = namespace(n=0) %}
-            {% for c in candidatos %}
-                {% for v in c.notas.values() %}
-                    {% if v is not none and v.data_quality == 'LOW' %}{% set ns2.n = ns2.n + 1 %}{% endif %}
-                {% endfor %}
-            {% endfor %}
-            {{ ns2.n }}
-        </span>
-        <span class="mgr-kpi__sub">intentos con datos de baja calidad</span>
+
+    <!-- Búsqueda -->
+    <div class="mgr-search" style="flex: 0 0 140px; margin: 0;">
+        <i class="ph ph-magnifying-glass mgr-search__icon" style="font-size:12px; left:6px;"></i>
+        <input type="text" id="searchInput" class="mgr-search__input" placeholder="Buscar..." oninput="filtrarMatriz()" style="height:24px; font-size:11px; padding:0 6px 0 22px; border-radius:4px; border:1px solid #e2e8f0; width:100%; outline:none;">
+    </div>
+
+    <!-- Filtros -->
+    <div style="display:flex; gap:4px; align-items:center;">
+        <div class="mgr-pill active" style="padding:2px 6px; font-size:10px; border-radius:4px; cursor:pointer; user-select:none; line-height:1.2; border:none; background:#f1f5f9; color:#64748b;" onclick="setFiltro(this, 'todos')">Todos</div>
+        <div class="mgr-pill" style="padding:2px 6px; font-size:10px; border-radius:4px; cursor:pointer; user-select:none; line-height:1.2; border:none; background:#f1f5f9; color:#64748b;" onclick="setFiltro(this, 'aprobados')">Aprobados</div>
+        <div class="mgr-pill" style="padding:2px 6px; font-size:10px; border-radius:4px; cursor:pointer; user-select:none; line-height:1.2; border:none; background:#f1f5f9; color:#64748b;" onclick="setFiltro(this, 'suspensos')">Suspensos</div>
+        <div class="mgr-pill" style="padding:2px 6px; font-size:10px; border-radius:4px; cursor:pointer; user-select:none; line-height:1.2; border:none; background:#f1f5f9; color:#64748b;" onclick="setFiltro(this, 'completados')">Completados</div>
+        <div class="mgr-pill" style="padding:2px 6px; font-size:10px; border-radius:4px; cursor:pointer; user-select:none; line-height:1.2; border:none; background:#f1f5f9; color:#64748b;" onclick="setFiltro(this, 'sin_terminar')">Incompletos</div>
+    </div>
+
+    <!-- Micro KPIs -->
+    <div style="display: flex; gap: 8px; align-items: center;">
+        <span title="Media superior a 5" style="color:#64748b; font-size:10px; text-transform:uppercase; letter-spacing:0.5px;"><strong style="color:#16a34a; font-size:12px; font-family:var(--font-heading);">{{ ns.aprobados }}</strong> Aprobados</span>
+        <span style="color:#e2e8f0;">|</span>
+        <span title="Media inferior a 5" style="color:#64748b; font-size:10px; text-transform:uppercase; letter-spacing:0.5px;"><strong style="color:#dc2626; font-size:12px; font-family:var(--font-heading);">{{ ns.suspensos }}</strong> Suspensos</span>
+        <span style="color:#e2e8f0;">|</span>
+        <span title="Todos los circuitos evaluados" style="color:#64748b; font-size:10px; text-transform:uppercase; letter-spacing:0.5px;"><strong style="color:#0d47a1; font-size:12px; font-family:var(--font-heading);">{{ ns.completados }}</strong> Completados</span>
+        <span style="color:#e2e8f0;">|</span>
+        <span title="Faltan circuitos por evaluar" style="color:#64748b; font-size:10px; text-transform:uppercase; letter-spacing:0.5px;"><strong style="color:#475569; font-size:12px; font-family:var(--font-heading);">{{ ns.sin_terminar }}</strong> Incompletos</span>
     </div>
 </div>
 
@@ -100,7 +107,23 @@
         </thead>
         <tbody>
         {% for c in candidatos %}
-        <tr>
+        {% set notas = [] %}
+        {% for v in c.notas.values() %}
+            {% if v is not none %}{% set _ = notas.append(v.nota) %}{% endif %}
+        {% endfor %}
+        {% set is_completado = (notas|length == circuitos|length and circuitos|length > 0) %}
+        {% set has_notas = (notas|length > 0) %}
+        {% set media = (notas|sum / notas|length) if has_notas else 0 %}
+        {% set is_aprobado = (has_notas and media >= 5) %}
+        {% set is_suspenso = (has_notas and media < 5) %}
+
+        <tr class="mgr-matriz-row mgr-clickable-row" 
+            data-nombre="{{ c.nombre|lower }}" 
+            data-completado="{% if is_completado %}true{% else %}false{% endif %}"
+            data-aprobado="{% if is_aprobado %}true{% else %}false{% endif %}"
+            data-suspenso="{% if is_suspenso %}true{% else %}false{% endif %}"
+            data-sinterminar="{% if not is_completado %}true{% else %}false{% endif %}"
+            data-href="{{ url_for('manager.alumno_detalle', candidato_id=c.id) }}">
             <td>
                 <strong><a href="{{ url_for('manager.alumno_detalle', candidato_id=c.id) }}" class="mgr-candidato-link">{{ c.nombre }}</a></strong>
                 <br>
@@ -155,4 +178,52 @@
     </table>
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let filtroActual = 'todos';
+
+function setFiltro(btn, filtro) {
+    document.querySelectorAll('.mgr-pill').forEach(el => el.classList.remove('active'));
+    btn.classList.add('active');
+    filtroActual = filtro;
+    filtrarMatriz();
+}
+
+function filtrarMatriz() {
+    const searchVal = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('.mgr-matriz-row');
+    
+    rows.forEach(row => {
+        const nombre = row.getAttribute('data-nombre');
+        const completado = row.getAttribute('data-completado') === 'true';
+        const aprobado = row.getAttribute('data-aprobado') === 'true';
+        const suspenso = row.getAttribute('data-suspenso') === 'true';
+        const sinTerminar = row.getAttribute('data-sinterminar') === 'true';
+        
+        let matchFiltro = false;
+        if (filtroActual === 'todos') matchFiltro = true;
+        if (filtroActual === 'aprobados' && aprobado) matchFiltro = true;
+        if (filtroActual === 'suspensos' && suspenso) matchFiltro = true;
+        if (filtroActual === 'completados' && completado) matchFiltro = true;
+        if (filtroActual === 'sin_terminar' && sinTerminar) matchFiltro = true;
+        
+        let matchSearch = nombre.includes(searchVal);
+        
+        if (matchFiltro && matchSearch) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+// Click en filas
+document.querySelectorAll('.mgr-clickable-row').forEach(row => {
+    row.addEventListener('click', e => {
+        if (e.target.closest('a')) return;
+        window.location.href = row.dataset.href;
+    });
+});
+</script>
 {% endblock %}

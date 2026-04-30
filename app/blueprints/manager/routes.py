@@ -527,6 +527,7 @@ def alumno_detalle(candidato_id):
     return render_template(
         "manager/alumno.html",
         active_page="matriz",
+        is_subpage=True,
         convocatoria=conv_dict,
         candidato=candidato,
         intentos=intentos,
@@ -552,6 +553,7 @@ def intento_detalle(attempt_id):
     return render_template(
         "manager/intento.html",
         active_page="matriz",
+        is_subpage=True,
         candidato=detail["candidato"],
         ruta=detail["ruta"],
         nota_info=detail["nota_info"],

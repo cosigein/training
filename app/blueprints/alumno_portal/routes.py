@@ -220,6 +220,7 @@ def intento(attempt_id):
         auditoria_solicitada=auditoria_solicitada,
         pedagogico=pedagogico,
         active_page='dashboard',
+        is_subpage=True,
     )
 
 
@@ -422,4 +423,5 @@ def solicitar_auditoria(attempt_id):
         razon_previa=razon,
         error=error,
         active_page='dashboard',
+        is_subpage=True,
     )

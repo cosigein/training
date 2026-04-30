@@ -1,62 +1,8 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ ruta.label if ruta else attempt_id }} — Mis resultados</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/alumno.css') }}">
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-</head>
-<body>
+{% extends "alumno_portal/layout.html" %}
 
-<div class="alu-root">
+{% block title %}{{ ruta.label if ruta else attempt_id }} — Mis resultados{% endblock %}
 
-    <!-- Header -->
-    <header class="alu-header">
-        <a href="{{ url_for('alumno.dashboard') }}" class="alu-logo">
-            <div class="alu-logo__icon">CM</div>
-            <span class="alu-logo__text">CMadrid <span>Training</span></span>
-        </a>
-
-        <button onclick="history.back()" class="alu-btn-back" title="Volver a la página anterior">
-            <i class="ph ph-arrow-left"></i>
-            Volver
-        </button>
-
-        <nav class="alu-nav">
-            <a href="{{ url_for('alumno.dashboard', plaza=candidato.plaza) }}"
-               class="alu-nav__btn {% if active_page == 'dashboard' %}active{% endif %}">
-                <i class="ph ph-house"></i> <span>Mis resultados</span>
-            </a>
-            <a href="{{ url_for('alumno.historial', plaza=candidato.plaza) }}"
-               class="alu-nav__btn {% if active_page == 'historial' %}active{% endif %}">
-                <i class="ph ph-clock-counter-clockwise"></i> <span>Historial</span>
-            </a>
-            <a href="{{ url_for('alumno.evolucion', plaza=candidato.plaza) }}"
-               class="alu-nav__btn {% if active_page == 'evolucion' %}active{% endif %}">
-                <i class="ph ph-trend-up"></i> <span>Evolución</span>
-            </a>
-        </nav>
-
-        <div class="alu-user-chip">
-            <div class="alu-user-chip__avatar">
-                {{ candidato.nombre[0] }}{{ candidato.nombre.split()[1][0] if candidato.nombre.split()|length > 1 else '' }}
-            </div>
-            <span class="alu-user-chip__name">{{ candidato.nombre.split()[0] }}</span>
-            <span class="alu-user-chip__plaza">#{{ candidato.plaza }}</span>
-        </div>
-        <a href="{{ url_for('auth.logout') }}" class="alu-btn-logout">
-            <i class="ph ph-sign-out"></i>
-            Salir
-        </a>
-    </header>
-
-    <!-- Body -->
-    <div class="alu-body">
+{% block content %}
 
         <!-- Back link + title -->
         <div>
@@ -258,8 +204,4 @@
             Resultado provisional. No tiene efecto jurídico hasta el cierre oficial de la convocatoria.
         </p>
 
-    </div>
-</div>
-
-</body>
-</html>
+{% endblock %}

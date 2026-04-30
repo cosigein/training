@@ -8,25 +8,32 @@
     display: flex;
     flex-direction: column;
     min-height: 100dvh;
-    background: #f0f4f8;
+    background: #f8fafc;
     font-family: var(--font-body);
     color: #1e293b;
 }
 
 /* ── HEADER ───────────────────────────────────────────────────────── */
 .alu-header {
-    height: 64px;
+    height: 56px;
     background: #fff;
     border-bottom: 1px solid #e2e8f0;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     padding: 0 24px;
-    gap: 12px;
     flex-shrink: 0;
     box-shadow: 0 1px 3px rgba(0,0,0,.06);
     position: sticky;
     top: 0;
     z-index: 100;
+}
+.alu-header__left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
 }
 
 .alu-logo {
@@ -62,12 +69,19 @@
 
 .alu-logo__text span { color: #0d47a1; }
 
+.alu-header__right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex: 1;
+}
+
 .alu-user-chip {
-    margin-left: auto;
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 6px 14px 6px 10px;
+    padding: 5px 12px 5px 8px;
     border-radius: 8px;
     background: #f8fafc;
     border: 1.5px solid #e2e8f0;
@@ -100,33 +114,27 @@
     color: #94a3b8;
 }
 
-.alu-btn-logout {
+.alu-logout-btn {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 0 12px;
-    height: 36px;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
     border-radius: 6px;
-    border: 1.5px solid #e2e8f0;
-    background: #fff;
     color: #64748b;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
+    transition: all 150ms ease;
     text-decoration: none;
-    transition: border-color 150ms ease, color 150ms ease;
-    flex-shrink: 0;
 }
 
-.alu-btn-logout:hover { border-color: #0d47a1; color: #0d47a1; }
+.alu-logout-btn:hover { background: #fee2e2; color: #dc2626; }
 
 /* ── BODY ─────────────────────────────────────────────────────────── */
 .alu-body {
     flex: 1;
-    padding: 0;
+    padding: 16px 24px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
     width: 100%;
     box-sizing: border-box;
 }
@@ -142,7 +150,7 @@
 
 .alu-welcome__title {
     font-family: var(--font-heading);
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 700;
     color: #1e293b;
     margin: 0;
@@ -151,9 +159,9 @@
 .alu-welcome__title span { color: #0d47a1; }
 
 .alu-welcome__sub {
-    font-size: 13px;
+    font-size: 12px;
     color: #64748b;
-    margin: 4px 0 0;
+    margin: 2px 0 0;
 }
 
 /* ── STATUS BADGE ─────────────────────────────────────────────────── */
@@ -199,12 +207,19 @@
 .alu-kpi {
     background: #fff;
     border-radius: 10px;
-    padding: 16px;
+    padding: 12px 16px;
+    border: 1.5px solid #e2e8f0;
     border-left: 4px solid transparent;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
+    transition: all 200ms ease;
+}
+
+.alu-kpi:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
 }
 
 .alu-kpi--blue  { border-left-color: #0d47a1; }
@@ -222,7 +237,7 @@
 
 .alu-kpi__value {
     font-family: var(--font-heading);
-    font-size: 26px;
+    font-size: 22px;
     font-weight: 800;
     color: #1e293b;
     line-height: 1;
@@ -419,8 +434,8 @@
 .alu-ranking-banner {
     display: flex;
     align-items: center;
-    gap: 20px;
-    padding: 20px;
+    gap: 16px;
+    padding: 12px 20px;
     background: #fff;
     border-radius: 10px;
     box-shadow: 0 1px 3px rgba(0,0,0,.06);
@@ -438,7 +453,7 @@
 
 .alu-pos-number {
     font-family: var(--font-heading);
-    font-size: 48px;
+    font-size: 32px;
     font-weight: 800;
     line-height: 1;
     color: #0d47a1;
@@ -446,7 +461,7 @@
 
 .alu-pos-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.4px; }
 
-.alu-ranking-divider { width: 1px; height: 60px; background: #e2e8f0; flex-shrink: 0; }
+.alu-ranking-divider { width: 1px; height: 40px; background: #e2e8f0; flex-shrink: 0; }
 
 .alu-ranking-info { display: flex; flex-direction: column; gap: 6px; flex: 1; }
 
@@ -594,7 +609,7 @@
     display: flex;
     align-items: center;
     gap: 2px;
-    margin-left: 16px;
+    flex: 0 0 auto;
 }
 
 .alu-nav__btn {
@@ -942,13 +957,13 @@
 .alu-completados-card {
     background: #fff;
     border-radius: 10px;
-    padding: 16px 20px;
+    padding: 10px 16px;
     border: 1.5px solid #e2e8f0;
     box-shadow: 0 1px 3px rgba(0,0,0,.06);
     display: flex;
     align-items: center;
-    gap: 20px;
-    margin-bottom: 12px;
+    gap: 16px;
+    margin-bottom: 8px;
 }
 
 .alu-completados-card__left {
@@ -960,7 +975,7 @@
 
 .alu-completados-card__num {
     font-family: var(--font-heading);
-    font-size: 32px;
+    font-size: 24px;
     font-weight: 800;
     color: #0d47a1;
     line-height: 1;
@@ -1005,10 +1020,10 @@
 /* ── LEYENDA RUTAS ────────────────────────────────────────────────── */
 .alu-rutas-leyenda {
     display: flex;
-    gap: 16px;
+    gap: 12px;
     flex-wrap: wrap;
-    margin-bottom: 14px;
-    font-size: 12px;
+    margin-bottom: 10px;
+    font-size: 11px;
     color: #64748b;
 }
 
@@ -1034,26 +1049,29 @@
 /* ── RUTAS GRID (dashboard) ───────────────────────────────────────── */
 .alu-rutas-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 8px;
 }
 
 .alu-ruta-card {
     background: #fff;
-    border-radius: 10px;
-    padding: 16px 18px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
     border: 1.5px solid #e2e8f0;
-    border-left: 4px solid transparent;
+    border-radius: 8px;
+    padding: 8px 12px;
     display: flex;
     flex-direction: column;
     gap: 6px;
     text-decoration: none;
-    color: inherit;
-    transition: box-shadow 150ms ease;
+    position: relative;
+    transition: all 200ms ease;
+    min-height: 120px;
 }
 
-.alu-ruta-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.10); }
+.alu-ruta-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+    border-color: #0d47a1;
+}
 
 .alu-ruta-card--pass { border-left-color: #16a34a; }
 .alu-ruta-card--fail { border-left-color: #dc2626; }
@@ -1069,18 +1087,22 @@
 }
 
 .alu-ruta-card__label {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
     color: #1e293b;
-    line-height: 1.3;
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .alu-ruta-card__nota {
     font-family: var(--font-heading);
-    font-size: 32px;
+    font-size: 22px;
     font-weight: 800;
     line-height: 1;
-    margin: 4px 0;
+    margin: 0;
 }
 
 .alu-ruta-card__nota--pass { color: #16a34a; }
@@ -1104,13 +1126,15 @@
 
 .alu-ruta-card__cta {
     margin-top: auto;
-    padding-top: 10px;
-    font-size: 12px;
-    font-weight: 600;
+    padding-top: 4px;
+    font-size: 10px;
+    font-weight: 700;
     color: #0d47a1;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
 }
 
 .alu-ruta-card--pend .alu-ruta-card__cta { display: none; }

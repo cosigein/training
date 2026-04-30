@@ -15,18 +15,26 @@
 
 /* ── HEADER ───────────────────────────────────────────────────────── */
 .mgr-header {
-    height: 64px;
+    height: 56px;
     background: #fff;
     border-bottom: 1px solid #e2e8f0;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     padding: 0 24px;
-    gap: 12px;
     flex-shrink: 0;
     box-shadow: 0 1px 3px rgba(0,0,0,.06);
     position: sticky;
     top: 0;
     z-index: 100;
+}
+
+.mgr-header__left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
 }
 
 .mgr-logo {
@@ -64,8 +72,9 @@
 
 .mgr-nav {
     display: flex;
-    gap: 4px;
-    margin-left: auto;
+    align-items: center;
+    gap: 2px;
+    flex: 0 0 auto;
 }
 
 .mgr-nav__btn {
@@ -79,7 +88,7 @@
     align-items: center;
     gap: 7px;
     color: #64748b;
-    transition: background var(--transition-base), color var(--transition-base);
+    transition: background 150ms ease, color 150ms ease;
     text-decoration: none;
     flex-shrink: 0;
     white-space: nowrap;
@@ -97,29 +106,62 @@
 }
 
 .mgr-nav__btn:hover { background: #f1f5f9; color: #1e293b; }
-.mgr-nav__btn.active { background: #0d47a1; color: #fff; }
-.mgr-nav__btn.active:hover { background: #0a3a8a; }
+.mgr-nav__btn.active { background: #eff6ff; color: #0d47a1; }
+.mgr-nav__btn.active:hover { background: #dbeafe; }
 
-.mgr-btn-logout {
+.mgr-header__right {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 0 14px;
-    height: 36px;
-    border-radius: 6px;
+    justify-content: flex-end;
+    gap: 8px;
+    flex: 1;
+}
+
+.mgr-user-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px 5px 8px;
+    border-radius: 8px;
+    background: #f8fafc;
     border: 1.5px solid #e2e8f0;
-    background: #fff;
-    color: #64748b;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    text-decoration: none;
-    transition: border-color var(--transition-base), color var(--transition-base);
-    margin-left: 8px;
+}
+
+.mgr-user-chip__avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #0d47a1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
     flex-shrink: 0;
 }
 
-.mgr-btn-logout:hover { border-color: #0d47a1; color: #0d47a1; }
+.mgr-user-chip__name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    white-space: nowrap;
+}
+
+.mgr-logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    color: #64748b;
+    transition: all 150ms ease;
+    text-decoration: none;
+}
+
+.mgr-logout-btn:hover { background: #fee2e2; color: #dc2626; }
 
 /* ── BACK BUTTON ──────────────────────────────────────────────────── */
 .mgr-btn-back {
@@ -146,10 +188,32 @@
 /* ── BODY / MAIN AREA ─────────────────────────────────────────────── */
 .mgr-body {
     flex: 1;
-    padding: 0;
+    padding: 24px 32px;
     display: flex;
     flex-direction: column;
     gap: 18px;
+}
+
+.mgr-clickable-row,
+.mgr-conv-card--clickable,
+.mgr-conv-row--clickable {
+    cursor: pointer;
+    transition: all 150ms ease;
+}
+
+.mgr-clickable-row:hover,
+.mgr-conv-card--clickable:hover,
+.mgr-conv-row--clickable:hover {
+    background-color: #f8fafc !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.mgr-body-inner {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
 }
 
 /* ── PAGE HEADING ─────────────────────────────────────────────────── */
@@ -452,10 +516,10 @@
 }
 
 .mgr-matrix th {
-    padding: 10px 14px;
+    padding: 8px 12px;
     background: #1e3a8a;
     color: #fff;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -474,15 +538,15 @@
 }
 
 .mgr-matrix td {
-    padding: 10px 14px;
+    padding: 8px 12px;
     border-bottom: 1px solid #f1f5f9;
     text-align: center;
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .mgr-matrix td:first-child {
     text-align: left;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: #1e293b;
     background: #fff;
@@ -496,14 +560,14 @@
 .mgr-matrix tbody tr:hover td:first-child { background: #f8fafc; }
 
 .mgr-cell-dot {
-    width: 28px;
-    height: 28px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     color: #fff;
 }
@@ -1320,3 +1384,4 @@ a.mgr-kpi--link:hover {
 
 .mgr-text-12 { font-size: 12px; }
 .mgr-color-muted { color: #94a3b8; }
+

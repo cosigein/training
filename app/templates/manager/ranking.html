@@ -76,11 +76,12 @@
         <tbody>
         {% for entry in ranking %}
         {% set pos = entry.puesto %}
-        <tr class="mgr-rank-row
+        <tr class="mgr-rank-row mgr-clickable-row
             {% if pos <= plazas %}mgr-rank--pass{% endif %}
             {% if pos == plazas + 1 %}mgr-cut-row{% endif %}"
             data-rank="{{ 'dentro' if entry.dentro_del_corte else 'fuera' }}"
-            data-audit="{{ 'auditoria' if entry.tiene_auditoria else '' }}">
+            data-audit="{{ 'auditoria' if entry.tiene_auditoria else '' }}"
+            data-href="{{ url_for('manager.alumno_detalle', candidato_id=entry.candidato.id) }}">
 
             <td>
                 <span class="mgr-pos
@@ -177,6 +178,13 @@ document.querySelectorAll('[data-filter-rank]').forEach(pill => {
                 row.style.display = row.dataset.rank === filter ? '' : 'none';
             }
         });
+    });
+});
+// Click en filas
+document.querySelectorAll('.mgr-clickable-row').forEach(row => {
+    row.addEventListener('click', e => {
+        if (e.target.closest('a')) return;
+        window.location.href = row.dataset.href;
     });
 });
 </script>

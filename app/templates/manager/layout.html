@@ -22,15 +22,19 @@
 <div class="mgr-root">
 
     <header class="mgr-header">
-        <a href="{{ url_for('manager.dashboard') }}" class="mgr-logo">
-            <div class="mgr-logo__icon">CM</div>
-            <span class="mgr-logo__text">CMadrid <span>Training</span></span>
-        </a>
+        <div class="mgr-header__left">
+            <a href="{{ url_for('manager.dashboard') }}" class="mgr-logo">
+                <div class="mgr-logo__icon">CM</div>
+                <span class="mgr-logo__text">CMadrid <span>Training</span></span>
+            </a>
 
-        <button onclick="history.back()" class="mgr-btn-back" title="Volver a la página anterior">
-            <i class="ph ph-arrow-left"></i>
-            Volver
-        </button>
+            {% if is_subpage or active_page not in ['dashboard', 'convocatorias', 'matriz', 'ranking', 'auditorias'] %}
+            <button onclick="history.back()" class="mgr-btn-back" title="Volver a la página anterior">
+                <i class="ph ph-arrow-left"></i>
+                Volver
+            </button>
+            {% endif %}
+        </div>
 
         <nav class="mgr-nav">
             <a href="{{ url_for('manager.dashboard') }}"
@@ -60,11 +64,15 @@
             </a>
         </nav>
 
-        <div class="mgr-header-right">
-            {% block header_extra %}{% endblock %}
-            <a href="{{ url_for('auth.logout') }}" class="mgr-btn-logout">
+        <div class="mgr-header__right">
+            <div class="mgr-user-chip">
+                <div class="mgr-user-chip__avatar">
+                    {{ current_user.name[0] }}{{ current_user.name.split()[1][0] if current_user.name.split()|length > 1 else '' }}
+                </div>
+                <span class="mgr-user-chip__name">{{ current_user.name.split()[0] }}</span>
+            </div>
+            <a href="{{ url_for('auth.logout') }}" class="mgr-logout-btn" title="Cerrar sesión">
                 <i class="ph ph-sign-out"></i>
-                Salir
             </a>
         </div>
     </header>
