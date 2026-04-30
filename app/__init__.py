@@ -76,7 +76,12 @@ def create_app(config_name=None):
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(manager_bp, url_prefix="/manager")
     app.register_blueprint(kiosko_bp, url_prefix="/kiosko")
-    
+
+    # JWT en header (no cookie) → no necesita CSRF
+    from app.blueprints.mobile_api import mobile_api_bp
+    app.register_blueprint(mobile_api_bp)
+    csrf.exempt(mobile_api_bp)
+
     # Custom Filters
     @app.template_filter('datetimeformat')
     def datetimeformat(value, format='%d/%m/%Y %H:%M'):
