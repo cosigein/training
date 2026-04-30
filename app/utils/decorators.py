@@ -5,6 +5,9 @@ from app.models.auth import User
 
 
 def _wants_json():
+    # /api/* es siempre JSON — clientes nativos no negocian Accept ni mandan is_json
+    if request.path.startswith("/api/"):
+        return True
     if request.is_json:
         return True
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
