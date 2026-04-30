@@ -1,13 +1,10 @@
 """
 Servicio de datos para el portal Manager: ranking, matriz, detalle de alumno/intento.
-
-Reemplaza los dicts mock de routes.py con consultas reales a SQLAlchemy.
-Nota: auditorías (AuditRequest) siguen siendo mock hasta que se implemente la Tarea 12.
 """
 from app.extensions import db
 from app.models.training import (
     Convocatoria, Enrollment, EnrollmentStatus,
-    AttemptEvent,
+    AttemptEvent, AuditRequest, AuditStatus,
 )
 from app.models.session import Attempt, AttemptStatus
 from app.models.auth import User
@@ -49,6 +46,16 @@ def _conv_to_dict(conv, org_id):
         .filter(Enrollment.status != EnrollmentStatus.INVALIDATED)
         .count()
     )
+    pending_audits = (
+        AuditRequest.query
+        .join(Attempt, AuditRequest.originalAttemptId == Attempt.id)
+        .filter(
+            AuditRequest.organizationId == org_id,
+            AuditRequest.status == AuditStatus.PENDING,
+            Attempt.convocatoriaId == conv.id,
+        )
+        .count()
+    )
     return {
         "id": conv.id,
         "nombre": conv.name,
@@ -58,7 +65,7 @@ def _conv_to_dict(conv, org_id):
         "total_candidatos": count,
         "fecha_cierre": _fmt_date(conv.closedAt),
         "ultima_actualizacion": _fmt_datetime(conv.updatedAt),
-        "auditorias_pendientes": 0,  # TODO Tarea 12: conectar AuditRequest
+        "auditorias_pendientes": pending_audits,
     }
 
 
@@ -124,11 +131,17 @@ def get_ranking(conv_id, org_id):
         scores = [a.score for a in scored]
         nota_media = sum(scores) / len(scores) if scores else 0.0
 
+        tiene_auditoria = AuditRequest.query.filter(
+            AuditRequest.organizationId == org_id,
+            AuditRequest.requestedBy == enrollment.studentId,
+            AuditRequest.status.in_([AuditStatus.PENDING, AuditStatus.REVIEWING]),
+        ).first() is not None
+
         entries.append({
             "nota_media": nota_media,
             "rutas_completadas": len(scored),
             "rutas_total": total,
-            "tiene_auditoria": False,  # TODO Tarea 12
+            "tiene_auditoria": tiene_auditoria,
             "candidato": {
                 "id": student.id,
                 "nombre": student.name,
@@ -180,17 +193,22 @@ def get_matrix_data(conv_id, org_id):
                 if prev is None or (a.score or 0) > (prev.score or 0):
                     best_by_route[a.routeId] = a
 
-        notas = {
-            route_id: (
-                {
+        notas = {}
+        for route_id in route_ids:
+            att = best_by_route.get(route_id)
+            if att is None:
+                notas[route_id] = None
+            else:
+                has_audit = AuditRequest.query.filter(
+                    AuditRequest.originalAttemptId == att.id,
+                    AuditRequest.status.in_([AuditStatus.PENDING, AuditStatus.REVIEWING]),
+                ).first() is not None
+                notas[route_id] = {
                     "nota": att.score,
                     "data_quality": _data_quality_label(att.dataQuality),
-                    "audit": False,
+                    "audit": has_audit,
                     "attempt_id": att.id,
-                } if (att := best_by_route.get(route_id)) else None
-            )
-            for route_id in route_ids
-        }
+                }
 
         total = Attempt.query.filter_by(enrollmentId=enrollment.id).count()
         candidatos.append({
@@ -273,6 +291,24 @@ def get_alumno_detail(student_id, conv_id, org_id):
     return _conv_to_dict(conv, org_id) if conv else None, candidato, intentos, nota_media
 
 
+def _get_auditoria_for_attempt(attempt_id, org_id):
+    ar = (
+        AuditRequest.query
+        .filter_by(originalAttemptId=attempt_id, organizationId=org_id)
+        .order_by(AuditRequest.createdAt.desc())
+        .first()
+    )
+    if not ar:
+        return None
+    return {
+        "id": ar.id,
+        "status": ar.status.value,
+        "reason": ar.reason,
+        "resolution": ar.resolution,
+        "createdAt": ar.createdAt.strftime("%d/%m/%Y %H:%M") if ar.createdAt else "—",
+    }
+
+
 def get_intento_detail(attempt_id, org_id):
     attempt = Attempt.query.filter_by(id=attempt_id, organizationId=org_id).first()
     if not attempt:
@@ -300,7 +336,7 @@ def get_intento_detail(attempt_id, org_id):
         "nota_info": nota_info,
         "score_breakdown": _build_breakdown(attempt, conv),
         "eventos": _build_eventos(attempt.id),
-        "auditoria": None,  # TODO Tarea 12
+        "auditoria": _get_auditoria_for_attempt(attempt.id, org_id),
         "convocatoria": _conv_to_dict(conv, org_id) if conv else None,
     }
 

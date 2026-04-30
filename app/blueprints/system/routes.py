@@ -11,13 +11,6 @@ def index():
     return redirect(url_for('sessions.list_attempts'))
 
 
-@system_bp.route("/alumno/", methods=["GET"])
-@require_role(["STUDENT"])
-def alumno_dashboard():
-    # TODO Tarea 11: reemplazar con el dashboard real del alumno
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    return render_template("alumno/dashboard.html", user=user)
 
 @system_bp.route("/settings", methods=["GET", "POST"])
 @require_role(["ADMIN", "MANAGER"])

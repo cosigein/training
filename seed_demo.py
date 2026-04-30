@@ -33,6 +33,8 @@ from app.models.training import (
     ConvocatoriaStatus,
     Enrollment,
     EnrollmentStatus,
+    AuditRequest,
+    AuditStatus,
 )
 from setup_db import get_or_create_user
 
@@ -280,8 +282,55 @@ def seed_demo_data():
         print(f"   → {n_b} attempts creados (o ya existían).")
 
         db.session.commit()
+
+        print("📝 Sembrando auditorías demo...")
+        n_audit = seed_audit_requests(org, conv_a)
+        print(f"   → {n_audit} auditorías creadas (o ya existían).")
+
+        db.session.commit()
         total = n_a + n_b
         print(f"🎉 Seed demo listo. Total attempts demo: ~{total}.")
+
+
+def seed_audit_requests(org, conv):
+    """Crea 3 AuditRequests demo para la convocatoria A (idempotente)."""
+    # Toma los primeros 3 students con attempts en esta conv
+    students_with_attempts = (
+        Attempt.query
+        .filter_by(convocatoriaId=conv.id, organizationId=org.id)
+        .filter(Attempt.score.isnot(None), Attempt.studentId.isnot(None))
+        .order_by(Attempt.endTime)
+        .limit(3)
+        .all()
+    )
+    if not students_with_attempts:
+        return 0
+
+    scenarios = [
+        ("El sistema registró una frenada brusca que no ocurrió. Solicito revisión de los datos del sensor durante el tramo final del recorrido.", AuditStatus.PENDING),
+        ("El vehículo presentó una falla mecánica en el tramo de curva pronunciada que afectó mi puntuación. Adjunto informe del técnico.", AuditStatus.REVIEWING),
+        ("La nota no refleja mi desempeño real. El GPS perdió señal en el tramo interior y eso penalizó mi velocidad incorrectamente.", AuditStatus.PENDING),
+    ]
+
+    count = 0
+    for attempt, (reason, status) in zip(students_with_attempts, scenarios):
+        existing = AuditRequest.query.filter_by(
+            originalAttemptId=attempt.id,
+            organizationId=org.id,
+        ).first()
+        if existing:
+            continue
+        ar = AuditRequest(
+            organizationId=org.id,
+            originalAttemptId=attempt.id,
+            enrollmentId=attempt.enrollmentId,
+            requestedBy=attempt.studentId,
+            reason=reason,
+            status=status,
+        )
+        db.session.add(ar)
+        count += 1
+    return count
 
 
 if __name__ == "__main__":
