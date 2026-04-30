@@ -229,6 +229,106 @@ def remove_enrollment(conv_id, enrollment_id):
     return redirect(url_for("admin.get_convocatoria_detail", conv_id=conv_id))
 
 
+# ─── Cierre 3 pasos (T10) ─────────────────────────────────────────────────────
+
+@admin_bp.route("/convocatorias/<string:conv_id>/close/preview", methods=["POST"])
+@require_role(["ADMIN", "SUPER_ADMIN"])
+def close_preview(conv_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    try:
+        result = convocatoria_service.close_preview(conv_id, user.organizationId)
+    except ConvocatoriaError as exc:
+        return jsonify({"message": str(exc)}), 422
+    return jsonify(result), 200
+
+
+@admin_bp.route("/convocatorias/<string:conv_id>/close/initiate", methods=["POST"])
+@require_role(["ADMIN", "SUPER_ADMIN"])
+def close_initiate(conv_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    data = request.get_json() or {}
+    confirmation_text = data.get("confirmation_text", "")
+    try:
+        conv = convocatoria_service.close_initiate(conv_id, user.organizationId, user_id, confirmation_text)
+    except ConvocatoriaError as exc:
+        return jsonify({"message": str(exc)}), 422
+    return jsonify({"id": conv.id, "status": conv.status.value, "closureInitiatedAt": conv.closureInitiatedAt.isoformat()}), 200
+
+
+@admin_bp.route("/convocatorias/<string:conv_id>/close/confirm", methods=["POST"])
+@require_role(["ADMIN", "SUPER_ADMIN"])
+def close_confirm(conv_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    data = request.get_json() or {}
+    confirmation_text = data.get("confirmation_text", "")
+    password = data.get("password", "")
+    try:
+        conv, sha256 = convocatoria_service.close_confirm(
+            conv_id, user.organizationId, user_id, confirmation_text, password
+        )
+    except ConvocatoriaError as exc:
+        return jsonify({"message": str(exc)}), 422
+    return jsonify({
+        "id": conv.id,
+        "status": conv.status.value,
+        "closedAt": conv.closedAt.isoformat(),
+        "reverseWindowUntil": conv.reverseWindowUntil.isoformat(),
+        "actaSignatureHash": sha256,
+        "actaUrl": f"/admin/convocatorias/{conv.id}/acta",
+    }), 200
+
+
+@admin_bp.route("/convocatorias/<string:conv_id>/close/abort", methods=["POST"])
+@require_role(["ADMIN", "SUPER_ADMIN"])
+def close_abort(conv_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    try:
+        conv = convocatoria_service.close_abort(conv_id, user.organizationId, user_id)
+    except ConvocatoriaError as exc:
+        return jsonify({"message": str(exc)}), 422
+    return jsonify({"id": conv.id, "status": conv.status.value}), 200
+
+
+@admin_bp.route("/convocatorias/<string:conv_id>/close/reverse", methods=["POST"])
+@require_role(["SUPER_ADMIN"])
+def close_reverse(conv_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    data = request.get_json() or {}
+    reason = data.get("reason", "")
+    try:
+        conv = convocatoria_service.close_reverse(conv_id, user.organizationId, user_id, reason)
+    except ConvocatoriaError as exc:
+        return jsonify({"message": str(exc)}), 422
+    return jsonify({"id": conv.id, "status": conv.status.value, "reversedAt": conv.reversedAt.isoformat()}), 200
+
+
+@admin_bp.route("/convocatorias/<string:conv_id>/acta", methods=["GET"])
+@require_role(["ADMIN", "SUPER_ADMIN"])
+def download_acta(conv_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    from app.models.training import Convocatoria, ConvocatoriaStatus
+    conv = Convocatoria.query.filter_by(id=conv_id, organizationId=user.organizationId).first()
+    if not conv:
+        return jsonify({"message": "Convocatoria no encontrada"}), 404
+    if conv.status not in (ConvocatoriaStatus.CLOSED, ConvocatoriaStatus.LOCKED):
+        return jsonify({"message": "El acta solo está disponible para convocatorias cerradas"}), 409
+    if not conv.acta:
+        return jsonify({"message": "Acta no disponible"}), 404
+    from flask import Response
+    filename = f"acta_{conv.name.replace(' ', '_')}_{conv.closedAt.strftime('%Y%m%d')}.pdf"
+    return Response(
+        conv.acta,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def _convocatoria_to_dict(c):
