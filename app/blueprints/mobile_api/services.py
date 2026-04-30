@@ -1,21 +1,92 @@
 """Helpers del blueprint mobile_api.
 
-Stubs creados en PR-1; cuerpo se implementa en los PRs siguientes:
-- convocatorias_for_user → PR-3
-- get_convocatoria_detail → PR-5
-- can_user_view_attempt → PR-7
-- _remap_conv → PR-3
-- _remap_ranking_entry → PR-6
-- _remap_attempt → PR-7
+Implementación incremental por PR. Cada función documenta el PR donde se completa.
 
-Nota: el modelo `User.managedConvocatorias` es `db.Column(JSONB, default=[])`
-con la lista de IDs de convocatorias supervisadas, NO un relationship.
-Patrón de query: `Convocatoria.query.filter(Convocatoria.id.in_(user.managedConvocatorias or []))`.
+Notas clave del modelo:
+- `User.managedConvocatorias` es `db.Column(JSONB, default=[])` con la LISTA DE IDs de
+  convocatorias supervisadas — NO un relationship. Patrón de query:
+  `Convocatoria.query.filter(Convocatoria.id.in_(user.managedConvocatorias or []))`.
+- `_conv_to_dict` (manager.ranking_service) devuelve keys en español + fechas formateadas
+  dd/mm/yyyy. La API V1 usa camelCase + ISO 8601, así que NO se reusa directo. En su lugar
+  construimos el dict camelCase desde el modelo (`_convocatoria_to_camel`).
 """
+
+from app.extensions import db
+from app.models.auth import User, UserRole
+from app.models.training import Convocatoria, Enrollment, EnrollmentStatus
+
+
+def _iso(dt):
+    """Devuelve datetime → ISO8601 con sufijo Z; None → None."""
+    if dt is None:
+        return None
+    return dt.isoformat() + ("Z" if dt.tzinfo is None else "")
+
+
+def _convocatoria_to_camel(conv, total_candidates):
+    return {
+        "id": conv.id,
+        "name": conv.name,
+        "description": conv.description or "",
+        "status": conv.status.value if conv.status else None,
+        "plazas": conv.plazas,
+        "totalCandidates": total_candidates,
+        "closedAt": _iso(conv.closedAt),
+        "updatedAt": _iso(conv.updatedAt),
+    }
+
+
+def _count_active_enrollments(conv_id, org_id):
+    return (
+        Enrollment.query
+        .filter_by(convocatoriaId=conv_id, organizationId=org_id)
+        .filter(Enrollment.status != EnrollmentStatus.INVALIDATED)
+        .count()
+    )
 
 
 def convocatorias_for_user(user):
-    raise NotImplementedError("Implementado en PR-3 (feat/be-mobile-api-me)")
+    """Lista de convocatorias visibles según el rol del user (V1 read-only)."""
+    role = user.role.value if hasattr(user.role, "value") else user.role
+    org_id = user.organizationId
+
+    if role == UserRole.STUDENT.value:
+        rows = (
+            db.session.query(Convocatoria)
+            .join(Enrollment, Enrollment.convocatoriaId == Convocatoria.id)
+            .filter(
+                Enrollment.studentId == user.id,
+                Enrollment.organizationId == org_id,
+                Enrollment.status != EnrollmentStatus.INVALIDATED,
+            )
+            .order_by(Convocatoria.openedAt.desc())
+            .all()
+        )
+    elif role == UserRole.MANAGER.value:
+        managed_ids = user.managedConvocatorias or []
+        if not managed_ids:
+            return []
+        rows = (
+            Convocatoria.query
+            .filter(
+                Convocatoria.id.in_(managed_ids),
+                Convocatoria.organizationId == org_id,
+            )
+            .order_by(Convocatoria.openedAt.desc())
+            .all()
+        )
+    elif role in (UserRole.ADMIN.value, UserRole.SUPER_ADMIN.value):
+        rows = (
+            Convocatoria.query
+            .filter_by(organizationId=org_id)
+            .order_by(Convocatoria.openedAt.desc())
+            .all()
+        )
+    else:
+        # VIEWER, OPERATOR (legacy) — sin acceso en V1
+        return []
+
+    return [_convocatoria_to_camel(c, _count_active_enrollments(c.id, org_id)) for c in rows]
 
 
 def get_convocatoria_detail(conv_id, user):
@@ -24,10 +95,6 @@ def get_convocatoria_detail(conv_id, user):
 
 def can_user_view_attempt(user, attempt):
     raise NotImplementedError("Implementado en PR-7 (feat/be-mobile-api-attempt-detail)")
-
-
-def _remap_conv(conv_dict):
-    raise NotImplementedError("Implementado en PR-3 (feat/be-mobile-api-me)")
 
 
 def _remap_ranking_entry(entry_dict):

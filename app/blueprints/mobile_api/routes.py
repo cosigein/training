@@ -1,13 +1,32 @@
 from datetime import datetime, timezone
 
 from flask import jsonify, request
-from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
+from flask_jwt_extended import (
+    create_access_token,
+    get_jwt_identity,
+    jwt_required,
+)
 
 from app.blueprints.auth.services import auth_service
 from app.blueprints.mobile_api import mobile_api_bp
 from app.blueprints.mobile_api.errors import error_response
-from app.blueprints.mobile_api.schemas import UserSchema
+from app.blueprints.mobile_api.schemas import (
+    ConvocatoriaSummarySchema,
+    UserSchema,
+)
+from app.blueprints.mobile_api.services import convocatorias_for_user
 from app.extensions import limiter
+from app.models.auth import User
+
+
+def _current_user_or_401():
+    user_id = get_jwt_identity()
+    if not user_id:
+        return None, error_response(401, "unauthenticated", "Token sin identidad")
+    user = User.query.get(user_id)
+    if not user:
+        return None, error_response(401, "unauthenticated", "Usuario no encontrado")
+    return user, None
 
 
 @mobile_api_bp.route("/health", methods=["GET"])
@@ -52,3 +71,23 @@ def refresh():
         "access_token": access_token,
         "expires_in": 3600,
     }), 200
+
+
+@mobile_api_bp.route("/me", methods=["GET"])
+@jwt_required()
+def me():
+    user, err = _current_user_or_401()
+    if err is not None:
+        return err
+    return jsonify(UserSchema().dump(user)), 200
+
+
+@mobile_api_bp.route("/me/convocatorias", methods=["GET"])
+@jwt_required()
+def me_convocatorias():
+    user, err = _current_user_or_401()
+    if err is not None:
+        return err
+    items = convocatorias_for_user(user)
+    schema = ConvocatoriaSummarySchema(many=True)
+    return jsonify({"items": schema.dump(items)}), 200
