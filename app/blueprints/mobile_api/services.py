@@ -105,8 +105,45 @@ def can_user_view_attempt(user, attempt):
     raise NotImplementedError("Implementado en PR-7 (feat/be-mobile-api-attempt-detail)")
 
 
-def _remap_ranking_entry(entry_dict):
-    raise NotImplementedError("Implementado en PR-6 (feat/be-mobile-api-ranking-matrix)")
+def remap_ranking_entry(entry_dict):
+    """Convierte un entry de manager.ranking_service.get_ranking → camelCase V1.
+
+    NO incluye `withinCutoff` (decisión D-API-001, GDPR art. 22) ni `tieneAuditoria`
+    (fuera de scope V1, depende de Tarea 12).
+    """
+    cand = entry_dict.get("candidato") or {}
+    return {
+        "position": entry_dict.get("puesto"),
+        "candidate": {
+            "id": cand.get("id"),
+            "name": cand.get("nombre"),
+            "plaza": cand.get("plaza"),
+        },
+        "score": entry_dict.get("nota_media"),
+        "attemptsCompleted": entry_dict.get("rutas_completadas"),
+        "attemptsTotal": entry_dict.get("rutas_total"),
+    }
+
+
+def remap_matrix_row(candidato_dict, circuit_ids):
+    """Convierte una row de manager.ranking_service.get_matrix_data → MatrixRow camelCase.
+
+    `notas` del manager es un dict {routeId: {nota, data_quality, audit, attempt_id}}
+    que se aplana a una lista [{circuitId, score}] siguiendo el orden de circuit_ids.
+    """
+    notas = candidato_dict.get("notas") or {}
+    scores = []
+    for circuit_id in circuit_ids:
+        cell = notas.get(circuit_id)
+        score_val = cell.get("nota") if isinstance(cell, dict) else None
+        scores.append({"circuitId": circuit_id, "score": score_val})
+    return {
+        "candidate": {
+            "id": candidato_dict.get("id"),
+            "name": candidato_dict.get("nombre"),
+        },
+        "scores": scores,
+    }
 
 
 def _remap_attempt(attempt_dict):
