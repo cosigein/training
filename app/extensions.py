@@ -29,10 +29,14 @@ babel = Babel()
 def create_celery_app(app=None):
     celery = Celery(
         app.import_name if app else "doback_celery",
-        broker=app.config["CELERY_BROKER_URL"] if app else "redis://localhost:6379/0"
+        broker=app.config.get("CELERY_BROKER_URL", "redis://localhost:6379/0") if app else "redis://localhost:6379/0",
     )
     if app:
-        celery.conf.update(app.config)
+        # Traducir keys legado CELERY_* → formato nuevo lowercase (Celery 5.x)
+        celery.conf.update(
+            broker_url=app.config.get("CELERY_BROKER_URL"),
+            result_backend=app.config.get("CELERY_RESULT_BACKEND"),
+        )
 
         class ContextTask(celery.Task):
             def __call__(self, *args, **kwargs):
