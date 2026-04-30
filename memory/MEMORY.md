@@ -13,6 +13,7 @@
 ## Decisiones de implementación / frontend
 
 - [Frontend con dos layouts](decision-frontend-dual-layout.md) — D-FE-001, top-nav nuevo `/manager/*` vs sidebar viejo `DOBACKSOFT` en `/sessions/` y `/admin/*` — pendiente decisión Alejandro+Antonio antes 09/05
+- [API móvil V1 read-only por fases](decision-mobile-api-v1.md) — D-API-001, contrato `/api/v1/*` para clientes nativos, fase 0 antes del demo / fase 1 post-demo / iOS SwiftUI después
 
 ## Equipo y proceso
 
