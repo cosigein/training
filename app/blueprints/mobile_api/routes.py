@@ -16,7 +16,10 @@ from app.blueprints.mobile_api.schemas import (
     StandingSchema,
     UserSchema,
 )
-from app.blueprints.mobile_api.services import convocatorias_for_user
+from app.blueprints.mobile_api.services import (
+    convocatorias_for_user,
+    get_convocatoria_detail,
+)
 from app.extensions import limiter
 from app.models.auth import User, UserRole
 from app.models.training import Enrollment, EnrollmentStatus
@@ -140,3 +143,33 @@ def me_standing(conv_id):
         "status": enrollment.status.value,
     }
     return jsonify(StandingSchema().dump(standing)), 200
+
+
+_ADMIN_ROLES = [
+    UserRole.MANAGER.value,
+    UserRole.ADMIN.value,
+    UserRole.SUPER_ADMIN.value,
+]
+
+
+@mobile_api_bp.route("/convocatorias", methods=["GET"])
+@require_role(_ADMIN_ROLES)
+def list_convocatorias():
+    user, err = _current_user_or_401()
+    if err is not None:
+        return err
+    items = convocatorias_for_user(user)
+    schema = ConvocatoriaSummarySchema(many=True)
+    return jsonify({"items": schema.dump(items)}), 200
+
+
+@mobile_api_bp.route("/convocatorias/<string:conv_id>", methods=["GET"])
+@require_role(_ADMIN_ROLES)
+def convocatoria_detail(conv_id):
+    user, err = _current_user_or_401()
+    if err is not None:
+        return err
+    detail = get_convocatoria_detail(conv_id, user)
+    if not detail:
+        return error_response(404, "not_found", "Convocatoria no encontrada")
+    return jsonify(ConvocatoriaSummarySchema().dump(detail)), 200

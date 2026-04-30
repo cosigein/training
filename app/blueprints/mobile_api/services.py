@@ -90,7 +90,15 @@ def convocatorias_for_user(user):
 
 
 def get_convocatoria_detail(conv_id, user):
-    raise NotImplementedError("Implementado en PR-5 (feat/be-mobile-api-convocatorias-list)")
+    """Detalle de una convocatoria scoped a la org del user. None si no existe o no pertenece."""
+    conv = (
+        Convocatoria.query
+        .filter_by(id=conv_id, organizationId=user.organizationId)
+        .first()
+    )
+    if not conv:
+        return None
+    return _convocatoria_to_camel(conv, _count_active_enrollments(conv_id, user.organizationId))
 
 
 def can_user_view_attempt(user, attempt):
