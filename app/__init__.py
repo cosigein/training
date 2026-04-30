@@ -125,4 +125,10 @@ def create_app(config_name=None):
         )
         return response
 
+    # Scheduler en proceso: cron de ranking y lock de convocatorias (T9)
+    # No arrancar en testing para no interferir con los tests
+    if not app.config.get("TESTING"):
+        from app.scheduler import init_scheduler
+        init_scheduler(app)
+
     return app
