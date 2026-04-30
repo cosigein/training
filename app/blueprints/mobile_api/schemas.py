@@ -9,7 +9,7 @@ Implementación por PR:
 - ConvocatoriaSummarySchema → PR-3 ✅
 - StandingSchema → PR-4 ✅ (SIN withinCutoff, decisión GDPR)
 - RankingEntrySchema → PR-6 ✅ (SIN withinCutoff, idem)
-- AttemptDetailSchema → PR-7
+- AttemptDetailSchema → PR-7 ✅
 """
 
 from marshmallow import Schema, fields
@@ -73,4 +73,12 @@ class RankingEntrySchema(Schema):
 
 
 class AttemptDetailSchema(Schema):
-    pass
+    """Detalle de un intento. SIN auditoría (fuera de scope V1)."""
+    id = fields.String(dump_only=True)
+    candidate = fields.Dict(dump_only=True)
+    route = fields.Dict(dump_only=True)
+    score = fields.Float(dump_only=True, allow_none=True)
+    dataQuality = fields.String(dump_only=True, allow_none=True)
+    scoreBreakdown = fields.List(fields.Dict(), dump_only=True)
+    events = fields.List(fields.Dict(), dump_only=True)
+    convocatoriaId = fields.String(dump_only=True, allow_none=True)
