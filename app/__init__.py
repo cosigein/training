@@ -51,7 +51,7 @@ def create_app(config_name=None):
     compress.init_app(app)
     cache.init_app(app)
     # Talisman se suele activar solo en producción por CSP
-    if not app.debug:
+    if not app.debug and not app.testing:
         talisman.init_app(app)
     babel.init_app(app)
     init_loguru(app)
