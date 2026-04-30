@@ -46,25 +46,7 @@ from flask_jwt_extended import get_jwt_identity
 from app.utils.decorators import require_role
 from . import manager_bp
 
-# ─── Catálogo local de rutas por convocatoria ──────────────────────────────
-# TODO: cuando exista el modelo `Route`, mover este catálogo a la tabla.
-# Las claves son `Convocatoria.name`. El primer match gana.
-
-ROUTES_BY_CONV = {
-    "Convocatoria 2026-A": [
-        {"id": "R01", "label": "Salida Cochera"},
-        {"id": "R02", "label": "Maniobra T"},
-        {"id": "R03", "label": "Paso Angosto"},
-        {"id": "R04", "label": "Marcha Atrás"},
-        {"id": "R05", "label": "Curva Pronunciada"},
-        {"id": "R06", "label": "Emergencia Urbana"},
-        {"id": "R07", "label": "Conducción Nocturna"},
-        {"id": "R08", "label": "Terreno Irregular"},
-    ],
-    "Convocatoria 2026-B": [
-        {"id": "R01", "label": "Salida Cochera"},
-        {"id": "R02", "label": "Maniobra T"},
-        {"id": "R03", "label": "# ── DATOS MOCK (modelo Paper Maestro v6) ────────────────────────────────────
+# ── DATOS MOCK (modelo Paper Maestro v6) ────────────────────────────────────
 # Representan el estado de la Convocatoria 2026-A al día de hoy.
 # Nota: las notas son 0-10 por intento; el modelo NO emite apto/no_apto
 # por intento — solo al cierre de la convocatoria.
@@ -233,11 +215,11 @@ CANDIDATOS = [
         "plaza": "007",
         "categoria": "C+E",
         "notas": {
-            "R01": {"nota": 7.1, "data_quality": "HIGH",   "audit": False, "attempt_id": "att-050"},
-            "R02": {"nota": 6.8, "data_quality": "HIGH",   "audit": False, "attempt_id": "att-051"},
-            "R03": {"nota": 3.5, "data_quality": "LOW",    "audit": False, "attempt_id": "att-052"},
-            "R04": {"nota": 3.2, "data_quality": "LOW",    "audit": False, "attempt_id": "att-053"},
-            "R05": {"nota": 3.0, "data_quality": "MEDIUM", "audit": False, "attempt_id": "att-054"},
+            "R01": {"nota": 7.1, "data_quality": "HIGH", "audit": False, "attempt_id": "att-050"},
+            "R02": {"nota": 6.8, "data_quality": "HIGH", "audit": False, "attempt_id": "att-051"},
+            "R03": {"nota": 3.5, "data_quality": "LOW",  "audit": False, "attempt_id": "att-052"},
+            "R04": {"nota": 3.2, "data_quality": "LOW",  "audit": False, "attempt_id": "att-053"},
+            "R05": {"nota": 3.0, "data_quality": "MEDIUM","audit": False,"attempt_id": "att-054"},
             "R06": None, "R07": None, "R08": None,
         },
         "rutas_completadas": 5,
@@ -273,10 +255,10 @@ CANDIDATOS = [
         "plaza": "101",
         "categoria": "C",
         "notas": {
-            "R01": {"nota": 6.8, "data_quality": "HIGH",   "audit": False, "attempt_id": "att-101"},
+            "R01": {"nota": 6.8, "data_quality": "HIGH", "audit": False, "attempt_id": "att-101"},
             "R02": {"nota": 7.2, "data_quality": "MEDIUM", "audit": False, "attempt_id": "att-102"},
-            "R03": {"nota": 8.0, "data_quality": "HIGH",   "audit": False, "attempt_id": "att-103"},
-            "R04": {"nota": 5.5, "data_quality": "LOW",    "audit": True,  "attempt_id": "att-104"},
+            "R03": {"nota": 8.0, "data_quality": "HIGH", "audit": False, "attempt_id": "att-103"},
+            "R04": {"nota": 5.5, "data_quality": "LOW", "audit": True, "attempt_id": "att-104"},
         },
         "rutas_completadas": 4,
         "rutas_total": 4,
@@ -341,114 +323,48 @@ AUDITORIAS = [
         "razon": "El sensor del camión falló intermitentemente durante la maniobra. La calidad de datos figura como MEDIUM pero creo que hay lecturas erróneas que influyeron en la nota.",
         "status": "PENDING",
     },
-    {
-        "id": "aud-003",
-        "attempt_id": "att-002",
-        "candidato": "Carlos Rodríguez",
-        "ruta": "Maniobra T",
-        "nota": 7.5,
-        "fecha_solicitud": "20/04/2026",
-        "hora_solicitud": "14:30",
-        "razon": "El sensor registró una frenada pero yo no frené bruscamente. Creo que fue vibración del camión al pasar un badén al inicio de la maniobra.",
-        "status": "RESOLVED",
-        "resolucion": "CONFIRMED",
-        "fecha_resolucion": "22/04/2026",
-        "comentario_manager": "Se revisaron los registros del sensor y los datos del Webfleet. Los datos son consistentes con una frenada real. La nota es correcta.",
-    },
 ]
 
-DEFAULT_ROUTES = [
-    {"id": "R01", "label": "Ruta 1"},
-]
 
-HISTORIAL_EXTRA = {
-    "001": [
-        {"ruta_id": "R01", "ruta_label": "Salida Cochera", "nota": 6.5, "data_quality": "HIGH",   "fecha": "10/04/2026", "hora": "09:15", "attempt_id": "att-001-a"},
-        {"ruta_id": "R02", "ruta_label": "Maniobra T",     "nota": 5.4, "data_quality": "MEDIUM", "fecha": "12/04/2026", "hora": "10:30", "attempt_id": "att-002-a"},
-        {"ruta_id": "R03", "ruta_label": "Paso Angosto",   "nota": 4.1, "data_quality": "LOW",    "fecha": "16/04/2026", "hora": "14:45", "attempt_id": "att-003-a"},
-    ],
-}
+def _calcular_nota_media(candidato):
+    """Calcula la nota media de las rutas completadas."""
+    notas = [v["nota"] for v in candidato["notas"].values() if v is not None]
+    if not notas:
+        return 0.0
+    return sum(notas) / len(notas)
 
 
-def _routes_for(conv):
-    return ROUTES_BY_CONV.get(conv.name, DEFAULT_ROUTES)
+def _tiene_auditoria_pendiente(candidato_id):
+    nombre = next((c["nombre"] for c in CANDIDATOS if c["id"] == candidato_id), "")
+    return any(a["candidato"] == nombre and a["status"] == "PENDING" for a in AUDITORIAS)
 
 
-# ─── Loaders: BD → dict que el template ya espera ──────────────────────────
+def _calcular_ranking(plazas, conv_id):
+    """Ordena candidatos por nota media descendente y calcula posición."""
+    entries = []
+    candidatos_filtrados = [c for c in CANDIDATOS if c.get("convocatoria_id") == conv_id]
+    
+    for c in candidatos_filtrados:
+        nota_media = _calcular_nota_media(c)
+        entries.append({
+            "candidato": c,
+            "nota_media": nota_media,
+            "rutas_completadas": c["rutas_completadas"],
+            "rutas_total": c["rutas_total"],
+            "tiene_auditoria": _tiene_auditoria_pendiente(c["id"]),
+        })
 
-def _format_date(dt):
-    if not dt:
-        return "—"
-    return dt.strftime("%d/%m/%Y")
+    entries.sort(key=lambda x: x["nota_media"], reverse=True)
 
+    for i, entry in enumerate(entries):
+        puesto = i + 1
+        entry["puesto"] = puesto
+        entry["dentro_del_corte"] = puesto <= plazas
 
-def _format_datetime(dt):
-    if not dt:
-        return "—"
-    return dt.strftime("%d/%m/%Y %H:%M")
-
-
-def _convocatoria_dict(conv, total_candidatos, auditorias_pendientes):
-    routes = _routes_for(conv)
-    return {
-        "id": conv.id,
-        "nombre": conv.name,
-        "descripcion": conv.description or "",
-        "status": conv.status.value if conv.status else "OPEN",
-        "plazas": conv.plazas,
-        "total_candidatos": total_candidatos,
-        "fecha_cierre": _format_date(conv.closedAt) if conv.closedAt else "Sin cierre",
-        "ultima_actualizacion": _format_datetime(conv.updatedAt or conv.openedAt),
-        "auditorias_pendientes": auditorias_pendientes,
-        "rutas": routes,
-    }
+    return entries
 
 
-def _load_convocatorias_dicts(only_active=True):
-    """Lista de convocatorias visibles para el manager."""
-    q = Convocatoria.query
-    if only_active:
-        q = q.filter(Convocatoria.status.in_([
-            ConvocatoriaStatus.OPEN,
-            ConvocatoriaStatus.PREVIEW,
-            ConvocatoriaStatus.CLOSING,
-        ]))
-    convs = q.order_by(Convocatoria.openedAt.desc()).all()
-
-    result = []
-    for c in convs:
-        total = db.session.query(Enrollment).filter_by(convocatoriaId=c.id).count()
-        from .audit_service import AuditRequest, AuditStatus
-        pendientes = AuditRequest.query.filter_by(
-            organizationId=org_id,
-            status=AuditStatus.PENDING,
-        ).count()
-        result.append(_convocatoria_dict(c, total_candidatos=total, auditorias_pendientes=pendientes))
-    return result
-
-
-def _load_auditorias_pendientes():
-    org_id = _get_org_id()
-    if not org_id:
-        return []
-    return list_audit_requests(org_id, status="PENDING")
-
-
-
-def _get_org_id():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    return user.organizationId if user else None
-
-
-def _resolve_conv_id(org_id):
-    conv_id = request.args.get("conv_id")
-    if not conv_id:
-        conv_id = get_first_conv_id(org_id)
-    return conv_id
-
-
-# ─── RUTAS ──────────────────────────────────────────────────────────────────
+# ── RUTAS ──────────────────────────────────────────────────────────────────
 
 @manager_bp.route("/")
 @require_role(["MANAGER", "ADMIN"])

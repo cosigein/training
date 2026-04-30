@@ -1269,3 +1269,23 @@ a.mgr-kpi--link:hover {
     box-shadow: 0 4px 12px rgba(0,0,0,.12);
     transform: translateY(-1px);
 }
+
+.mgr-mt-16 { margin-top: 16px; }
+.mgr-mt-24 { margin-top: 24px; }
+.mgr-gap-8 { gap: 8px; }
+.mgr-gap-12 { gap: 12px; }
+.mgr-flex-wrap { flex-wrap: wrap; }
+.mgr-align-center { align-items: center; }
+
+.mgr-input-file {
+    font-size: 12px;
+    color: #f1f5f9;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 4px 8px;
+    max-width: 200px;
+}
+
+.mgr-text-12 { font-size: 12px; }
+.mgr-color-muted { color: #94a3b8; }
