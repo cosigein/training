@@ -8,15 +8,19 @@ from flask_jwt_extended import (
 )
 
 from app.blueprints.auth.services import auth_service
+from app.blueprints.manager.ranking_service import get_ranking
 from app.blueprints.mobile_api import mobile_api_bp
 from app.blueprints.mobile_api.errors import error_response
 from app.blueprints.mobile_api.schemas import (
     ConvocatoriaSummarySchema,
+    StandingSchema,
     UserSchema,
 )
 from app.blueprints.mobile_api.services import convocatorias_for_user
 from app.extensions import limiter
-from app.models.auth import User
+from app.models.auth import User, UserRole
+from app.models.training import Enrollment, EnrollmentStatus
+from app.utils.decorators import require_role
 
 
 def _current_user_or_401():
@@ -91,3 +95,48 @@ def me_convocatorias():
     items = convocatorias_for_user(user)
     schema = ConvocatoriaSummarySchema(many=True)
     return jsonify({"items": schema.dump(items)}), 200
+
+
+@mobile_api_bp.route("/me/convocatorias/<string:conv_id>/standing", methods=["GET"])
+@require_role([UserRole.STUDENT.value])
+def me_standing(conv_id):
+    user, err = _current_user_or_401()
+    if err is not None:
+        return err
+
+    enrollment = (
+        Enrollment.query
+        .filter_by(
+            convocatoriaId=conv_id,
+            studentId=user.id,
+            organizationId=user.organizationId,
+        )
+        .filter(Enrollment.status != EnrollmentStatus.INVALIDATED)
+        .first()
+    )
+    if not enrollment:
+        # 404, no 403 — no leakeamos existencia de la convocatoria
+        return error_response(404, "not_found", "No estás inscripto en esa convocatoria")
+
+    conv_dict, entries = get_ranking(conv_id, user.organizationId)
+    if not conv_dict:
+        return error_response(404, "not_found", "Convocatoria no encontrada")
+
+    my_entry = next(
+        (e for e in entries if e.get("candidato", {}).get("id") == user.id),
+        None,
+    )
+    if not my_entry:
+        return error_response(404, "not_found", "Sin posición en el ranking")
+
+    standing = {
+        "convocatoriaId": conv_id,
+        "position": my_entry["puesto"],
+        "totalCandidates": len(entries),
+        "plazas": conv_dict["plazas"],
+        "score": my_entry["nota_media"],
+        "attemptsCompleted": my_entry["rutas_completadas"],
+        "attemptsTotal": my_entry["rutas_total"],
+        "status": enrollment.status.value,
+    }
+    return jsonify(StandingSchema().dump(standing)), 200
