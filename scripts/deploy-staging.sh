@@ -73,6 +73,12 @@ sudo -u "$REPO_OWNER" git -C "$REPO_PATH" checkout "$BRANCH"
 sudo -u "$REPO_OWNER" git -C "$REPO_PATH" pull --ff-only origin "$BRANCH"
 echo "HEAD now at: \$(sudo -u "$REPO_OWNER" git -C "$REPO_PATH" rev-parse HEAD)"
 
+echo "--- pip install -r requirements.txt (idempotent; OPERATIONS-VPS.md step 3) ---"
+sudo -u "$REPO_OWNER" "$REPO_PATH/.venv/bin/pip" install --quiet -r "$REPO_PATH/requirements.txt"
+
+echo "--- setup_db.py (idempotent db.create_all; OPERATIONS-VPS.md step 4) ---"
+sudo -u "$REPO_OWNER" bash -c "cd '$REPO_PATH' && set -a && . ./.env && set +a && '$REPO_PATH/.venv/bin/python' setup_db.py"
+
 echo "--- systemctl restart $SERVICE_NAME ---"
 systemctl restart "$SERVICE_NAME"
 
