@@ -93,8 +93,8 @@ Cuando revisás el PR de otro:
 - ¿Tiene tests donde corresponde?
 - ¿Rompe alguna invariante (ver `docs/PAPER-MAESTRO.md` §9)?
 - ¿El nombre del commit/PR refleja el cambio?
-- ¿Hay deuda escondida (TODO, console.log, código muerto)?
-- ¿El cambio respeta los límites entre packages/apps?
+- ¿Hay deuda escondida (TODO, print(...), código muerto)?
+- ¿El cambio respeta los límites entre blueprints/módulos?
 
 No es necesario que el código sea perfecto — necesario que sea **honesto** (hace lo que dice, sin sorpresas).
 

@@ -22,7 +22,7 @@
 | `app/blueprints/manager/` (UI manager-facing: dashboard, matriz, ranking, alumno, intento, auditoría, convocatorias) | **Alejandro** mientras sirva mock data; transferencia a **Jesús** cuando se conecte a SQLAlchemy | Alejandro edita templates + presentation; Jesús revisa cuando entren queries reales |
 | `docs/STYLE-GUIDE-MANAGER.md` (style guide del portal manager) | **Alejandro** | Alejandro edita |
 | `app/blueprints/admin/` (cierre de convocatoria) | **Antonio** | Antonio edita; Alejandro entrega componentes base; Joel escribe E2E |
-| `app/blueprints/admin/` (scoring simulator — endpoint `POST /scoring/simulate` + UI D12) | **Joel** edita; **Antonio** review obligatoria (endpoint legalmente sensible) | Joel implementa; Alejandro entrega componentes base (`<ScoreBreakdown>`, layouts); Jesús expone la función pura `simulate()` |
+| `app/blueprints/admin/` (scoring simulator — endpoint `POST /scoring/simulate` + UI D12) | **Joel** edita; **Antonio** review obligatoria (endpoint legalmente sensible) | Joel implementa; Alejandro entrega templates base (`macro score_breakdown`, layouts); Jesús expone la función pura `simulate()` |
 | `app/services/webfleet/` y `app/workers/webfleet_worker.py` (cuando existan — ingesta Webfleet + sync periódico) | **Antonio** define el contrato + **Jesús** orquesta Celery | Antonio define qué llama, Jesús cómo se programa |
 | `docs/SIMULATOR-USER-GUIDE.md` (cuando se cree) | **Joel** redacta + **Antonio** review final (cliente CMadrid) | Doc para admin CMadrid (español castellano, 1-2 páginas) |
 | `tests/` · `tests/conftest.py` · tests E2E con Playwright | **Joel** | Joel edita; Jesús revisa fixtures que tocan modelos |
