@@ -76,7 +76,8 @@ def _load_auditorias_pendientes():
 
 @manager_bp.context_processor
 def inject_auditorias_count():
-    count = sum(1 for a in AUDITORIAS if a.get("status") == "PENDING")
+    org_id = _get_org_id()
+    count = count_pending(org_id) if org_id else 0
     return {"auditorias_count": count}
 
 
