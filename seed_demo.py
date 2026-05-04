@@ -1,19 +1,20 @@
-"""seed_demo.py — Datos demo para que el dashboard manager se vea con contenido realista.
+"""seed_demo.py — Datos demo realistas para el sistema completo.
 
 Idempotente: ejecutar varias veces no duplica filas. Asume que `setup_db.py` ya
 corrió antes (org CMadrid, super/admin/manager seed users existen).
 
 Crea (en orden):
-- 1 Vehicle (camión bomberos)
-- 11 Students (8 para 2026-A, 3 para 2026-B; nombres alineados con el mock previo)
+- 1 Vehicle (camión bomberos, identifier=DEMO-V001)
+- 11 Students (8 para 2026-A, 3 para 2026-B)
+- 11 RfidCards (una por alumno, UID estilo Mifare 4-bytes)
 - 2 Convocatorias OPEN (2026-A con 8 rutas y 5 plazas, 2026-B con 4 rutas y 3 plazas)
 - 11 Enrollments
-- ~30-35 Attempts CLOSED con score 3.0-9.6 y dataQuality HIGH/MEDIUM/LOW
-
-NO crea:
-- AuditRequest entries (modelo no existe todavía — pendiente tarea 12 del roadmap)
-- Ranking snapshots (lo genera el cron de tarea 9 cuando esté implementado)
-- AttemptEvent rows (lo genera el detector de tarea 8)
+- ~30-35 Attempts CLOSED actuales con score 3.0-9.6 y dataQuality HIGH/MEDIUM/LOW
+- 5 Attempts "anteriores" para 5 alumnos (alimenta evolución/historial con tendencias)
+- AttemptEvents correlacionados con la nota de cada attempt (frenadas, exceso vel., etc.)
+- 5 AuditRequests (3 PENDING/REVIEWING + 1 CONFIRMED + 1 REJECTED)
+- 2 Ranking snapshots PROVISIONAL para 2026-A (hoy + hace 3 días)
+- TrainingAuditLog entries por cada acción (convocatoria, enrollment, attempt, score, ranking)
 
 Usage:
     python seed_demo.py
@@ -33,8 +34,17 @@ from app.models.training import (
     ConvocatoriaStatus,
     Enrollment,
     EnrollmentStatus,
+    AttemptEvent,
+    AttemptEventType,
+    EventSeverity,
+    EventSource,
+    Ranking,
+    RankingStatus,
+    TrainingAuditLog,
+    AuditAction,
     AuditRequest,
     AuditStatus,
+    RfidCard,
 )
 from setup_db import get_or_create_user
 
@@ -60,8 +70,8 @@ ROUTES_B = [
 ]
 
 
-# ─── Dataset alineado con el mock previo del dashboard ──────────────────────
-# Cada alumno: (nombre, email, plaza, categoria, scores_por_ruta).
+# ─── Dataset principal: estado actual de cada alumno por ruta ──────────────
+# (nombre, email, plaza, categoria, scores_por_ruta).
 # scores_por_ruta = {route_id: (nota, dataQuality) | None}.
 
 STUDENTS_A = [
@@ -121,6 +131,94 @@ STUDENTS_B = [
         "R02": None, "R03": None, "R04": None,
     }),
 ]
+
+
+# ─── Intentos "anteriores" para tendencias en evolución/historial ───────────
+# (email_alumno, route_id, score_anterior, dq_anterior, days_ago_extra).
+# Representan el SEGUNDO mejor intento del alumno en esa ruta — el detector
+# y el manager siempre toman el mejor por ruta.
+
+PREVIOUS_ATTEMPTS = [
+    # María mejoró 7.2 → 9.2 en R01 (subiendo)
+    ("maria.gonzalez@cmadrid.com",   "R01", 7.2, "HIGH",   30),
+    # Carlos mejoró 5.8 → 7.5 en R02 (subiendo)
+    ("carlos.rodriguez@cmadrid.com", "R02", 5.8, "MEDIUM", 28),
+    # Javier empeoró 6.5 → 4.8 en R02 (bajando — algo raro pasó)
+    ("javier.martinez@cmadrid.com",  "R02", 6.5, "HIGH",   28),
+    # Pedro mejoró 8.7 → 9.4 en R01 (subiendo)
+    ("pedro.sanchez@cmadrid.com",    "R01", 8.7, "HIGH",   25),
+    # Laura empeoró 6.2 → 4.1 en R04 (bajando — fallo del sensor según auditoría)
+    ("laura.fernandez@cmadrid.com",  "R04", 6.2, "HIGH",   20),
+]
+
+
+# ─── Catálogo de eventos sintéticos según la nota ──────────────────────────
+# Lista de (AttemptEventType, EventSeverity, penaltyPoints, descripcion_es).
+
+def _events_for_score(score):
+    """Eventos correlacionados con la nota. Más bajo el score, más eventos serios."""
+    if score >= 9.0:
+        return []
+    if score >= 7.5:
+        return [
+            (AttemptEventType.HARSH_BRAKING, EventSeverity.LOW, 0.3,
+             "Frenada brusca leve — anticipación insuficiente"),
+        ]
+    if score >= 6.0:
+        return [
+            (AttemptEventType.HARSH_BRAKING, EventSeverity.MEDIUM, 0.6,
+             "Frenada brusca en aproximación a curva"),
+            (AttemptEventType.SPEEDING, EventSeverity.LOW, 0.4,
+             "Exceso leve de velocidad en tramo recto"),
+        ]
+    if score >= 5.0:
+        return [
+            (AttemptEventType.HARSH_BRAKING, EventSeverity.MEDIUM, 0.7,
+             "Frenada brusca en zona urbana"),
+            (AttemptEventType.SPEEDING, EventSeverity.MEDIUM, 0.6,
+             "Velocidad por encima del límite (5-10 km/h)"),
+            (AttemptEventType.ACCELERATION_LATERAL, EventSeverity.LOW, 0.4,
+             "Aceleración lateral elevada en curva"),
+        ]
+    if score >= 3.5:
+        return [
+            (AttemptEventType.HARSH_BRAKING, EventSeverity.HIGH, 0.9,
+             "Frenada de emergencia detectada"),
+            (AttemptEventType.HARSH_ACCELERATION, EventSeverity.MEDIUM, 0.6,
+             "Aceleración brusca tras parada"),
+            (AttemptEventType.SPEEDING, EventSeverity.HIGH, 0.8,
+             "Exceso de velocidad sostenido (>10 km/h sobre el límite)"),
+            (AttemptEventType.ACCELERATION_LATERAL, EventSeverity.MEDIUM, 0.5,
+             "Aceleración lateral en curva pronunciada"),
+            (AttemptEventType.DEVIATION, EventSeverity.MEDIUM, 0.6,
+             "Desviación de la trayectoria recomendada"),
+        ]
+    return [
+        (AttemptEventType.HARSH_BRAKING, EventSeverity.CRITICAL, 1.2,
+         "Frenada de emergencia con riesgo de bloqueo"),
+        (AttemptEventType.HARSH_BRAKING, EventSeverity.HIGH, 0.9,
+         "Frenada brusca repetida"),
+        (AttemptEventType.HARSH_ACCELERATION, EventSeverity.HIGH, 0.8,
+         "Aceleración brusca con vehículo cargado"),
+        (AttemptEventType.SPEEDING, EventSeverity.HIGH, 0.9,
+         "Exceso de velocidad continuado"),
+        (AttemptEventType.ACCELERATION_LATERAL, EventSeverity.HIGH, 0.7,
+         "Aceleración lateral peligrosa en curva"),
+        (AttemptEventType.DEVIATION, EventSeverity.HIGH, 0.8,
+         "Desviación severa fuera del corredor"),
+        (AttemptEventType.DEVIATION, EventSeverity.MEDIUM, 0.5,
+         "Reentrada brusca a la trayectoria"),
+    ]
+
+
+def _confidence_for_dq(dq_label):
+    return {"HIGH": 0.95, "MEDIUM": 0.75, "LOW": 0.55}.get(dq_label, 0.85)
+
+
+def _rfid_uid_for_plaza(plaza_str):
+    """Genera un UID estilo Mifare 4-bytes a partir del nº de plaza."""
+    n = int(plaza_str.lstrip("0") or "0")
+    return f"04:00:{(n >> 8) & 0xFF:02X}:{n & 0xFF:02X}"
 
 
 # ─── Helpers idempotentes ────────────────────────────────────────────────────
@@ -185,33 +283,40 @@ def get_or_create_enrollment(conv_id, student_id, org_id, route_id):
     return e
 
 
-def create_attempt_if_missing(conv_id, enrollment_id, student_id, vehicle_id,
-                              org_id, route_id, score, dq_label, days_ago):
-    """Idempotente por (enrollmentId, routeId)."""
-    existing = Attempt.query.filter_by(
-        enrollmentId=enrollment_id,
-        routeId=route_id,
-    ).first()
-    if existing:
-        return existing
+def get_or_create_rfid_card(uid, student, org_id):
+    """Crea o devuelve una RfidCard activa por uid+org."""
+    card = RfidCard.query.filter_by(uid=uid, organizationId=org_id, active=True).first()
+    if card:
+        return card
+    card = RfidCard(
+        uid=uid,
+        organizationId=org_id,
+        assignedTo=student.id,
+        assignedAt=datetime.utcnow(),
+        active=True,
+    )
+    db.session.add(card)
+    db.session.flush()
+    return card
 
-    start = datetime.utcnow() - timedelta(days=days_ago, hours=2)
-    end = start + timedelta(minutes=15)
-    confidence = 0.95 if dq_label == "HIGH" else (0.75 if dq_label == "MEDIUM" else 0.55)
 
-    a = Attempt(
+def _build_attempt(*, conv_id, enrollment_id, student_id, vehicle_id, org_id,
+                   route_id, score, dq_label, start, end, attempt_number,
+                   sequence):
+    confidence = _confidence_for_dq(dq_label)
+    return Attempt(
         organizationId=org_id,
         vehicleId=vehicle_id,
         enrollmentId=enrollment_id,
         convocatoriaId=conv_id,
         studentId=student_id,
         routeId=route_id,
-        attemptNumber=1,
+        attemptNumber=attempt_number,
         startTime=start,
         endTime=end,
         closedAt=end,
-        sequence=1,
-        sessionNumber=1,
+        sequence=sequence,
+        sessionNumber=sequence,
         status=AttemptStatus.CLOSED,
         source="kiosk",
         scoreRaw=score,
@@ -228,27 +333,376 @@ def create_attempt_if_missing(conv_id, enrollment_id, student_id, vehicle_id,
         normalizerVersionPinned="v1.0",
         detectorVersionPinned="v1.0",
     )
-    db.session.add(a)
-    return a
+
+
+def _seed_events_for_attempt(attempt, dq_label):
+    """Crea AttemptEvents para un attempt según su nota. Idempotente: si ya hay
+    eventos para este attempt, no crea más."""
+    existing = AttemptEvent.query.filter_by(attemptId=attempt.id).count()
+    if existing:
+        return 0
+
+    events_spec = _events_for_score(attempt.score or 0)
+    if not events_spec:
+        return 0
+
+    duration = (attempt.endTime - attempt.startTime).total_seconds()
+    step = duration / (len(events_spec) + 1) if duration > 0 else 30
+    base_confidence = _confidence_for_dq(dq_label)
+
+    for i, (etype, severity, penalty, desc) in enumerate(events_spec, start=1):
+        ts = attempt.startTime + timedelta(seconds=int(step * i))
+        ev = AttemptEvent(
+            attemptId=attempt.id,
+            organizationId=attempt.organizationId,
+            type=etype,
+            severity=severity,
+            source=EventSource.DOBACK_ELITE,
+            confidence=round(base_confidence * 0.95, 2),
+            penaltyPoints=penalty,
+            timestamp=ts,
+            payload={
+                "descripcion": desc,
+                "speedKmh": 38 if etype == AttemptEventType.SPEEDING else None,
+                "lateralG": 0.45 if etype == AttemptEventType.ACCELERATION_LATERAL else None,
+            },
+        )
+        db.session.add(ev)
+    return len(events_spec)
+
+
+def create_attempt_with_events_if_missing(*, conv_id, enrollment_id, student_id,
+                                          vehicle_id, org_id, route_id, score,
+                                          dq_label, days_ago, attempt_number=1,
+                                          sequence=1):
+    """Idempotente por (enrollmentId, routeId, attemptNumber).
+    Crea el Attempt + sus AttemptEvents en una sola pasada."""
+    existing = Attempt.query.filter_by(
+        enrollmentId=enrollment_id,
+        routeId=route_id,
+        attemptNumber=attempt_number,
+    ).first()
+    if existing:
+        return existing, 0
+
+    start = datetime.utcnow() - timedelta(days=days_ago, hours=2)
+    end = start + timedelta(minutes=15)
+
+    attempt = _build_attempt(
+        conv_id=conv_id, enrollment_id=enrollment_id, student_id=student_id,
+        vehicle_id=vehicle_id, org_id=org_id, route_id=route_id,
+        score=score, dq_label=dq_label, start=start, end=end,
+        attempt_number=attempt_number, sequence=sequence,
+    )
+    db.session.add(attempt)
+    db.session.flush()
+
+    n_events = _seed_events_for_attempt(attempt, dq_label)
+    return attempt, n_events
+
+
+# ─── Etapas de seed ──────────────────────────────────────────────────────────
+
+def seed_rfid_cards(students_data, org):
+    n = 0
+    for (name, email, plaza, _categoria, _scores) in students_data:
+        student = User.query.filter_by(email=email).first()
+        if not student:
+            continue
+        uid = _rfid_uid_for_plaza(plaza)
+        existed = RfidCard.query.filter_by(uid=uid, organizationId=org.id, active=True).first()
+        get_or_create_rfid_card(uid, student, org.id)
+        if not existed:
+            n += 1
+    return n
 
 
 def seed_students_and_attempts(students_data, conv, vehicle, org):
-    counter = 0
+    """Crea Student + Enrollment + Attempt CURRENT por cada (alumno, ruta)."""
+    n_attempts = 0
+    n_events = 0
     for idx, (name, email, plaza, categoria, scores_dict) in enumerate(students_data):
         student = get_or_create_user(email, name, "alumno123", UserRole.STUDENT, org.id)
         enrollment = get_or_create_enrollment(conv.id, student.id, org.id, conv.routePrincipal)
-        days_offset = (idx + 1) * 3  # spread sintético en el tiempo
+        days_offset = max(1, (idx + 1) * 2)
         for route_id, score_data in scores_dict.items():
             if score_data is None:
                 continue
             score, dq_label = score_data
-            create_attempt_if_missing(
-                conv.id, enrollment.id, student.id, vehicle.id, org.id,
-                route_id, score, dq_label, days_ago=days_offset,
+            _, n_ev = create_attempt_with_events_if_missing(
+                conv_id=conv.id, enrollment_id=enrollment.id,
+                student_id=student.id, vehicle_id=vehicle.id, org_id=org.id,
+                route_id=route_id, score=score, dq_label=dq_label,
+                days_ago=days_offset, attempt_number=2, sequence=2,
             )
-            counter += 1
-    return counter
+            n_attempts += 1
+            n_events += n_ev
+    return n_attempts, n_events
 
+
+def seed_previous_attempts(org, vehicle):
+    """Inserta los attempts 'anteriores' para que evolución muestre tendencia."""
+    n_attempts = 0
+    n_events = 0
+    for email, route_id, score, dq_label, days_ago in PREVIOUS_ATTEMPTS:
+        student = User.query.filter_by(email=email).first()
+        if not student:
+            continue
+        enrollment = (
+            Enrollment.query
+            .filter_by(studentId=student.id, organizationId=org.id)
+            .first()
+        )
+        if not enrollment:
+            continue
+        _, n_ev = create_attempt_with_events_if_missing(
+            conv_id=enrollment.convocatoriaId, enrollment_id=enrollment.id,
+            student_id=student.id, vehicle_id=vehicle.id, org_id=org.id,
+            route_id=route_id, score=score, dq_label=dq_label,
+            days_ago=days_ago, attempt_number=1, sequence=1,
+        )
+        n_attempts += 1
+        n_events += n_ev
+    return n_attempts, n_events
+
+
+def seed_audit_requests(org, conv):
+    """Crea 5 AuditRequests demo con mix de estados (idempotente)."""
+    attempts = (
+        Attempt.query
+        .filter_by(convocatoriaId=conv.id, organizationId=org.id)
+        .filter(Attempt.score.isnot(None), Attempt.studentId.isnot(None))
+        .order_by(Attempt.endTime)
+        .limit(5)
+        .all()
+    )
+    if len(attempts) < 5:
+        attempts = attempts + attempts  # fallback si faltan; el for corta antes
+    if not attempts:
+        return 0
+
+    manager = User.query.filter_by(email="manager@cmadrid.com").first()
+    now = datetime.utcnow()
+
+    scenarios = [
+        # PENDING — alumno acaba de pedir revisión
+        {
+            "reason": "El sistema registró una frenada brusca que no ocurrió. Solicito revisión de los datos del sensor durante el tramo final del recorrido.",
+            "status": AuditStatus.PENDING,
+            "resolution": None,
+            "reviewed_at": None,
+            "reviewed_by": None,
+        },
+        # REVIEWING — manager está revisando
+        {
+            "reason": "El vehículo presentó una falla mecánica en el tramo de curva pronunciada que afectó mi puntuación. Adjunto informe del técnico.",
+            "status": AuditStatus.REVIEWING,
+            "resolution": None,
+            "reviewed_at": now - timedelta(hours=8),
+            "reviewed_by": manager.id if manager else None,
+        },
+        # PENDING — segunda solicitud
+        {
+            "reason": "La nota no refleja mi desempeño real. El GPS perdió señal en el tramo interior y eso penalizó mi velocidad incorrectamente.",
+            "status": AuditStatus.PENDING,
+            "resolution": None,
+            "reviewed_at": None,
+            "reviewed_by": None,
+        },
+        # CONFIRMED — el manager confirmó la nota original (rechazó la auditoría argumentando)
+        {
+            "reason": "Considero que la frenada detectada fue producto de un peatón que cruzó inesperadamente. Solicito revisión.",
+            "status": AuditStatus.CONFIRMED,
+            "resolution": "Revisados los datos del Doback Elite: la frenada se detectó 8s antes del cruce del peatón. La nota original es correcta.",
+            "reviewed_at": now - timedelta(days=2),
+            "reviewed_by": manager.id if manager else None,
+        },
+        # REJECTED — auditoría sin mérito
+        {
+            "reason": "La nota es muy baja, no estoy de acuerdo y solicito que la revisen porque creo que hay un error en el sistema.",
+            "status": AuditStatus.REJECTED,
+            "resolution": "La justificación no aporta indicios de error de medición. Datos del sensor consistentes con la nota.",
+            "reviewed_at": now - timedelta(days=1, hours=4),
+            "reviewed_by": manager.id if manager else None,
+        },
+    ]
+
+    count = 0
+    for attempt, scenario in zip(attempts, scenarios):
+        existing = AuditRequest.query.filter_by(
+            originalAttemptId=attempt.id,
+            organizationId=org.id,
+        ).first()
+        if existing:
+            continue
+        ar = AuditRequest(
+            organizationId=org.id,
+            originalAttemptId=attempt.id,
+            enrollmentId=attempt.enrollmentId,
+            requestedBy=attempt.studentId,
+            reason=scenario["reason"],
+            status=scenario["status"],
+            reviewedBy=scenario["reviewed_by"],
+            reviewedAt=scenario["reviewed_at"],
+            resolution=scenario["resolution"],
+        )
+        db.session.add(ar)
+        count += 1
+    return count
+
+
+def seed_ranking_snapshots(org, conv):
+    """Crea snapshots PROVISIONAL para una convocatoria: hoy y hace 3 días."""
+    enrollments = (
+        Enrollment.query
+        .filter_by(convocatoriaId=conv.id, organizationId=org.id)
+        .filter(Enrollment.status != EnrollmentStatus.INVALIDATED)
+        .all()
+    )
+    if not enrollments:
+        return 0
+
+    now = datetime.utcnow()
+    snapshots = [
+        ("hoy",          now.replace(hour=6, minute=0, second=0, microsecond=0)),
+        ("hace 3 días",  (now - timedelta(days=3)).replace(hour=6, minute=0, second=0, microsecond=0)),
+    ]
+
+    total_inserted = 0
+    for label, snapshot_at in snapshots:
+        existing = (
+            Ranking.query
+            .filter_by(convocatoriaId=conv.id, snapshotAt=snapshot_at)
+            .first()
+        )
+        if existing:
+            continue
+
+        # Calcular promedio del MEJOR attempt por ruta para cada alumno, en la
+        # ventana cronológica del snapshot (attempts cuyo closedAt <= snapshot_at).
+        rows = []
+        for e in enrollments:
+            attempts = (
+                Attempt.query
+                .filter_by(enrollmentId=e.id, status=AttemptStatus.CLOSED)
+                .filter(Attempt.score.isnot(None))
+                .filter(Attempt.closedAt <= snapshot_at)
+                .all()
+            )
+            if not attempts:
+                rows.append((e, None, 0.0))
+                continue
+            best_by_route = {}
+            for a in attempts:
+                if not a.routeId:
+                    continue
+                prev = best_by_route.get(a.routeId)
+                if prev is None or (a.score or 0) > (prev.score or 0):
+                    best_by_route[a.routeId] = a
+            scores = [a.score for a in best_by_route.values()]
+            mean = sum(scores) / len(scores) if scores else 0.0
+            best_overall = max(best_by_route.values(), key=lambda a: a.score or 0) if best_by_route else None
+            rows.append((e, best_overall, mean))
+
+        rows.sort(key=lambda r: r[2], reverse=True)
+        for rank, (e, best_attempt, mean) in enumerate(rows, start=1):
+            db.session.add(Ranking(
+                convocatoriaId=conv.id,
+                attemptId=best_attempt.id if best_attempt else None,
+                enrollmentId=e.id,
+                studentId=e.studentId,
+                score=round(mean, 2),
+                rank=rank,
+                status=RankingStatus.PROVISIONAL,
+                snapshotAt=snapshot_at,
+            ))
+            total_inserted += 1
+        print(f"   📸 Snapshot {label} ({snapshot_at:%d/%m %H:%M}) — {len(rows)} filas.")
+    return total_inserted
+
+
+def seed_audit_log_entries(org):
+    """Genera TrainingAuditLog entries por cada entidad creada por el seed.
+    Idempotente: si ya existe un log con esa (action, resourceType, resourceId), no duplica.
+    """
+    admin = User.query.filter_by(email="admin@cmadrid.com").first()
+    actor_id = admin.id if admin else None
+    actor_role = "ADMIN"
+    count = 0
+
+    def log_once(action, resource_type, resource_id, delta, when=None):
+        nonlocal count
+        if not resource_id:
+            return
+        existing = (
+            TrainingAuditLog.query
+            .filter_by(action=action, resourceType=resource_type, resourceId=resource_id)
+            .first()
+        )
+        if existing:
+            return
+        entry = TrainingAuditLog(
+            actorId=actor_id,
+            actorRole=actor_role,
+            action=action,
+            resourceType=resource_type,
+            resourceId=resource_id,
+            delta=delta,
+            organizationId=org.id,
+            createdAt=when or datetime.utcnow(),
+        )
+        db.session.add(entry)
+        count += 1
+
+    # Convocatorias
+    for conv in Convocatoria.query.filter_by(organizationId=org.id).all():
+        log_once(
+            AuditAction.CONVOCATORIA_CREATED, "Convocatoria", conv.id,
+            {"name": conv.name, "plazas": conv.plazas, "umbralMin": conv.umbralMin},
+            when=conv.openedAt,
+        )
+
+    # Enrollments
+    for e in Enrollment.query.filter_by(organizationId=org.id).all():
+        log_once(
+            AuditAction.ENROLLMENT_CREATED, "Enrollment", e.id,
+            {"convocatoriaId": e.convocatoriaId, "studentId": e.studentId, "routeId": e.routeId},
+            when=e.enrolledAt,
+        )
+
+    # Attempts (uno por attempt: ATTEMPT_CREATED + SCORE_CALCULATED)
+    for a in Attempt.query.filter_by(organizationId=org.id).all():
+        log_once(
+            AuditAction.ATTEMPT_CREATED, "Attempt", a.id,
+            {"routeId": a.routeId, "studentId": a.studentId, "convocatoriaId": a.convocatoriaId},
+            when=a.startTime,
+        )
+        if a.score is not None:
+            log_once(
+                AuditAction.SCORE_CALCULATED, "Attempt", a.id,
+                {"score": a.score, "scoreBreakdown": a.scoreBreakdown},
+                when=a.closedAt or a.endTime,
+            )
+
+    # Ranking snapshots — un log por snapshot (primer Ranking del grupo)
+    seen_snapshots = set()
+    for r in Ranking.query.join(Convocatoria, Ranking.convocatoriaId == Convocatoria.id).filter(
+        Convocatoria.organizationId == org.id
+    ).order_by(Ranking.snapshotAt).all():
+        key = (r.convocatoriaId, r.snapshotAt)
+        if key in seen_snapshots:
+            continue
+        seen_snapshots.add(key)
+        log_once(
+            AuditAction.RANKING_PUBLISHED, "Ranking", r.id,
+            {"convocatoriaId": r.convocatoriaId, "status": r.status.value},
+            when=r.snapshotAt,
+        )
+
+    return count
+
+
+# ─── Orquestador ─────────────────────────────────────────────────────────────
 
 def seed_demo_data():
     app = create_app()
@@ -274,63 +728,51 @@ def seed_demo_data():
         )
 
         print(f"👨‍🚒 Sembrando alumnos + enrollments + attempts para {conv_a.name}...")
-        n_a = seed_students_and_attempts(STUDENTS_A, conv_a, vehicle, org)
-        print(f"   → {n_a} attempts creados (o ya existían).")
+        n_a, ev_a = seed_students_and_attempts(STUDENTS_A, conv_a, vehicle, org)
+        print(f"   → {n_a} attempts, {ev_a} eventos detectados.")
 
         print(f"👩‍🚒 Sembrando alumnos + enrollments + attempts para {conv_b.name}...")
-        n_b = seed_students_and_attempts(STUDENTS_B, conv_b, vehicle, org)
-        print(f"   → {n_b} attempts creados (o ya existían).")
+        n_b, ev_b = seed_students_and_attempts(STUDENTS_B, conv_b, vehicle, org)
+        print(f"   → {n_b} attempts, {ev_b} eventos detectados.")
 
+        db.session.commit()
+
+        print("🪪  Sembrando tarjetas RFID demo...")
+        n_rfid_a = seed_rfid_cards(STUDENTS_A, org)
+        n_rfid_b = seed_rfid_cards(STUDENTS_B, org)
+        print(f"   → {n_rfid_a + n_rfid_b} tarjetas creadas (o ya existían).")
+        db.session.commit()
+
+        print("📈 Sembrando intentos anteriores (tendencias)...")
+        n_prev, ev_prev = seed_previous_attempts(org, vehicle)
+        print(f"   → {n_prev} attempts anteriores, {ev_prev} eventos.")
         db.session.commit()
 
         print("📝 Sembrando auditorías demo...")
         n_audit = seed_audit_requests(org, conv_a)
         print(f"   → {n_audit} auditorías creadas (o ya existían).")
-
         db.session.commit()
-        total = n_a + n_b
-        print(f"🎉 Seed demo listo. Total attempts demo: ~{total}.")
 
+        print("📊 Sembrando ranking snapshots PROVISIONAL...")
+        n_rank = seed_ranking_snapshots(org, conv_a)
+        n_rank += seed_ranking_snapshots(org, conv_b)
+        print(f"   → {n_rank} filas de ranking insertadas.")
+        db.session.commit()
 
-def seed_audit_requests(org, conv):
-    """Crea 3 AuditRequests demo para la convocatoria A (idempotente)."""
-    # Toma los primeros 3 students con attempts en esta conv
-    students_with_attempts = (
-        Attempt.query
-        .filter_by(convocatoriaId=conv.id, organizationId=org.id)
-        .filter(Attempt.score.isnot(None), Attempt.studentId.isnot(None))
-        .order_by(Attempt.endTime)
-        .limit(3)
-        .all()
-    )
-    if not students_with_attempts:
-        return 0
+        print("🧾 Sembrando audit log...")
+        n_log = seed_audit_log_entries(org)
+        print(f"   → {n_log} entradas de audit log.")
+        db.session.commit()
 
-    scenarios = [
-        ("El sistema registró una frenada brusca que no ocurrió. Solicito revisión de los datos del sensor durante el tramo final del recorrido.", AuditStatus.PENDING),
-        ("El vehículo presentó una falla mecánica en el tramo de curva pronunciada que afectó mi puntuación. Adjunto informe del técnico.", AuditStatus.REVIEWING),
-        ("La nota no refleja mi desempeño real. El GPS perdió señal en el tramo interior y eso penalizó mi velocidad incorrectamente.", AuditStatus.PENDING),
-    ]
-
-    count = 0
-    for attempt, (reason, status) in zip(students_with_attempts, scenarios):
-        existing = AuditRequest.query.filter_by(
-            originalAttemptId=attempt.id,
-            organizationId=org.id,
-        ).first()
-        if existing:
-            continue
-        ar = AuditRequest(
-            organizationId=org.id,
-            originalAttemptId=attempt.id,
-            enrollmentId=attempt.enrollmentId,
-            requestedBy=attempt.studentId,
-            reason=reason,
-            status=status,
-        )
-        db.session.add(ar)
-        count += 1
-    return count
+        total_attempts = n_a + n_b + n_prev
+        total_events = ev_a + ev_b + ev_prev
+        print()
+        print("🎉 Seed demo listo:")
+        print(f"   · {total_attempts} attempts (con {total_events} eventos)")
+        print(f"   · {n_audit} auditorías (mix PENDING/REVIEWING/CONFIRMED/REJECTED)")
+        print(f"   · {n_rank} filas de ranking")
+        print(f"   · {n_log} entradas de audit log")
+        print(f"   · {n_rfid_a + n_rfid_b} tarjetas RFID")
 
 
 if __name__ == "__main__":
