@@ -46,8 +46,8 @@ jobs:
    - name: Install dependencies
      run: pip install -r requirements.txt -r requirements-dev.txt
 
-   - name: Run database migrations
-     run: flask db upgrade
+   - name: Setup database
+     run: python setup_db.py && flask db stamp head
      env:
       DATABASE_URL: postgresql://training:training_test@localhost:5432/training_test
       FLASK_ENV: testing
