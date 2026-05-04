@@ -5,6 +5,44 @@ from .convocatoria_service import convocatoria_service, ConvocatoriaError
 from app.utils.decorators import jwt_required, get_jwt_identity, require_role
 from app.models.auth import User
 
+# ─────────────────────────────────────────────────────────────────────────────
+# MOCK PARA PRUEBAS UI (Eliminar en producción)
+# ─────────────────────────────────────────────────────────────────────────────
+class MockUser:
+    id = "mock-123"
+    name = "Admin Prueba"
+    is_authenticated = True
+    organizationId = "org-1"
+    class role:
+        value = "SUPER_ADMIN"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# UI Views (Admin Portal)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@admin_bp.route("/dashboard", endpoint="dashboard", methods=["GET"])
+def admin_dashboard():
+    return render_template("admin/dashboard.html", current_user=MockUser())
+
+@admin_bp.route("/matriz", endpoint="matriz", methods=["GET"])
+def admin_matriz():
+    return render_template("admin/matriz.html", current_user=MockUser())
+
+@admin_bp.route("/simulador", endpoint="simulador", methods=["GET"])
+def admin_simulador():
+    return render_template("admin/simulador.html", current_user=MockUser())
+
+@admin_bp.route("/cierre", endpoint="cierre", methods=["GET"])
+def admin_cierre():
+    return render_template("admin/cierre.html", current_user=MockUser())
+
+@admin_bp.route("/gdpr-panel", endpoint="gdpr", methods=["GET"])
+def admin_gdpr():
+    return render_template("admin/gdpr.html", current_user=MockUser())
+
+@admin_bp.route("/convocatorias-panel", endpoint="convocatorias", methods=["GET"])
+def admin_convocatorias_ui():
+    return render_template("admin/convocatorias.html", current_user=MockUser())
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Users / Organizations (legacy, usados por el sidebar)

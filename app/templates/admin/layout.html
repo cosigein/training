@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Admin | CMadrid Training{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+
+{% block layout %}
+<div class="adm-root">
+    <header class="adm-header">
+        <div class="adm-header__brand">
+            <div class="adm-logo">
+                CMadrid <span class="adm-logo__accent">Admin</span>
+            </div>
+        </div>
+        <div class="adm-header__actions">
+            <div class="adm-user-chip">
+                <span>{{ current_user.name if current_user else 'Administrador' }}</span>
+            </div>
+            <a href="{{ url_for('auth.logout') }}" class="adm-btn-icon" title="Cerrar sesión">
+                <i class="ph ph-sign-out"></i>
+            </a>
+        </div>
+    </header>
+
+    <div class="adm-body">
+        <aside class="adm-sidebar">
+            <nav class="adm-nav">
+                <a href="{{ url_for('admin.dashboard') }}"
+                    class="adm-nav__link {% if active_page == 'dashboard' %}active{% endif %}">
+                    <i class="ph ph-squares-four"></i> Dashboard
+                </a>
+                <a href="{{ url_for('admin.convocatorias') }}"
+                    class="adm-nav__link {% if active_page == 'convocatorias' %}active{% endif %}">
+                    <i class="ph ph-clipboard-text"></i> Convocatorias
+                </a>
+                <a href="{{ url_for('admin.matriz') }}"
+                    class="adm-nav__link {% if active_page == 'matriz' %}active{% endif %}">
+                    <i class="ph ph-grid-nine"></i> Matriz de Progreso
+                </a>
+                <a href="{{ url_for('admin.simulador') }}"
+                    class="adm-nav__link {% if active_page == 'simulador' %}active{% endif %}">
+                    <i class="ph ph-test-tube"></i> Simulador Scoring
+                </a>
+
+                <div class="adm-nav__divider"></div>
+
+                <a href="{{ url_for('admin.cierre') }}"
+                    class="adm-nav__link adm-nav__link--critical {% if active_page == 'cierre' %}active{% endif %}">
+                    <i class="ph ph-lock"></i> Cierre Convocatoria
+                </a>
+                <a href="{{ url_for('admin.gdpr') }}"
+                    class="adm-nav__link {% if active_page == 'gdpr' %}active{% endif %}">
+                    <i class="ph ph-shield"></i> Privacidad (GDPR)
+                </a>
+            </nav>
+        </aside>
+
+        <main class="adm-main">
+            <div class="adm-toolbar">
+                <div class="adm-toolbar__left">
+                    {% block admin_toolbar_left %}{% endblock %}
+                </div>
+                <div class="adm-toolbar__right">
+                    {% block admin_toolbar_right %}{% endblock %}
+                </div>
+            </div>
+
+            <div class="adm-content">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="adm-alerts">
+                    {% for category, message in messages %}
+                    <div class="adm-alert adm-alert--{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                {% block admin_content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}
