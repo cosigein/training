@@ -11,7 +11,7 @@ Flujo del tap (PDF §2):
 """
 from datetime import datetime
 from app.extensions import db
-from app.models.auth import User, UserRole
+from app.models.auth import User, UserRole, Organization
 from app.models.vehicle import Vehicle
 from app.models.session import Attempt, AttemptStatus
 from app.models.training import (
@@ -27,6 +27,58 @@ class KioskoError(Exception):
         super().__init__(message)
         self.code = code
         self.http = http
+
+
+def _resolve_org():
+    """V1 single-tenant: el kiosko opera contra la primera Organization (CMadrid).
+    En V2 esto pasa por kioskCode → Vehicle.organizationId."""
+    return Organization.query.first()
+
+
+def _resolve_active_conv(org_id):
+    return (
+        Convocatoria.query
+        .filter_by(organizationId=org_id, status=ConvocatoriaStatus.OPEN)
+        .order_by(Convocatoria.openedAt.desc())
+        .first()
+    )
+
+
+def resolve_enrollment_by_plaza(plaza_str):
+    """Mapea un nº de plaza tipeado al Enrollment correspondiente.
+    El nº de plaza es el orden de inscripción dentro de la convocatoria activa.
+    Devuelve (enrollment, convocatoria, organization) o None si no se resuelve."""
+    if not plaza_str:
+        return None
+    org = _resolve_org()
+    if not org:
+        return None
+    conv = _resolve_active_conv(org.id)
+    if not conv:
+        return None
+    enrollments = (
+        Enrollment.query
+        .filter_by(convocatoriaId=conv.id, organizationId=org.id)
+        .filter(Enrollment.status != EnrollmentStatus.INVALIDATED)
+        .order_by(Enrollment.enrolledAt)
+        .all()
+    )
+    try:
+        idx = int(plaza_str.lstrip("0") or "0") - 1
+    except ValueError:
+        return None
+    if idx < 0 or idx >= len(enrollments):
+        return None
+    return enrollments[idx], conv, org
+
+
+def resolve_attempt_view(attempt_id):
+    """Devuelve (attempt, organization) o None si no existe."""
+    org = _resolve_org()
+    if not org:
+        return None
+    attempt = Attempt.query.filter_by(id=attempt_id, organizationId=org.id).first()
+    return (attempt, org) if attempt else None
 
 
 class KioskoService:

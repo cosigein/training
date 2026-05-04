@@ -1,4 +1,4 @@
-{% extends "alumno_portal/layout.html" %}
+{% extends "student/layout.html" %}
 
 {% block content %}
 
@@ -31,9 +31,10 @@
                     </thead>
                     <tbody>
                         {% for intento in intentos %}
-                        <tr {% if intento.es_actual %}
+                        <tr data-testid="student-historial-row-{{ loop.index }}"
+                            {% if intento.es_actual %}
                             class="alu-hist-row--clickable"
-                            data-href="{{ url_for('alumno.intento', attempt_id=intento.attempt_id) }}"
+                            data-href="{{ url_for('student.intento', attempt_id=intento.attempt_id) }}"
                             {% endif %}>
                             <td style="white-space:nowrap;">
                                 {% if intento.fecha %}
@@ -64,9 +65,10 @@
                                 {% endif %}
                             </td>
                             <td style="text-align:right;">
-                                {% if intento.es_actual %}
-                                <i class="ph ph-caret-right" style="color:#94a3b8; font-size:14px;"></i>
-                                {% endif %}
+                                <a href="{{ url_for('student.intento', attempt_id=intento.attempt_id) }}"
+                                   class="alu-ruta-btn">
+                                    <i class="ph ph-eye"></i> Ver
+                                </a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -85,6 +87,10 @@
         </div>
         {% endif %}
 
+        <a href="{{ url_for('student.dashboard') }}"
+           class="alu-ruta-btn" style="align-self:flex-start;">
+            <i class="ph ph-arrow-left"></i> Volver a mis resultados
+        </a>
         <p class="alu-disclaimer">
             Resultados provisionales. No tienen efecto jurídico hasta el cierre oficial de la convocatoria.
         </p>

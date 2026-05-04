@@ -1,159 +1,174 @@
 {% extends "student/layout.html" %}
-{% block title %}Mi Portal — CMadrid Training{% endblock %}
 
 {% block content %}
-<div class="mgr-body-inner">
 
-    {# ── Cabecera ──────────────────────────────────────────────────── #}
-    <div style="margin-bottom:32px;">
-        <h1 style="font-size:22px; font-weight:700; color:#0f172a; margin-bottom:4px;">
-            Bienvenido, {{ user.name }}
-        </h1>
-        <p style="font-size:14px; color:#64748b;">
-            Aquí podés ver tus inscripciones y el resultado de tus intentos.
-        </p>
-    </div>
-
-    {% if not inscripciones %}
-    {# ── Sin inscripciones ────────────────────────────────────────── #}
-    <div style="text-align:center; padding:64px 0; color:#94a3b8;">
-        <i class="ph ph-clipboard-text" style="font-size:48px; display:block; margin-bottom:12px;"></i>
-        <p style="font-size:15px;">No estás inscripto en ninguna convocatoria activa.</p>
-    </div>
-
-    {% else %}
-    {% for insc in inscripciones %}
-    {# ── Card por convocatoria ─────────────────────────────────────── #}
-    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:24px; margin-bottom:24px; box-shadow:0 1px 3px rgba(0,0,0,.04);">
-
-        {# Título + estado #}
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; gap:12px; flex-wrap:wrap;">
+        <!-- Welcome + estado provisional -->
+        <div class="alu-welcome">
             <div>
-                <h2 style="font-size:17px; font-weight:700; color:#0f172a; margin-bottom:4px;">
-                    {{ insc.conv_nombre }}
-                </h2>
-                <span style="font-size:12px; font-weight:600; padding:2px 10px; border-radius:20px;
-                    {% if insc.conv_status == 'OPEN' %}background:#dbeafe; color:#1d4ed8;
-                    {% elif insc.conv_status in ('CLOSED', 'LOCKED') %}background:#f0fdf4; color:#15803d;
-                    {% else %}background:#fef9c3; color:#92400e;{% endif %}">
-                    {{ insc.conv_status }}
+                <h1 class="alu-welcome__title">
+                    Hola, <span>{{ candidato.nombre.split()[0] }}</span>
+                </h1>
+                <p class="alu-welcome__sub">
+                    {{ convocatoria.nombre }}
+                    {% if convocatoria.fecha_cierre %} · Cierre: {{ convocatoria.fecha_cierre }}{% endif %}
+                </p>
+            </div>
+            {% if nota_media > 0 %}
+            <span class="alu-estado {% if dentro_del_corte %}alu-estado--pass{% else %}alu-estado--fail{% endif %}">
+                {% if dentro_del_corte %}
+                    <i class="ph ph-check-circle"></i> DENTRO DEL CORTE
+                {% else %}
+                    <i class="ph ph-x-circle"></i> FUERA DEL CORTE
+                {% endif %}
+                <span style="opacity:.6; font-weight:500; margin-left:4px">(provisional)</span>
+            </span>
+            {% else %}
+            <span class="alu-estado alu-estado--pending">
+                <i class="ph ph-clock"></i> Sin resultados aún
+            </span>
+            {% endif %}
+        </div>
+
+        <!-- KPIs -->
+        <div class="alu-kpis">
+            <div class="alu-kpi alu-kpi--blue">
+                <span class="alu-kpi__label">Nota media</span>
+                <span class="alu-kpi__value">
+                    {{ "%.2f"|format(nota_media) if nota_media > 0 else "—" }}
+                </span>
+                <span class="alu-kpi__sub">sobre 10 puntos</span>
+            </div>
+            <div class="alu-kpi alu-kpi--amber">
+                <span class="alu-kpi__label">Posición</span>
+                <span class="alu-kpi__value">
+                    {% if mi_posicion %}{{ mi_posicion }}º / {{ total_candidatos }}{% else %}—{% endif %}
+                </span>
+                <span class="alu-kpi__sub">en el ranking provisional</span>
+            </div>
+            <div class="alu-kpi alu-kpi--green">
+                <span class="alu-kpi__label">Rutas completadas</span>
+                <span class="alu-kpi__value">{{ candidato.rutas_completadas }} / {{ candidato.rutas_total }}</span>
+                <span class="alu-kpi__sub">circuitos realizados</span>
+            </div>
+            <div class="alu-kpi alu-kpi--gray">
+                <span class="alu-kpi__label">Plazas disponibles</span>
+                <span class="alu-kpi__value">{{ plazas }}</span>
+                <span class="alu-kpi__sub">en esta convocatoria</span>
+            </div>
+        </div>
+
+        <!-- Ranking banner -->
+        {% if mi_posicion %}
+        <div class="alu-ranking-banner">
+            <div class="alu-ranking-pos">
+                <span class="alu-pos-number">{{ mi_posicion }}º</span>
+                <span class="alu-pos-label">Posición actual</span>
+            </div>
+            <div class="alu-ranking-divider"></div>
+            <div class="alu-ranking-info">
+                <span class="alu-ranking-info__title">Ranking provisional</span>
+                <span class="alu-ranking-info__desc">
+                    Hay {{ total_candidatos }} candidatos en esta convocatoria.
+                    Se cubren {{ plazas }} plazas.
+                    El ranking se actualiza diariamente a las 06:00 AM.
+                </span>
+            </div>
+            <span class="alu-corte-chip {% if dentro_del_corte %}alu-corte-chip--dentro{% else %}alu-corte-chip--fuera{% endif %}">
+                {% if dentro_del_corte %}
+                    <i class="ph ph-check-circle"></i> Dentro del corte
+                {% else %}
+                    <i class="ph ph-x-circle"></i> Fuera del corte
+                {% endif %}
+            </span>
+        </div>
+        {% endif %}
+
+        <!-- Detalle de rutas -->
+        {% if rutas %}
+        <div>
+            <div class="alu-completados-card">
+                <div class="alu-completados-card__left">
+                    <span class="alu-completados-card__num">{{ candidato.rutas_completadas }}</span>
+                    <span class="alu-completados-card__sep">/</span>
+                    <span class="alu-completados-card__total">{{ candidato.rutas_total }}</span>
+                    <span class="alu-completados-card__label">circuitos completados</span>
+                </div>
+                <div class="alu-completados-card__bar">
+                    {% set pct = (candidato.rutas_completadas / candidato.rutas_total * 100)|int if candidato.rutas_total > 0 else 0 %}
+                    <div class="alu-completados-card__fill" {{ {'style': 'width:' ~ pct ~ '%'} | xmlattr }}></div>
+                </div>
+            </div>
+
+            <div class="alu-rutas-leyenda">
+                <span class="alu-rutas-leyenda__item alu-rutas-leyenda__item--pass">
+                    <span class="alu-rutas-leyenda__dot"></span> Aprobado (≥ 5)
+                </span>
+                <span class="alu-rutas-leyenda__item alu-rutas-leyenda__item--fail">
+                    <span class="alu-rutas-leyenda__dot"></span> Suspenso (&lt; 5)
+                </span>
+<span class="alu-rutas-leyenda__item alu-rutas-leyenda__item--pend">
+                    <span class="alu-rutas-leyenda__dot"></span> Pendiente
                 </span>
             </div>
 
-            {# Nota media grande #}
-            <div style="text-align:right; flex-shrink:0;">
-                {% if insc.nota_media is not none %}
-                <div style="font-size:32px; font-weight:800; line-height:1;
-                    color:{% if insc.nota_media >= insc.umbral_min %}#15803d{% else %}#dc2626{% endif %};">
-                    {{ "%.1f"|format(insc.nota_media) }}
-                </div>
-                <div style="font-size:11px; color:#94a3b8; margin-top:2px;">nota media</div>
+            <div class="alu-rutas-grid">
+                {% for ruta in rutas %}
+
+                {% if ruta.info %}
+                    {% if ruta.info.nota >= 5 %}
+                        {% set card_mod = 'pass' %}
+                    {% else %}
+                        {% set card_mod = 'fail' %}
+                    {% endif %}
+                <a href="{{ url_for('student.intento', attempt_id=ruta.info.attempt_id) }}"
+                   class="alu-ruta-card alu-ruta-card--{{ card_mod }}"
+                   data-testid="student-dashboard-route-{{ ruta.id }}">
+                    <span class="alu-ruta-card__id">{{ ruta.id }}</span>
+                    <span class="alu-ruta-card__label">{{ ruta.label }}</span>
+                    <span class="alu-ruta-card__nota {% if ruta.info.nota >= 5 %}alu-ruta-card__nota--pass{% else %}alu-ruta-card__nota--fail{% endif %}">
+                        {{ "%.1f"|format(ruta.info.nota) }}
+                    </span>
+                    <div class="alu-ruta-card__meta">
+                        {% if ruta.info.fecha %}
+                        <span class="alu-ruta-card__fecha">
+                            <i class="ph ph-calendar-blank"></i> {{ ruta.info.fecha[:5] }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    <span class="alu-ruta-card__cta">
+                        <i class="ph ph-eye"></i> Ver detalle
+                    </span>
+                </a>
+
                 {% else %}
-                <div style="font-size:15px; color:#94a3b8; font-weight:600;">Sin notas aún</div>
+                <div class="alu-ruta-card alu-ruta-card--pend"
+                     data-testid="student-dashboard-route-{{ ruta.id }}">
+                    <span class="alu-ruta-card__id">{{ ruta.id }}</span>
+                    <span class="alu-ruta-card__label">{{ ruta.label }}</span>
+                    <span class="alu-ruta-card__nota alu-ruta-card__nota--pend">—</span>
+                    <span class="alu-ruta-card__pend">
+                        <i class="ph ph-clock"></i> Pendiente
+                    </span>
+                </div>
                 {% endif %}
-            </div>
-        </div>
 
-        {# KPIs #}
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:12px; margin-bottom:20px;">
-
-            <div style="background:#f8fafc; border-radius:8px; padding:12px 14px;">
-                <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px;">Rutas</div>
-                <div style="font-size:18px; font-weight:700; color:#1e293b;">
-                    {{ insc.rutas_completadas }} / {{ insc.rutas_total }}
-                </div>
-            </div>
-
-            {% if insc.puesto %}
-            <div style="background:{% if insc.dentro_del_corte %}#f0fdf4{% else %}#fef2f2{% endif %}; border-radius:8px; padding:12px 14px;">
-                <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px;">Posición</div>
-                <div style="font-size:18px; font-weight:700; color:{% if insc.dentro_del_corte %}#15803d{% else %}#dc2626{% endif %};">
-                    {{ insc.puesto }}° / {{ insc.total_candidatos }}
-                </div>
-            </div>
-
-            <div style="background:#f8fafc; border-radius:8px; padding:12px 14px;">
-                <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px;">Plazas</div>
-                <div style="font-size:18px; font-weight:700; color:#1e293b;">{{ insc.plazas }}</div>
-            </div>
-
-            <div style="background:{% if insc.dentro_del_corte %}#f0fdf4{% else %}#fff7ed{% endif %}; border-radius:8px; padding:12px 14px;">
-                <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px;">Estado</div>
-                <div style="font-size:13px; font-weight:700; color:{% if insc.dentro_del_corte %}#15803d{% else %}#c2410c{% endif %};">
-                    {% if insc.dentro_del_corte %}Dentro del corte{% else %}Fuera del corte{% endif %}
-                </div>
-            </div>
-            {% endif %}
-
-        </div>
-
-        {# Tabla de intentos #}
-        {% if insc.intentos %}
-        <div>
-            <div style="font-size:13px; font-weight:600; color:#475569; margin-bottom:10px;">
-                Mis intentos
-            </div>
-            <table style="width:100%; border-collapse:collapse; font-size:13px;">
-                <thead>
-                    <tr style="border-bottom:2px solid #e2e8f0;">
-                        <th style="text-align:left; padding:8px 12px; color:#94a3b8; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.5px;">Ruta</th>
-                        <th style="text-align:center; padding:8px 12px; color:#94a3b8; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.5px;">Nota</th>
-                        <th style="text-align:center; padding:8px 12px; color:#94a3b8; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.5px;">Calidad</th>
-                        <th style="text-align:left; padding:8px 12px; color:#94a3b8; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.5px;">Fecha</th>
-                        <th style="text-align:center; padding:8px 12px; color:#94a3b8; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.5px;">Detalle</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for intento in insc.intentos %}
-                <tr class="mgr-clickable-row" style="border-bottom:1px solid #f1f5f9;" 
-                    data-testid="student-dashboard-attempt-{{ loop.index }}"
-                    data-href="{{ url_for('student.intento_detalle', attempt_id=intento.id) }}">
-                    <td style="padding:10px 12px; font-weight:600; color:#1e293b;">{{ intento.ruta_id }}</td>
-                    <td style="padding:10px 12px; text-align:center;">
-                        <span style="font-size:15px; font-weight:700;
-                            color:{% if intento.nota >= insc.umbral_min %}#15803d{% else %}#dc2626{% endif %};">
-                            {{ "%.1f"|format(intento.nota) }}
-                        </span>
-                    </td>
-                    <td style="padding:10px 12px; text-align:center;">
-                        <span style="font-size:11px; font-weight:600; padding:2px 8px; border-radius:12px;
-                            {% if intento.data_quality == 'HIGH' %}background:#dcfce7; color:#15803d;
-                            {% elif intento.data_quality == 'MEDIUM' %}background:#fef9c3; color:#854d0e;
-                            {% else %}background:#fee2e2; color:#dc2626;{% endif %}">
-                            {{ intento.data_quality }}
-                        </span>
-                    </td>
-                    <td style="padding:10px 12px; color:#64748b;">{{ intento.fecha }}</td>
-                    <td style="padding:10px 12px; text-align:center;">
-                        <a href="{{ url_for('student.intento_detalle', attempt_id=intento.id) }}"
-                           style="font-size:12px; color:#0d47a1; font-weight:600; text-decoration:none;">
-                            Ver →
-                        </a>
-                    </td>
-                </tr>
                 {% endfor %}
-                </tbody>
-            </table>
+            </div>
         </div>
         {% else %}
-        <p style="font-size:13px; color:#94a3b8; margin-top:8px;">
-            Todavía no tenés intentos registrados para esta convocatoria.
-        </p>
+        <div class="alu-card">
+            <div class="alu-card__body" style="padding:48px 20px; text-align:center;">
+                <i class="ph ph-clock" style="font-size:40px; color:#cbd5e1; display:block; margin-bottom:12px;"></i>
+                <div style="font-size:15px; font-weight:600; color:#64748b;">Sin intentos registrados todavía</div>
+                <div style="font-size:13px; color:#94a3b8; margin-top:6px;">
+                    Cuando completes tu primer circuito, vas a verlo acá con su nota.
+                </div>
+            </div>
+        </div>
         {% endif %}
 
-    </div>
-    {% endfor %}
-    {% endif %}
+        <p class="alu-disclaimer">
+            Resultados <strong>provisionales</strong>. No tienen efecto jurídico hasta la publicación oficial al cierre de la convocatoria{% if convocatoria.fecha_cierre %} ({{ convocatoria.fecha_cierre }}){% endif %}.
+        </p>
 
-</div>
-{% block extra_js %}
-<script>
-document.querySelectorAll('.mgr-clickable-row').forEach(row => {
-    row.addEventListener('click', e => {
-        if (e.target.closest('a')) return;
-        window.location.href = row.dataset.href;
-    });
-});
-</script>
-{% endblock %}
 {% endblock %}

@@ -66,8 +66,15 @@ app/
 │   │                                    ranking, alumno, intento, auditoría,
 │   │                                    convocatorias — gateado con
 │   │                                    @require_role([MANAGER, ADMIN]).
-│   │                                    Hoy sirve mock data hardcodeado;
-│   │                                    pendiente conectar a SQLAlchemy.)
+│   │                                    Lee de BD real vía ranking_service.py
+│   │                                    y audit_service.py.)
+│   ├── student/     ── /alumno        (portal del alumno con dashboard,
+│   │                                    historial, evolución, detalle de
+│   │                                    intento y solicitar auditoría.
+│   │                                    Solo STUDENT, ownership por studentId.)
+│   ├── kiosko/      ── /kiosko        (UI pública: login por nº de plaza
+│   │                                    + POST /tap del hardware Doback.
+│   │                                    V1 single-tenant (CMadrid).)
 │   ├── system/      ── /
 │   └── telemetry/   ── /telemetry
 ├── models/                  # SQLAlchemy: Organization, User, Vehicle, Session, Geofence, Event,
