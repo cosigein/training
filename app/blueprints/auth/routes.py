@@ -44,7 +44,7 @@ def login():
         else:
             role = user.role.value if hasattr(user.role, 'value') else user.role
             if role == "STUDENT":
-                dest = url_for('alumno.dashboard')
+                dest = url_for('student.dashboard')
             elif role in ("MANAGER", "ADMIN", "SUPER_ADMIN"):
                 dest = url_for('manager.dashboard')
             else:
