@@ -4,12 +4,13 @@
 
 {% block content %}
 
+        <a href="{{ url_for('alumno.intento', attempt_id=attempt_id) }}"
+           class="alu-ruta-btn" style="display:inline-flex;">
+            <i class="ph ph-arrow-left"></i> Volver al intento
+        </a>
+
         <div>
-            <a href="{{ url_for('alumno.intento', attempt_id=attempt_id) }}"
-               class="alu-ruta-btn" style="margin-bottom:12px; display:inline-flex;">
-                <i class="ph ph-arrow-left"></i> Volver al intento
-            </a>
-            <h1 class="alu-welcome__title" style="margin-top:10px;">Solicitar auditoría</h1>
+            <h1 class="alu-welcome__title">Solicitar auditoría</h1>
             <p class="alu-welcome__sub">
                 <strong>{{ ruta.label if ruta else attempt_id }}</strong>
                 {% if nota_info.fecha %}

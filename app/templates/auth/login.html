@@ -4,248 +4,450 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login — CMadrid Manager</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css', q='1') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css', q='1') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/manager.css', q='1') }}">
+    <title>Acceso — CMadrid Training</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
+        *, *::before, *::after { box-sizing: border-box; }
+
         body {
-            background-color: #f8fafc;
+            margin: 0;
+            font-family: var(--font-body);
+            background: #f0f4f8;
+            min-height: 100vh;
+            display: flex;
+            align-items: stretch;
+            animation: pageIn 280ms ease-out;
+        }
+
+        /* ── LAYOUT ──────────────────────────────────────────── */
+        .login-root {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        /* ── LEFT PANEL ──────────────────────────────────────── */
+        .login-left {
+            flex: 0 0 45%;
+            background: linear-gradient(145deg, #0a1f44 0%, #0d47a1 60%, #1565c0 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 48px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Decorative circles */
+        .login-left::before {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,.06);
+            top: -100px;
+            right: -100px;
+        }
+        .login-left::after {
+            content: '';
+            position: absolute;
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,.06);
+            bottom: -60px;
+            left: -60px;
+        }
+
+        .login-brand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .login-brand__icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,.12);
+            border: 1.5px solid rgba(255,255,255,.2);
+            border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
+            font-size: 40px;
+            color: #fff;
+            backdrop-filter: blur(8px);
+        }
+
+        .login-brand__cm {
+            font-family: var(--font-heading);
+            font-size: 36px;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.5px;
+            line-height: 1;
+        }
+        .login-brand__cm span { color: #90caf9; }
+
+        .login-brand__title {
+            font-family: var(--font-heading);
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255,255,255,.65);
+            text-transform: uppercase;
+            letter-spacing: 2px;
             margin: 0;
-            font-family: var(--font-base);
         }
 
-        .login-container {
-            background: #ffffff;
-            width: 100%;
-            max-width: 400px;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            text-align: center;
+        .login-brand__sub {
+            font-size: 14px;
+            color: rgba(255,255,255,.5);
+            line-height: 1.6;
+            margin: 0;
+            max-width: 280px;
         }
 
-        .login-logo {
+        .login-brand__badge {
+            margin-top: 8px;
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            width: 64px;
-            height: 64px;
-            background: #1e3a8a;
-            color: #ffffff;
-            border-radius: 16px;
-            font-size: 32px;
-            margin-bottom: 24px;
+            gap: 6px;
+            padding: 6px 14px;
+            background: rgba(255,255,255,.08);
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(255,255,255,.7);
+            letter-spacing: 0.5px;
         }
 
-        .login-title {
+        /* ── RIGHT PANEL ─────────────────────────────────────── */
+        .login-right {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 32px;
+            background: #f8fafc;
+        }
+
+        .login-form-wrap {
+            width: 100%;
+            max-width: 380px;
+        }
+
+        .login-form-title {
             font-family: var(--font-heading);
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 700;
             color: #0f172a;
-            margin-bottom: 8px;
+            margin: 0 0 6px;
         }
 
-        .login-subtitle {
-            font-size: 14px;
+        .login-form-sub {
+            font-size: 13px;
             color: #64748b;
-            margin-bottom: 32px;
+            margin: 0 0 28px;
         }
 
-        .login-form {
-            text-align: left;
+        /* ── FLASH MESSAGES ──────────────────────────────────── */
+        .flash-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 20px;
         }
+        .flash-item {
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .flash-item.danger  { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .flash-item.success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+        /* ── FORM ────────────────────────────────────────────── */
+        .form-group { margin-bottom: 18px; }
 
         .form-label {
             display: block;
-            font-size: 13px;
-            font-weight: 600;
+            font-size: 12px;
+            font-weight: 700;
             color: #334155;
-            margin-bottom: 8px;
+            margin-bottom: 7px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 12px;
+            font-size: 17px;
+            color: #94a3b8;
+            pointer-events: none;
+            z-index: 1;
         }
 
         .form-input {
             width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
+            padding: 11px 12px 11px 40px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
             font-size: 14px;
-            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-        }
-
-        .form-input:focus {
+            font-family: var(--font-body);
+            color: #0f172a;
+            background: #fff;
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            transition: border-color 150ms ease, box-shadow 150ms ease;
         }
+        .form-input:focus {
+            border-color: #0d47a1;
+            box-shadow: 0 0 0 3px rgba(13,71,161,.1);
+        }
+        .form-input::placeholder { color: #cbd5e1; }
 
-        .btn-submit {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            background: #1e3a8a;
-            color: #ffffff;
+        .pw-toggle {
+            position: absolute;
+            right: 10px;
+            background: none;
             border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
             cursor: pointer;
-            transition: background var(--transition-fast);
-        }
-
-        .btn-submit:hover {
-            background: #1e40af;
-        }
-
-        .login-footer {
-            margin-top: 24px;
-            font-size: 12px;
             color: #94a3b8;
-        }
-
-        .login-divider {
+            font-size: 17px;
+            padding: 4px;
             display: flex;
             align-items: center;
-            text-align: center;
-            margin: 24px 0;
-            color: #94a3b8;
-            font-size: 13px;
+            transition: color 150ms ease;
         }
+        .pw-toggle:hover { color: #475569; }
 
-        .login-divider::before,
-        .login-divider::after {
-            content: "";
-            flex: 1;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .login-divider:not(:empty)::before {
-            margin-right: 12px;
-        }
-
-        .login-divider:not(:empty)::after {
-            margin-left: 12px;
-        }
-
-        .btn-rfid {
+        /* ── SUBMIT BUTTON ───────────────────────────────────── */
+        .btn-submit {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
             width: 100%;
+            padding: 13px;
+            background: #0d47a1;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            font-family: var(--font-heading);
+            cursor: pointer;
+            transition: background 150ms ease, transform 100ms ease;
+            letter-spacing: 0.2px;
+        }
+        .btn-submit:hover { background: #1565c0; transform: translateY(-1px); }
+        .btn-submit:active { transform: none; }
+        .btn-submit.btn-loading { pointer-events: none; opacity: 0.7; }
+        .btn-submit.btn-loading::after {
+            content: '';
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border: 2px solid rgba(255,255,255,.4);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 600ms linear infinite;
+        }
+
+        /* ── DIVIDER ─────────────────────────────────────────── */
+        .login-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 20px 0;
+            color: #cbd5e1;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .login-divider::before,
+        .login-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        /* ── RFID BUTTON ─────────────────────────────────────── */
+        .btn-rfid {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
             padding: 12px;
             background: #f8fafc;
-            color: #334155;
-            border: 1px dashed #94a3b8;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--transition-fast);
-        }
-
-        .btn-rfid:hover {
-            background: #f1f5f9;
-            border-color: #3b82f6;
-            color: #1e3a8a;
-        }
-
-        .btn-rfid i {
-            font-size: 24px;
-            color: #3b82f6;
-        }
-
-        .btn-rfid:disabled {
-            cursor: not-allowed;
-            opacity: 0.55;
-        }
-
-        .btn-rfid:disabled:hover {
-            background: #f8fafc;
-            border-color: #94a3b8;
-            color: #334155;
-        }
-
-        .flash-list {
-            list-style: none;
-            padding: 0;
-            margin: 0 0 16px 0;
-        }
-
-        .flash-item {
-            padding: 10px 12px;
-            border-radius: 6px;
+            color: #64748b;
+            border: 1.5px dashed #cbd5e1;
+            border-radius: 8px;
             font-size: 13px;
-            margin-bottom: 8px;
+            font-weight: 600;
+            cursor: not-allowed;
+            opacity: 0.6;
+            font-family: var(--font-body);
+        }
+        .btn-rfid i { font-size: 20px; color: #94a3b8; }
+
+        /* ── FOOTER ──────────────────────────────────────────── */
+        .login-footer {
+            margin-top: 24px;
+            font-size: 11px;
+            color: #94a3b8;
+            text-align: center;
+            line-height: 1.6;
         }
 
-        .flash-item.danger {
-            background: #fef2f2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
-
-        .flash-item.success {
-            background: #f0fdf4;
-            color: #166534;
-            border: 1px solid #bbf7d0;
+        /* ── RESPONSIVE ──────────────────────────────────────── */
+        @media (max-width: 768px) {
+            .login-root { flex-direction: column; }
+            .login-left {
+                flex: 0 0 auto;
+                padding: 32px 24px;
+                min-height: 200px;
+            }
+            .login-brand { flex-direction: row; text-align: left; gap: 16px; }
+            .login-brand__icon { width: 56px; height: 56px; font-size: 28px; border-radius: 14px; flex-shrink: 0; }
+            .login-brand__cm { font-size: 24px; }
+            .login-brand__sub, .login-brand__badge { display: none; }
+            .login-right { padding: 32px 20px; }
         }
     </style>
 </head>
 
 <body>
+<div class="login-root">
 
-    <div class="login-container">
-        <div class="login-logo">
-            <i class="ph ph-truck"></i>
+    <!-- Panel izquierdo — Branding -->
+    <div class="login-left">
+        <div class="login-brand">
+            <div class="login-brand__icon">
+                <i class="ph ph-truck"></i>
+            </div>
+            <div>
+                <p class="login-brand__cm">CMadrid <span>Training</span></p>
+                <p class="login-brand__title">Sistema de evaluación</p>
+                <p class="login-brand__sub">
+                    Evaluación competitiva para conductores<br>
+                    de vehículos de emergencia
+                </p>
+                <span class="login-brand__badge">
+                    <i class="ph ph-shield-check"></i>
+                    Cuerpo de Bomberos · Comunidad de Madrid
+                </span>
+            </div>
         </div>
-        <h1 class="login-title">CMadrid Training</h1>
-        <p class="login-subtitle">Acceso a la Plataforma</p>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <ul class="flash-list">
-            {% for category, message in messages %}
-            <li class="flash-item {{ category }}">{{ message }}</li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-        {% endwith %}
-
-        <form class="login-form" method="POST" action="{{ url_for('auth.login') }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-            <div class="form-group">
-                <label class="form-label" for="email">Correo electrónico</label>
-                <input type="email" id="email" name="email" class="form-input" placeholder="usuario@cmadrid.es" required
-                    autofocus>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="password">Contraseña</label>
-                <input type="password" id="password" name="password" class="form-input" placeholder="••••••••" required>
-            </div>
-
-            <button type="submit" class="btn-submit">Iniciar sesión</button>
-        </form>
-
-        <div class="login-divider">O</div>
-
-        <button type="button" class="btn-rfid" disabled title="Próximamente">
-            <i class="ph ph-identification-card"></i>
-            Acercar tarjeta RFID (próximamente)
-        </button>
     </div>
 
-</body>
+    <!-- Panel derecho — Formulario -->
+    <div class="login-right">
+        <div class="login-form-wrap">
 
+            <h1 class="login-form-title">Bienvenido</h1>
+            <p class="login-form-sub">Ingresá con tu correo y contraseña institucional</p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <ul class="flash-list">
+                {% for category, message in messages %}
+                <li class="flash-item {{ category }}">
+                    {% if category == 'danger' %}<i class="ph ph-warning-circle"></i>{% else %}<i class="ph ph-check-circle"></i>{% endif %}
+                    {{ message }}
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            {% endwith %}
+
+            <form id="login-form" method="POST" action="{{ url_for('auth.login') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="form-group">
+                    <label class="form-label" for="email">Correo electrónico</label>
+                    <div class="input-wrap">
+                        <i class="ph ph-envelope input-icon"></i>
+                        <input type="email" id="email" name="email" class="form-input"
+                               placeholder="usuario@cmadrid.es" required autofocus>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Contraseña</label>
+                    <div class="input-wrap">
+                        <i class="ph ph-lock-simple input-icon"></i>
+                        <input type="password" id="password" name="password" class="form-input"
+                               placeholder="••••••••" required>
+                        <button type="button" class="pw-toggle" id="pw-toggle" aria-label="Mostrar contraseña">
+                            <i class="ph ph-eye" id="pw-icon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit" id="btn-submit">
+                    <i class="ph ph-sign-in"></i>
+                    Iniciar sesión
+                </button>
+            </form>
+
+            <div class="login-divider">O</div>
+
+            <button type="button" class="btn-rfid" disabled title="Próximamente">
+                <i class="ph ph-identification-card"></i>
+                Acercar tarjeta RFID
+                <span style="font-size:11px; opacity:.6;">(próximamente)</span>
+            </button>
+
+            <p class="login-footer">
+                Acceso restringido a personal autorizado de CMadrid.<br>
+                Tus datos están protegidos conforme al RGPD.
+            </p>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Password toggle
+    document.getElementById('pw-toggle').addEventListener('click', function() {
+        const input = document.getElementById('password');
+        const icon  = document.getElementById('pw-icon');
+        const show  = input.type === 'password';
+        input.type  = show ? 'text' : 'password';
+        icon.className = show ? 'ph ph-eye-slash' : 'ph ph-eye';
+    });
+
+    // Loading state on submit
+    document.getElementById('login-form').addEventListener('submit', function() {
+        const btn = document.getElementById('btn-submit');
+        btn.classList.add('btn-loading');
+        btn.querySelector('i').style.display = 'none';
+        btn.innerHTML = '<span style="opacity:.85">Verificando...</span>';
+        btn.classList.add('btn-loading');
+    });
+</script>
+
+</body>
 </html>

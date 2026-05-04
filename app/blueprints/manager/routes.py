@@ -59,6 +59,7 @@ CONVOCATORIAS = [
         "status": "OPEN",
         "plazas": 5,
         "total_candidatos": 8,
+        "fecha_apertura": "01/03/2026",
         "fecha_cierre": "15/06/2026",
         "ultima_actualizacion": "28/04/2026 06:00",
         "auditorias_pendientes": 2,
@@ -80,6 +81,7 @@ CONVOCATORIAS = [
         "status": "OPEN",
         "plazas": 3,
         "total_candidatos": 12,
+        "fecha_apertura": "15/04/2026",
         "fecha_cierre": "30/06/2026",
         "ultima_actualizacion": "28/04/2026 06:00",
         "auditorias_pendientes": 0,
@@ -418,6 +420,14 @@ def _load_auditorias_pendientes():
             "status": ar.get("status", "PENDING"),
         })
     return result
+
+
+# ── CONTEXT PROCESSOR ──────────────────────────────────────────────────────
+
+@manager_bp.context_processor
+def inject_auditorias_count():
+    count = sum(1 for a in AUDITORIAS if a.get("status") == "PENDING")
+    return {"auditorias_count": count}
 
 
 # ── RUTAS ──────────────────────────────────────────────────────────────────

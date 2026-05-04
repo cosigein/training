@@ -28,12 +28,6 @@
                 <span class="mgr-logo__text">CMadrid <span>Training</span></span>
             </a>
 
-            {% if is_subpage or active_page not in ['dashboard', 'convocatorias', 'matriz', 'ranking', 'auditorias'] %}
-            <button onclick="history.back()" class="mgr-btn-back" title="Volver a la página anterior">
-                <i class="ph ph-arrow-left"></i>
-                Volver
-            </button>
-            {% endif %}
         </div>
 
         <nav class="mgr-nav">
@@ -61,6 +55,9 @@
                class="mgr-nav__btn {% if active_page == 'auditorias' %}active{% endif %}">
                 <i class="ph ph-magnifying-glass"></i>
                 <span>Auditorías</span>
+                {% if auditorias_count is defined and auditorias_count > 0 %}
+                <span class="mgr-nav-badge">{{ auditorias_count }}</span>
+                {% endif %}
             </a>
         </nav>
 

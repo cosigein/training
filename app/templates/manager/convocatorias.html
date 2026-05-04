@@ -8,20 +8,46 @@
     <p class="mgr-page-subtitle">Listado de todos los procesos de selección activos y cerrados</p>
 </div>
 
-<!-- Filtros de estado -->
-<div class="mgr-toolbar">
-    <span data-filter-status="all" class="mgr-pill active">Todas</span>
-    <span data-filter-status="open" class="mgr-pill">Abiertas</span>
-    <span data-filter-status="closing" class="mgr-pill">En cierre</span>
-    <span data-filter-status="closed" class="mgr-pill">Cerradas</span>
+<!-- Filtros + ordenamiento -->
+<div class="mgr-toolbar" style="flex-wrap:wrap; gap:8px;">
+
+    <!-- Filtro por estado -->
+    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+        <span class="mgr-sort-label">Estado:</span>
+        <span data-filter-status="all"     class="mgr-pill active">Todas</span>
+        <span data-filter-status="open"    class="mgr-pill">Abiertas</span>
+        <span data-filter-status="closing" class="mgr-pill">En cierre</span>
+        <span data-filter-status="closed"  class="mgr-pill">Cerradas</span>
+    </div>
+
+    <!-- Separador -->
+    <span style="width:1px; height:24px; background:#e2e8f0; flex-shrink:0;"></span>
+
+    <!-- Ordenamiento -->
+    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+        <span class="mgr-sort-label">Ordenar por:</span>
+        <button data-sort="nombre"     class="mgr-pill mgr-sort-btn">
+            <i class="ph ph-arrows-down-up"></i> Nombre
+        </button>
+        <button data-sort="candidatos" class="mgr-pill mgr-sort-btn">
+            <i class="ph ph-arrows-down-up"></i> Candidatos
+        </button>
+        <button data-sort="apertura"   class="mgr-pill mgr-sort-btn">
+            <i class="ph ph-arrows-down-up"></i> Fecha de inclusión
+        </button>
+    </div>
+
 </div>
 
 <!-- Tarjetas de convocatoria -->
-<div class="mgr-conv-list">
+<div class="mgr-conv-list" id="conv-list">
     {% for conv in convocatorias %}
     <div class="mgr-conv-row mgr-conv-row--clickable"
          data-status="{{ conv.status|lower }}"
-         data-href="{{ url_for('manager.matriz', conv_id=conv.id) }}">
+         data-href="{{ url_for('manager.matriz', conv_id=conv.id) }}"
+         data-nombre="{{ conv.nombre }}"
+         data-candidatos="{{ conv.total_candidatos }}"
+         data-apertura="{{ conv.fecha_apertura if conv.fecha_apertura is defined else '' }}">
 
         <div class="mgr-conv-row__main">
             <div class="mgr-conv-row__title">
@@ -40,6 +66,12 @@
                 <span class="mgr-conv-stat__val">{{ conv.plazas }}</span>
                 <span class="mgr-conv-stat__lbl">Plazas</span>
             </div>
+            {% if conv.fecha_apertura is defined %}
+            <div class="mgr-conv-stat">
+                <span class="mgr-conv-stat__val" style="font-size:12px">{{ conv.fecha_apertura }}</span>
+                <span class="mgr-conv-stat__lbl">Apertura</span>
+            </div>
+            {% endif %}
             <div class="mgr-conv-stat">
                 <span class="mgr-conv-stat__val" style="font-size:12px">{{ conv.fecha_cierre }}</span>
                 <span class="mgr-conv-stat__lbl">Cierre</span>
@@ -79,22 +111,94 @@
 
 {% block extra_js %}
 <script>
-document.querySelectorAll('[data-filter-status]').forEach(pill => {
-    pill.addEventListener('click', () => {
-        document.querySelectorAll('[data-filter-status]').forEach(p => p.classList.remove('active'));
-        pill.classList.add('active');
-        const status = pill.dataset.filterStatus;
-        document.querySelectorAll('.mgr-conv-row').forEach(row => {
-            row.style.display = (status === 'all' || row.dataset.status === status) ? '' : 'none';
+(function () {
+    // ── Estado de ordenamiento ────────────────────────────────────
+    let activeField = null;
+    let activeDir   = 'asc';
+
+    // ── Parsear fecha DD/MM/YYYY → timestamp para comparar ───────
+    function parseDate(str) {
+        if (!str) return 0;
+        const p = str.split('/');
+        if (p.length < 3) return 0;
+        return new Date(parseInt(p[2], 10), parseInt(p[1], 10) - 1, parseInt(p[0], 10)).getTime();
+    }
+
+    // ── Ordenar y reinsertar filas en el DOM ──────────────────────
+    function sortRows(field) {
+        if (activeField === field) {
+            activeDir = activeDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            activeField = field;
+            activeDir   = 'asc';
+        }
+
+        // Actualizar aspecto de los botones
+        document.querySelectorAll('.mgr-sort-btn').forEach(btn => {
+            btn.classList.remove('active');
+            const icon = btn.querySelector('i');
+            if (icon) icon.className = 'ph ph-arrows-down-up';
+        });
+        const activeBtn = document.querySelector(`[data-sort="${field}"]`);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+            const icon = activeBtn.querySelector('i');
+            if (icon) icon.className = activeDir === 'asc' ? 'ph ph-sort-ascending' : 'ph ph-sort-descending';
+        }
+
+        // Reordenar filas
+        const list = document.getElementById('conv-list');
+        const rows = Array.from(list.querySelectorAll('.mgr-conv-row'));
+
+        rows.sort((a, b) => {
+            if (field === 'nombre') {
+                const va = (a.dataset.nombre || '').toLowerCase();
+                const vb = (b.dataset.nombre || '').toLowerCase();
+                const cmp = va.localeCompare(vb, 'es');
+                return activeDir === 'asc' ? cmp : -cmp;
+            }
+            if (field === 'candidatos') {
+                const va = parseInt(a.dataset.candidatos || '0', 10);
+                const vb = parseInt(b.dataset.candidatos || '0', 10);
+                return activeDir === 'asc' ? va - vb : vb - va;
+            }
+            if (field === 'apertura') {
+                const va = parseDate(a.dataset.apertura);
+                const vb = parseDate(b.dataset.apertura);
+                return activeDir === 'asc' ? va - vb : vb - va;
+            }
+            return 0;
+        });
+
+        // Reinsertar en orden
+        rows.forEach(row => list.appendChild(row));
+    }
+
+    // ── Bind sort buttons ────────────────────────────────────────
+    document.querySelectorAll('.mgr-sort-btn').forEach(btn => {
+        btn.addEventListener('click', () => sortRows(btn.dataset.sort));
+    });
+
+    // ── Filtro por estado (existente) ────────────────────────────
+    document.querySelectorAll('[data-filter-status]').forEach(pill => {
+        pill.addEventListener('click', () => {
+            document.querySelectorAll('[data-filter-status]').forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            const status = pill.dataset.filterStatus;
+            document.querySelectorAll('.mgr-conv-row').forEach(row => {
+                row.style.display = (status === 'all' || row.dataset.status === status) ? '' : 'none';
+            });
         });
     });
-});
-document.querySelectorAll('.mgr-conv-row--clickable').forEach(row => {
-    row.style.cursor = 'pointer';
-    row.addEventListener('click', e => {
-        if (e.target.closest('a')) return;
-        window.location.href = row.dataset.href;
+
+    // ── Filas clickables ─────────────────────────────────────────
+    document.querySelectorAll('.mgr-conv-row--clickable').forEach(row => {
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', e => {
+            if (e.target.closest('a, button')) return;
+            window.location.href = row.dataset.href;
+        });
     });
-});
+}());
 </script>
 {% endblock %}

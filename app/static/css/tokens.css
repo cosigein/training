@@ -56,3 +56,23 @@
     --transition-base: 150ms ease;
     --transition-slow: 200ms ease-in-out;
 }
+
+/* ── GLOBAL ANIMATIONS ───────────────────────────────────────────── */
+@keyframes pageIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pulseDot {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.25; }
+}
+
+@keyframes urgencyPulse {
+    0%, 100% { box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    50%       { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0.15), 0 1px 3px rgba(0,0,0,.06); }
+}

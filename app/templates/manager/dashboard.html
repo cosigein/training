@@ -12,31 +12,31 @@
 <div class="mgr-kpis">
     <a href="{{ url_for('manager.convocatorias') }}" class="mgr-kpi mgr-kpi--blue mgr-kpi--link">
         <span class="mgr-kpi__label">Convocatorias activas</span>
-        <span class="mgr-kpi__value">{{ convocatorias|length }}</span>
+        <span class="mgr-kpi__value" data-counter>{{ convocatorias|length }}</span>
         <span class="mgr-kpi__sub">en curso</span>
+        <i class="ph-fill ph-clipboard-text mgr-kpi__icon"></i>
     </a>
-    <a href="#auditorias" class="mgr-kpi mgr-kpi--red mgr-kpi--link">
+    <a href="#auditorias" class="mgr-kpi mgr-kpi--red mgr-kpi--link {% if pendientes_total > 0 %}mgr-kpi--urgent{% endif %}">
         <span class="mgr-kpi__label">Auditorías pendientes</span>
-        <span class="mgr-kpi__value">{{ pendientes_total }}</span>
+        <span class="mgr-kpi__value" data-counter>{{ pendientes_total }}</span>
         <span class="mgr-kpi__sub">requieren revisión</span>
+        <i class="ph-fill ph-scales mgr-kpi__icon"></i>
     </a>
     <a href="{{ url_for('manager.convocatorias') }}" class="mgr-kpi mgr-kpi--gray mgr-kpi--link">
         <span class="mgr-kpi__label">Total candidatos</span>
-        <span class="mgr-kpi__value">
-            {% set ns = namespace(total=0) %}
-            {% for conv in convocatorias %}{% set ns.total = ns.total + conv.total_candidatos %}{% endfor %}
-            {{ ns.total }}
-        </span>
+        {% set ns = namespace(total=0) %}
+        {% for conv in convocatorias %}{% set ns.total = ns.total + conv.total_candidatos %}{% endfor %}
+        <span class="mgr-kpi__value" data-counter>{{ ns.total }}</span>
         <span class="mgr-kpi__sub">entre todas las convocatorias</span>
+        <i class="ph-fill ph-users mgr-kpi__icon"></i>
     </a>
     <a href="{{ url_for('manager.convocatorias') }}" class="mgr-kpi mgr-kpi--green mgr-kpi--link">
         <span class="mgr-kpi__label">Plazas totales</span>
-        <span class="mgr-kpi__value">
-            {% set ns2 = namespace(plazas=0) %}
-            {% for conv in convocatorias %}{% set ns2.plazas = ns2.plazas + conv.plazas %}{% endfor %}
-            {{ ns2.plazas }}
-        </span>
+        {% set ns2 = namespace(plazas=0) %}
+        {% for conv in convocatorias %}{% set ns2.plazas = ns2.plazas + conv.plazas %}{% endfor %}
+        <span class="mgr-kpi__value" data-counter>{{ ns2.plazas }}</span>
         <span class="mgr-kpi__sub">a cubrir en total</span>
+        <i class="ph-fill ph-medal mgr-kpi__icon"></i>
     </a>
 </div>
 
@@ -134,6 +134,33 @@
 
 {% block extra_js %}
 <script>
+// ── Counter animation ───────────────────────────────────────────────
+document.querySelectorAll('[data-counter]').forEach(el => {
+    const raw = el.textContent.trim();
+    const target = parseInt(raw, 10);
+    if (isNaN(target) || target === 0) return;
+    el.textContent = '0';
+    const steps = 28;
+    const duration = 550;
+    let step = 0;
+    const timer = setInterval(() => {
+        step++;
+        el.textContent = Math.round(target * (step / steps));
+        if (step >= steps) { el.textContent = target; clearInterval(timer); }
+    }, duration / steps);
+});
+
+// ── Progress bars — animate from 0 to data-anim-width ──────────────
+document.querySelectorAll('[data-anim-width]').forEach(el => {
+    const target = el.dataset.animWidth;
+    el.style.width = '0';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        el.style.transition = 'width 800ms cubic-bezier(.4,0,.2,1)';
+        el.style.width = target;
+    }));
+});
+
+// ── Clickable cards / rows ──────────────────────────────────────────
 document.querySelectorAll('.mgr-conv-card--clickable').forEach(card => {
     card.style.cursor = 'pointer';
     card.addEventListener('click', e => {

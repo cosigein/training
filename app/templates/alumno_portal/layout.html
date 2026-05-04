@@ -24,26 +24,16 @@
                 <span class="alu-logo__text">CMadrid <span>Training</span></span>
             </a>
 
-            {% if is_subpage or active_page not in ['dashboard', 'historial', 'evolucion'] %}
-            <button onclick="history.back()" class="alu-btn-back" title="Volver a la página anterior">
-                <i class="ph ph-arrow-left"></i>
-                Volver
-            </button>
-            {% endif %}
         </div>
 
         <nav class="alu-nav">
-            <a href="{{ url_for('alumno.dashboard', plaza=candidato.plaza) }}"
+            <a href="{{ url_for('alumno.dashboard') }}"
                class="alu-nav__btn {% if active_page == 'dashboard' %}active{% endif %}">
                 <i class="ph ph-house"></i> <span>Mis resultados</span>
             </a>
-            <a href="{{ url_for('alumno.historial', plaza=candidato.plaza) }}"
+            <a href="{{ url_for('alumno.historial') }}"
                class="alu-nav__btn {% if active_page == 'historial' %}active{% endif %}">
                 <i class="ph ph-clock-counter-clockwise"></i> <span>Historial</span>
-            </a>
-            <a href="{{ url_for('alumno.evolucion', plaza=candidato.plaza) }}"
-               class="alu-nav__btn {% if active_page == 'evolucion' %}active{% endif %}">
-                <i class="ph ph-trend-up"></i> <span>Evolución</span>
             </a>
         </nav>
 

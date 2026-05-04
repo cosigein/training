@@ -314,7 +314,7 @@ def historial():
                 'es_actual': True,
             })
 
-    for p in HISTORIAL_EXTRA.get(plaza, []):
+    for p in HISTORIAL_EXTRA.get(candidato['plaza'], []):
         intentos.append({
             'ruta_id': p['ruta_id'],
             'label': p['ruta_label'],

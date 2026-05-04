@@ -2,6 +2,11 @@
 
 {% block content %}
 
+        <!-- Back link -->
+        <a href="{{ url_for('alumno.dashboard') }}" class="alu-ruta-btn" style="display:inline-flex;">
+            <i class="ph ph-arrow-left"></i> Volver a mis resultados
+        </a>
+
         <div>
             <h1 class="alu-welcome__title">Tu evolución</h1>
             <p class="alu-welcome__sub">
@@ -85,11 +90,6 @@
             </div>
         </div>
         {% endif %}
-
-        <a href="{{ url_for('alumno.dashboard', plaza=candidato.plaza) }}"
-           class="alu-ruta-btn" style="align-self:flex-start;">
-            <i class="ph ph-arrow-left"></i> Volver a mis resultados
-        </a>
 
         <p class="alu-disclaimer">
             Indicadores provisionales basados en los intentos registrados hasta la fecha.

@@ -25,14 +25,16 @@
                             <th>Fecha</th>
                             <th>Circuito</th>
                             <th>Nota</th>
-                            <th>Calidad</th>
                             <th>Estado</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for intento in intentos %}
-                        <tr>
+                        <tr {% if intento.es_actual %}
+                            class="alu-hist-row--clickable"
+                            data-href="{{ url_for('alumno.intento', attempt_id=intento.attempt_id) }}"
+                            {% endif %}>
                             <td style="white-space:nowrap;">
                                 {% if intento.fecha %}
                                 <div style="font-size:13px; font-weight:600; color:#334155;">{{ intento.fecha[:5] }}</div>
@@ -51,13 +53,6 @@
                                 </span>
                             </td>
                             <td>
-                                <span class="alu-ruta-quality alu-ruta-quality--{{ intento.data_quality|lower }}">
-                                    {% if intento.data_quality == 'HIGH' %}<i class="ph ph-check"></i> HQ
-                                    {% elif intento.data_quality == 'MEDIUM' %}MQ
-                                    {% else %}<i class="ph ph-warning"></i> LQ{% endif %}
-                                </span>
-                            </td>
-                            <td>
                                 {% if intento.es_actual %}
                                     <span class="alu-hist-badge alu-hist-badge--actual">
                                         <i class="ph ph-star"></i> Actual
@@ -67,26 +62,10 @@
                                         Anterior
                                     </span>
                                 {% endif %}
-                                {% if intento.auditoria %}
-                                    {% if intento.auditoria.status == 'PENDING' %}
-                                    <span class="alu-hist-badge alu-hist-badge--aud" style="margin-left:4px;">
-                                        <i class="ph ph-scales"></i> Revisión
-                                    </span>
-                                    {% elif intento.auditoria.status == 'RESOLVED' %}
-                                    <span class="alu-hist-badge alu-hist-badge--resolved" style="margin-left:4px;">
-                                        <i class="ph ph-check"></i> Resuelta
-                                    </span>
-                                    {% endif %}
-                                {% endif %}
                             </td>
                             <td style="text-align:right;">
                                 {% if intento.es_actual %}
-                                <a href="{{ url_for('alumno.intento', attempt_id=intento.attempt_id) }}"
-                                   class="alu-ruta-btn">
-                                    <i class="ph ph-eye"></i> Ver
-                                </a>
-                                {% else %}
-                                <span style="font-size:11px; color:#cbd5e1;">intento anterior</span>
+                                <i class="ph ph-caret-right" style="color:#94a3b8; font-size:14px;"></i>
                                 {% endif %}
                             </td>
                         </tr>
@@ -106,13 +85,19 @@
         </div>
         {% endif %}
 
-        <a href="{{ url_for('alumno.dashboard', plaza=candidato.plaza) }}"
-           class="alu-ruta-btn" style="align-self:flex-start;">
-            <i class="ph ph-arrow-left"></i> Volver a mis resultados
-        </a>
-
         <p class="alu-disclaimer">
             Resultados provisionales. No tienen efecto jurídico hasta el cierre oficial de la convocatoria.
         </p>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.alu-hist-row--clickable').forEach(row => {
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', () => {
+        window.location.href = row.dataset.href;
+    });
+});
+</script>
 {% endblock %}

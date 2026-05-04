@@ -1385,3 +1385,144 @@ a.mgr-kpi--link:hover {
 .mgr-text-12 { font-size: 12px; }
 .mgr-color-muted { color: #94a3b8; }
 
+/* ── SORT CONTROLS ────────────────────────────────────────────────── */
+.mgr-sort-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.mgr-sort-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    font-family: var(--font-body);
+    cursor: pointer;
+}
+
+.mgr-sort-btn i { font-size: 13px; }
+
+.mgr-sort-btn.active {
+    background: #0d47a1;
+    border-color: #0d47a1;
+    color: #fff;
+}
+.mgr-sort-btn.active:hover { background: #1565c0; border-color: #1565c0; }
+
+/* ── ANIMATIONS & VISUAL UPGRADES ────────────────────────────────── */
+
+/* Page fade-in */
+.mgr-root { animation: pageIn 220ms ease-out; }
+
+/* KPI gradient backgrounds + icon support */
+.mgr-kpi { position: relative; overflow: hidden; }
+.mgr-kpi--blue  { background: linear-gradient(135deg, #fff 55%, #eff6ff); }
+.mgr-kpi--green { background: linear-gradient(135deg, #fff 55%, #f0fdf4); }
+.mgr-kpi--red   { background: linear-gradient(135deg, #fff 55%, #fef2f2); }
+.mgr-kpi--gray  { background: linear-gradient(135deg, #fff 55%, #f8fafc); }
+
+.mgr-kpi__icon {
+    position: absolute;
+    right: 14px;
+    bottom: 10px;
+    font-size: 38px;
+    opacity: 0.12;
+    pointer-events: none;
+    line-height: 1;
+}
+
+/* Urgency pulse on red KPI */
+.mgr-kpi--urgent { animation: urgencyPulse 2s ease-in-out infinite; }
+
+/* Status dot for OPEN convocatoria */
+.mgr-conv-status--open {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.mgr-conv-status--open::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: #16a34a;
+    border-radius: 50%;
+    flex-shrink: 0;
+    animation: pulseDot 1.5s ease-in-out infinite;
+}
+
+/* Nav badge */
+.mgr-nav-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #dc2626;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    padding: 0 4px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+/* Score warn (5.0–7.0) */
+.mgr-score--warn { color: #d97706; }
+
+/* Loading button */
+.btn-loading {
+    pointer-events: none;
+    opacity: 0.75;
+}
+.btn-loading::after {
+    content: '';
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 600ms linear infinite;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+/* Table row hover with left accent */
+.mgr-table tbody tr:hover { box-shadow: inset 3px 0 0 #0d47a1; }
+.mgr-rank-table tbody tr:hover { box-shadow: inset 3px 0 0 #0d47a1; }
+
+/* Card hover lift — enhanced */
+.mgr-conv-card--clickable:hover,
+.mgr-conv-row--clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(13,71,161,.1) !important;
+}
+
+/* Convocatoria card progress bar */
+.mgr-conv-progress {
+    height: 5px;
+    background: #f1f5f9;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 6px;
+}
+.mgr-conv-progress__fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0d47a1, #1976d2);
+    border-radius: 3px;
+    transition: width 800ms cubic-bezier(.4,0,.2,1);
+}
+.mgr-conv-progress__label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #94a3b8;
+    margin-top: 3px;
+}
+
