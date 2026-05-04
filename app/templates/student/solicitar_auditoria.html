@@ -1,25 +1,22 @@
-{% extends "alumno_portal/layout.html" %}
+{% extends "student/layout.html" %}
 
 {% block title %}Solicitar auditoría — CMadrid Training{% endblock %}
 
 {% block content %}
 
         <div>
-            <a href="{{ url_for('alumno.intento', attempt_id=attempt_id) }}"
+            <a href="{{ url_for('student.intento', attempt_id=attempt_id) }}"
                class="alu-ruta-btn" style="margin-bottom:12px; display:inline-flex;">
                 <i class="ph ph-arrow-left"></i> Volver al intento
             </a>
             <h1 class="alu-welcome__title" style="margin-top:10px;">Solicitar auditoría</h1>
             <p class="alu-welcome__sub">
                 <strong>{{ ruta.label if ruta else attempt_id }}</strong>
-                {% if nota_info.fecha %}
-                · {{ nota_info.fecha[:5] }} {{ nota_info.hora }}
-                {% endif %}
+                {% if nota_info.fecha %} · {{ nota_info.fecha[:5] }} {{ nota_info.hora }}{% endif %}
                 · nota <strong>{{ "%.1f"|format(nota_info.nota) }}</strong>
             </p>
         </div>
 
-        <!-- Info -->
         <div style="padding:16px 20px; background:#eff6ff; border-radius:10px; border:1.5px solid #bfdbfe;
                     font-size:13px; color:#1e40af; line-height:1.6;">
             <strong><i class="ph ph-info"></i> ¿Qué es una auditoría?</strong><br>
@@ -28,21 +25,19 @@
             Tu solicitud debe incluir una descripción clara de lo que ocurrió. El manager analizará los datos del sensor y te dará una respuesta.
         </div>
 
-        <!-- Error -->
         {% if error %}
         <div class="alu-audit-error">
             <i class="ph ph-warning"></i> {{ error }}
         </div>
         {% endif %}
 
-        <!-- Formulario -->
         <div class="alu-card">
             <div class="alu-card__head">
                 <h2><i class="ph ph-scales"></i> Tu solicitud</h2>
             </div>
             <div class="alu-card__body" style="padding:24px;">
                 <form class="alu-audit-form"
-                      action="{{ url_for('alumno.solicitar_auditoria', attempt_id=attempt_id) }}"
+                      action="{{ url_for('student.solicitar_auditoria', attempt_id=attempt_id) }}"
                       method="get">
 
                     <div>
@@ -67,7 +62,7 @@
                     </div>
 
                     <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                        <a href="{{ url_for('alumno.intento', attempt_id=attempt_id) }}"
+                        <a href="{{ url_for('student.intento', attempt_id=attempt_id) }}"
                            class="alu-ruta-btn" style="height:48px; padding:0 20px; font-size:14px;">
                             <i class="ph ph-x"></i> Cancelar
                         </a>
@@ -96,7 +91,6 @@ function updateCounter(el) {
     span.textContent = count;
     counter.className = 'alu-audit-counter' + (count >= 30 ? ' ok' : '');
 }
-// Init on page load
 document.addEventListener('DOMContentLoaded', function() {
     const ta = document.getElementById('razon');
     if (ta) updateCounter(ta);
