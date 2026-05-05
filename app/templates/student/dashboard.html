@@ -1,6 +1,50 @@
 {% extends "student/layout.html" %}
 
+{% block extra_css %}
+<style>
+.alu-conv-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 24px;
+    padding-bottom: 0;
+}
+.alu-conv-tab {
+    padding: 8px 18px;
+    border-radius: 6px 6px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color 150ms, border-color 150ms;
+    white-space: nowrap;
+}
+.alu-conv-tab:hover { color: #0d47a1; }
+.alu-conv-tab--active {
+    color: #0d47a1;
+    border-bottom-color: #0d47a1;
+    background: #f0f4f8;
+}
+</style>
+{% endblock %}
+
 {% block content %}
+
+        {% if convocatorias_activas is defined and convocatorias_activas|length > 1 %}
+        <div class="alu-conv-tabs" role="tablist" aria-label="Convocatorias activas">
+            {% for c in convocatorias_activas %}
+            <a href="{{ url_for('student.dashboard', conv_id=c.conv_id) }}"
+               class="alu-conv-tab{% if c.conv_id == convocatoria.id %} alu-conv-tab--active{% endif %}"
+               role="tab"
+               aria-selected="{{ 'true' if c.conv_id == convocatoria.id else 'false' }}">
+                {{ c.nombre }}
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
 
         <!-- Welcome + estado provisional -->
         <div class="alu-welcome">
@@ -161,7 +205,7 @@
                 <i class="ph ph-clock" style="font-size:40px; color:#cbd5e1; display:block; margin-bottom:12px;"></i>
                 <div style="font-size:15px; font-weight:600; color:#64748b;">Sin intentos registrados todavía</div>
                 <div style="font-size:13px; color:#94a3b8; margin-top:6px;">
-                    Cuando completes tu primer circuito, vas a verlo acá con su nota.
+                    Cuando complete su primer circuito, lo verá aquí con su nota.
                 </div>
             </div>
         </div>

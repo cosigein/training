@@ -1,0 +1,245 @@
+{% extends "admin/layout.html" %}
+
+{% set active_page = 'gdpr' %}
+
+{% block title %}Privacidad (GDPR) | CMadrid Admin{% endblock %}
+
+{% block content %}
+
+<div class="adm-page-header" style="margin-bottom: 20px;">
+    <div>
+        <h1 class="adm-page-title"><i class="ph ph-shield"></i> Privacidad (GDPR)</h1>
+        <p class="adm-page-subtitle">Reglamento (UE) 2016/679 · Art. 17 — Derecho al olvido</p>
+    </div>
+</div>
+
+{# ── Aviso legal ──────────────────────────────────────────────────────────── #}
+<div class="adm-alert adm-alert--info" style="margin-bottom: 20px;">
+    <i class="ph ph-info" style="font-size: 1.2rem; flex-shrink: 0;"></i>
+    <div>
+        Las solicitudes de <strong>Derecho al Olvido</strong> deben resolverse en un plazo máximo de <strong>30 días</strong> desde su recepción (Art. 12 RGPD). La aprobación ejecuta el borrado irreversible de datos personales del candidato. Solo SUPER_ADMIN puede aprobar.
+    </div>
+</div>
+
+{# ── KPIs ─────────────────────────────────────────────────────────────────── #}
+{% set pending_count = solicitudes | selectattr('estado', 'equalto', 'PENDING') | list | length %}
+{% set approved_count = solicitudes | selectattr('estado', 'equalto', 'APPROVED') | list | length %}
+{% set rejected_count = solicitudes | selectattr('estado', 'equalto', 'REJECTED') | list | length %}
+
+<div class="adm-grid-4" style="margin-bottom: 20px;">
+    <div class="adm-kpi-card {% if pending_count > 0 %}adm-kpi-card--danger{% endif %}">
+        <div class="adm-kpi-card__label">Pendientes</div>
+        <div class="adm-kpi-card__value {% if pending_count > 0 %}" style="color: var(--adm-danger){% endif %}">{{ pending_count }}</div>
+    </div>
+    <div class="adm-kpi-card adm-kpi-card--success">
+        <div class="adm-kpi-card__label">Aprobadas</div>
+        <div class="adm-kpi-card__value">{{ approved_count }}</div>
+    </div>
+    <div class="adm-kpi-card" style="border-left-color: var(--adm-text-muted);">
+        <div class="adm-kpi-card__label">Rechazadas</div>
+        <div class="adm-kpi-card__value">{{ rejected_count }}</div>
+    </div>
+    <div class="adm-kpi-card" style="border-left-color: #6366f1;">
+        <div class="adm-kpi-card__label">Total</div>
+        <div class="adm-kpi-card__value">{{ solicitudes | length }}</div>
+    </div>
+</div>
+
+{# ── Tabla de solicitudes ─────────────────────────────────────────────────── #}
+<div class="adm-card">
+    <div class="adm-card__header">
+        <span class="adm-card__title">Solicitudes GDPR</span>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            {# Filter pills #}
+            <button class="adm-gdpr-pill active" data-filter="all" onclick="filterGdpr('all', this)">Todas</button>
+            <button class="adm-gdpr-pill" data-filter="PENDING" onclick="filterGdpr('PENDING', this)">
+                Pendientes {% if pending_count > 0 %}<span style="background: var(--adm-danger); color: #fff; border-radius: 9px; padding: 1px 6px; font-size: 10px; margin-left: 4px;">{{ pending_count }}</span>{% endif %}
+            </button>
+            <button class="adm-gdpr-pill" data-filter="APPROVED" onclick="filterGdpr('APPROVED', this)">Aprobadas</button>
+            <button class="adm-gdpr-pill" data-filter="REJECTED" onclick="filterGdpr('REJECTED', this)">Rechazadas</button>
+        </div>
+    </div>
+    <div class="adm-card__body" style="padding: 0;">
+        {% if solicitudes %}
+        <table class="adm-table">
+            <thead>
+                <tr>
+                    <th>Candidato</th>
+                    <th>Tipo</th>
+                    <th>Fecha solicitud</th>
+                    <th>Estado</th>
+                    <th style="text-align: right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="gdpr-tbody">
+                {% for sol in solicitudes %}
+                <tr class="gdpr-row" data-estado="{{ sol.estado }}">
+                    <td>
+                        <div style="font-weight: 600; color: var(--adm-text);">{{ sol.alumno }}</div>
+                        <div style="font-size: 0.75rem; color: var(--adm-text-muted);">ID: {{ sol.id }}</div>
+                    </td>
+                    <td>
+                        {% if sol.tipo == 'Olvido' %}
+                        <span class="adm-badge adm-badge--danger">
+                            <i class="ph ph-eraser"></i> Olvido (Art. 17)
+                        </span>
+                        {% else %}
+                        <span class="adm-badge adm-badge--pending">
+                            <i class="ph ph-eye"></i> Acceso (Art. 15)
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td style="color: var(--adm-text-muted); font-size: 0.85rem;">{{ sol.fecha }}</td>
+                    <td>
+                        {% if sol.estado == 'PENDING' %}
+                        <span class="adm-badge adm-badge--pending">Pendiente</span>
+                        {% elif sol.estado == 'APPROVED' %}
+                        <span class="adm-badge adm-badge--approved">Aprobada</span>
+                        {% elif sol.estado == 'REJECTED' %}
+                        <span class="adm-badge adm-badge--rejected">Rechazada</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        {% if sol.estado == 'PENDING' %}
+                        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                            <button class="adm-btn adm-btn--sm adm-btn--danger"
+                                onclick="aprobarSolicitud('{{ sol.id }}', '{{ sol.alumno }}')"
+                                title="Aprobar: ejecuta borrado de datos personales">
+                                <i class="ph ph-check"></i> Aprobar
+                            </button>
+                            <button class="adm-btn adm-btn--sm adm-btn--ghost"
+                                onclick="rechazarSolicitud('{{ sol.id }}', '{{ sol.alumno }}')"
+                                title="Rechazar solicitud">
+                                <i class="ph ph-x"></i> Rechazar
+                            </button>
+                        </div>
+                        {% else %}
+                        <span style="font-size: 0.8rem; color: var(--adm-text-muted);">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="adm-empty">
+            <i class="ph ph-shield-check"></i>
+            <p>No hay solicitudes GDPR registradas.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ── Modal de confirmación de aprobación ─────────────────────────────────── #}
+<div id="gdpr-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center;">
+    <div style="background: #fff; border-radius: 8px; padding: 24px; max-width: 480px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.2);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <div style="width: 40px; height: 40px; background: #fee2e2; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="ph ph-warning" style="color: var(--adm-danger); font-size: 1.4rem;"></i>
+            </div>
+            <div>
+                <div style="font-weight: 700; font-size: 1rem; color: var(--adm-text);">Confirmar borrado de datos</div>
+                <div style="font-size: 0.8rem; color: var(--adm-text-muted);">Esta acción es irreversible</div>
+            </div>
+        </div>
+        <p style="font-size: 0.875rem; color: var(--adm-text); margin: 0 0 16px;">
+            Al aprobar la solicitud de <strong id="modal-alumno-name">—</strong>, se eliminarán de forma permanente todos sus datos personales del sistema, incluyendo intentos, scoring y datos de identificación.
+        </p>
+        <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--adm-text); margin-bottom: 6px;">
+                Escriba <strong>CONFIRMAR OLVIDO</strong> para continuar
+            </label>
+            <input type="text" id="modal-confirm-text"
+                placeholder="CONFIRMAR OLVIDO"
+                style="width: 100%; padding: 8px 12px; border: 1px solid var(--adm-border); border-radius: 6px; font-size: 0.875rem; box-sizing: border-box;">
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="adm-btn adm-btn--ghost" onclick="cerrarModal()">Cancelar</button>
+            <button class="adm-btn adm-btn--danger" onclick="ejecutarAprobacion()">
+                <i class="ph ph-eraser"></i> Ejecutar borrado
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    let pendingSolId = null;
+
+    window.filterGdpr = function (filter, btn) {
+        document.querySelectorAll('.adm-gdpr-pill').forEach(function (p) { p.classList.remove('active'); });
+        btn.classList.add('active');
+
+        document.querySelectorAll('.gdpr-row').forEach(function (row) {
+            if (filter === 'all' || row.dataset.estado === filter) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    };
+
+    window.aprobarSolicitud = function (id, nombre) {
+        pendingSolId = id;
+        document.getElementById('modal-alumno-name').textContent = nombre;
+        document.getElementById('modal-confirm-text').value = '';
+        const modal = document.getElementById('gdpr-modal');
+        modal.style.display = 'flex';
+    };
+
+    window.rechazarSolicitud = function (id, nombre) {
+        if (!confirm('¿Rechazar la solicitud de ' + nombre + '? Se notificará al candidato.')) return;
+        alert('Demo: solicitud ' + id + ' rechazada correctamente.');
+    };
+
+    window.cerrarModal = function () {
+        document.getElementById('gdpr-modal').style.display = 'none';
+        pendingSolId = null;
+    };
+
+    window.ejecutarAprobacion = function () {
+        const text = document.getElementById('modal-confirm-text').value.trim();
+        if (text !== 'CONFIRMAR OLVIDO') {
+            alert('El texto de confirmación no coincide. Escriba exactamente: CONFIRMAR OLVIDO');
+            return;
+        }
+        cerrarModal();
+        alert('Demo: solicitud ' + pendingSolId + ' aprobada. Datos borrados del sistema.');
+    };
+
+    // Cerrar modal al hacer click fuera
+    document.getElementById('gdpr-modal').addEventListener('click', function (e) {
+        if (e.target === this) cerrarModal();
+    });
+})();
+</script>
+
+<style>
+.adm-gdpr-pill {
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--adm-border);
+    background: #fff;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--adm-text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.adm-gdpr-pill:hover {
+    border-color: var(--adm-primary);
+    color: var(--adm-primary);
+}
+.adm-gdpr-pill.active {
+    background: var(--adm-primary);
+    border-color: var(--adm-primary);
+    color: #fff;
+}
+.adm-badge.adm-badge--danger  { background: #fee2e2; color: #991b1b; }
+.adm-badge.adm-badge--approved { background: #dcfce7; color: #15803d; }
+.adm-badge.adm-badge--rejected { background: #f1f5f9; color: #475569; }
+</style>
+{% endblock %}

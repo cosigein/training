@@ -180,23 +180,23 @@ def _build_pedagogico(attempt, ruta_label):
     elif nota >= 7:
         resumen = "Buen recorrido. La técnica general es correcta, queda margen de mejora."
         sugerencias = [
-            "Anticipá los frenados con al menos 3 segundos de margen.",
-            "Mantené velocidad constante en los tramos rectos.",
+            "Anticipe los frenados con al menos 3 segundos de margen.",
+            "Mantenga velocidad constante en los tramos rectos.",
         ]
     elif nota >= 5:
         resumen = "Recorrido aprobado. Hay incidencias claras que se pueden trabajar."
         sugerencias = [
-            "Revisá los puntos donde aparecen frenadas bruscas.",
-            "Ajustá la velocidad antes de entrar a curvas, no durante.",
-            "Practicá la trayectoria en condiciones controladas antes del próximo intento.",
+            "Revise los puntos donde aparecen frenadas bruscas.",
+            "Ajuste la velocidad antes de entrar a curvas, no durante.",
+            "Practique la trayectoria en condiciones controladas antes del próximo intento.",
         ]
     else:
         resumen = "Recorrido con incidencias significativas que afectaron varias familias."
         sugerencias = [
-            "Trabajá los frenados progresivos — son el factor con más peso.",
-            "Anticipá las curvas: reducí velocidad antes de entrar.",
-            "Seguí el GPS sin desviarte — cada desviación suma puntos negativos.",
-            "Considerá un repaso en vehículo ligero antes del próximo intento.",
+            "Trabaje los frenados progresivos — son el factor con más peso.",
+            "Anticipe las curvas: reduzca la velocidad antes de entrar.",
+            "Siga el GPS sin desviarse — cada desviación suma puntos negativos.",
+            "Considere un repaso en vehículo ligero antes del próximo intento.",
         ]
 
     return {"resumen": resumen, "infracciones": infracciones, "sugerencias": sugerencias}
@@ -522,6 +522,26 @@ def get_solicitar_auditoria_ctx(attempt_id, student_id, org_id):
             "hora": _fmt_time(attempt.endTime),
         },
     }
+
+
+def get_active_enrollments_summary(student_id, org_id):
+    """Lista resumida de convocatorias activas del alumno, ordenada por inscripción desc."""
+    enrollments = (
+        Enrollment.query
+        .join(Convocatoria, Enrollment.convocatoriaId == Convocatoria.id)
+        .filter(
+            Enrollment.studentId == student_id,
+            Enrollment.organizationId == org_id,
+            Enrollment.status == EnrollmentStatus.ACTIVE,
+        )
+        .order_by(Enrollment.enrolledAt.desc())
+        .all()
+    )
+    return [
+        {"conv_id": e.convocatoriaId, "nombre": e.convocatoria.name}
+        for e in enrollments
+        if e.convocatoria
+    ]
 
 
 def submit_audit_request(attempt_id, student_id, org_id, reason):

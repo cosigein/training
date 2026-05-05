@@ -21,9 +21,9 @@
         <div style="padding:16px 20px; background:#eff6ff; border-radius:10px; border:1.5px solid #bfdbfe;
                     font-size:13px; color:#1e40af; line-height:1.6;">
             <strong><i class="ph ph-info"></i> ¿Qué es una auditoría?</strong><br>
-            Si creés que el sistema registró un error en tu nota (por ejemplo, un obstáculo externo, un fallo del sensor, o una situación imprevista), podés solicitar que el manager revise manualmente tu intento.
+            Si cree que el sistema registró un error en su nota (por ejemplo, un obstáculo externo, un fallo del sensor, o una situación imprevista), puede solicitar que el manager revise manualmente su intento.
             <br><br>
-            Tu solicitud debe incluir una descripción clara de lo que ocurrió. El manager analizará los datos del sensor y te dará una respuesta.
+            La solicitud debe incluir una descripción clara de lo que ocurrió. El manager analizará los datos del sensor y le dará una respuesta.
         </div>
 
         {% if error %}
@@ -42,12 +42,12 @@
                       method="get">
 
                     <div>
-                        <label for="razon">Explicá qué ocurrió (mínimo 30 caracteres)</label>
+                        <label for="razon">Explique qué ocurrió (mínimo 30 caracteres)</label>
                         <textarea
                             id="razon"
                             name="razon"
                             class="alu-audit-textarea"
-                            placeholder="Describí lo que pasó durante el recorrido que creés que pudo afectar tu nota. Por ejemplo: un obstáculo inesperado, una condición del terreno, un fallo del vehículo..."
+                            placeholder="Describa lo que ocurrió durante el recorrido que cree que pudo afectar su nota. Por ejemplo: un obstáculo inesperado, una condición del terreno, un fallo del vehículo..."
                             oninput="updateCounter(this)"
                         >{{ razon_previa }}</textarea>
                         <div class="alu-audit-counter" id="counter">
@@ -77,8 +77,8 @@
         </div>
 
         <p class="alu-disclaimer">
-            Tu solicitud será visible para el manager responsable de la convocatoria.
-            Recibirás la respuesta en tu dashboard al iniciar sesión.
+            La solicitud será visible para el manager responsable de la convocatoria.
+            Recibirá la respuesta en su panel al iniciar sesión.
         </p>
 
 {% endblock %}

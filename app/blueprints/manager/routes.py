@@ -347,12 +347,12 @@ def registrar_intento(student_id):
         studentId=student_id, convocatoriaId=conv_id, organizationId=org_id
     ).first()
     if not enrollment:
-        flash("El alumno no está inscripto en esa convocatoria.", "warning")
+        flash("El alumno no está inscrito en esa convocatoria.", "warning")
         return redirect(redirect_url)
 
     vehicle = Vehicle.query.filter_by(organizationId=org_id).first()
     if not vehicle:
-        flash("No hay vehículos registrados. Creá uno antes de ingresar notas.", "warning")
+        flash("No hay vehículos registrados. Cree uno antes de introducir notas.", "warning")
         return redirect(redirect_url)
 
     conv = enrollment.convocatoria

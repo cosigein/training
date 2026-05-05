@@ -1,0 +1,70 @@
+{% extends "admin/layout.html" %}
+
+{% set active_page = 'usuarios' %}
+
+{% block title %}Usuarios | CMadrid Admin{% endblock %}
+
+{% block content %}
+
+<div class="adm-page-header" style="margin-bottom: 20px;">
+    <div>
+        <h1 class="adm-page-title">Usuarios</h1>
+        <p class="adm-page-subtitle">Administradores y managers del sistema</p>
+    </div>
+</div>
+
+<div class="adm-alert adm-alert--info" style="margin-bottom: 16px;">
+    <i class="ph ph-info"></i>
+    <div>Gestión de usuarios en modo demo. La creación y edición de usuarios estará disponible con la BD real.</div>
+</div>
+
+<div class="adm-card">
+    <div class="adm-card__body" style="padding: 0;">
+        {% if usuarios %}
+        <div class="adm-table-wrap">
+            <table class="adm-table">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Último acceso</th>
+                        <th style="text-align: right;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in usuarios %}
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 32px; height: 32px; border-radius: 50%; background: #0d47a1; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; font-family: var(--font-heading);">
+                                    {{ u.nombre[0] }}{{ u.nombre.split()[1][0] if u.nombre.split()|length > 1 else '' }}
+                                </div>
+                                <span style="font-weight: 600; color: #1e293b;">{{ u.nombre }}</span>
+                            </div>
+                        </td>
+                        <td style="color: #64748b; font-size: 13px;">{{ u.email }}</td>
+                        <td>
+                            <span class="adm-badge adm-badge--{{ u.rol | lower }}">{{ u.rol }}</span>
+                        </td>
+                        <td style="color: #94a3b8; font-size: 12px;">{{ u.acceso }}</td>
+                        <td style="text-align: right;">
+                            <button class="adm-btn adm-btn--sm adm-btn--secondary" disabled title="Disponible con BD real">
+                                <i class="ph ph-pencil"></i> Editar
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="adm-empty">
+            <i class="ph ph-users-three"></i>
+            <p>No hay usuarios registrados.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

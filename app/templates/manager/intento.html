@@ -94,14 +94,11 @@
                 <span class="mgr-event-ts">{{ ev.timestamp }}</span>
             </div>
             <p class="mgr-event-desc">{{ ev.descripcion }}</p>
+            {% set sev_class = 'mgr-sev-bar--high' if ev.severidad > 0.7 else ('mgr-sev-bar--medium' if ev.severidad > 0.4 else 'mgr-sev-bar--low') %}
             <div class="mgr-event-severity">
                 <span style="font-size:11px; color:#94a3b8">Severidad</span>
                 <div class="mgr-sev-bar-wrap">
-                    <div class="mgr-sev-bar
-                        {% if ev.severidad > 0.7 %}mgr-sev-bar--high
-                        {% elif ev.severidad > 0.4 %}mgr-sev-bar--medium
-                        {% else %}mgr-sev-bar--low{% endif %}"
-                        style="width:{{ (ev.severidad * 100)|int }}%"></div>
+                    <div class="mgr-sev-bar {{ sev_class }}" {{ {'style': 'width:' ~ (ev.severidad * 100)|int ~ '%'} | xmlattr }}></div>
                 </div>
                 <span style="font-size:11px; color:#475569">{{ (ev.severidad * 100)|int }}%</span>
             </div>
@@ -138,17 +135,7 @@
 </div>
 {% endif %}
 
-<div class="mgr-mt-24 mgr-flex-center-gap mgr-flex-wrap mgr-align-center mgr-gap-12">
-    <a href="{{ url_for('manager.alumno_detalle', candidato_id=candidato.id) }}"
-       class="mgr-action-btn mgr-action-btn--secondary">
-        <i class="ph ph-list-bullets"></i> Ver todos los recorridos de {{ candidato.nombre.split()[0] }}
-    </a>
-    <a href="{{ url_for('manager.matriz', conv_id=convocatoria.id) }}"
-       class="mgr-action-btn mgr-action-btn--secondary">
-        <i class="ph ph-arrow-left"></i> Volver a Matriz
-    </a>
 
-</div>
 
 {% endblock %}
 

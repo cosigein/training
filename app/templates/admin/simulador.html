@@ -1,0 +1,300 @@
+{% extends "admin/layout.html" %}
+
+{% set active_page = 'simulador' %}
+
+{% block title %}Simulador de Scoring | CMadrid Admin{% endblock %}
+
+{% block content %}
+
+<div class="adm-page-header" style="margin-bottom: 20px;">
+    <div>
+        <h1 class="adm-page-title"><i class="ph ph-test-tube"></i> Simulador de Scoring</h1>
+        <p class="adm-page-subtitle">Simulación sin efecto en datos reales</p>
+    </div>
+</div>
+
+{# ── Aviso demo ───────────────────────────────────────────────────────────── #}
+<div class="adm-alert adm-alert--info" style="margin-bottom: 20px;">
+    <i class="ph ph-info" style="font-size: 1.2rem; flex-shrink: 0;"></i>
+    <div>
+        Los cambios en este simulador son <strong>ficticios</strong>: no modifican el scoring activo ni el ranking de ninguna convocatoria. Sirven para visualizar el impacto antes de una decisión real.
+    </div>
+</div>
+
+{# ── Controles superiores ─────────────────────────────────────────────────── #}
+<div class="adm-card" style="margin-bottom: 20px;">
+    <div class="adm-card__body">
+        <div style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">
+                <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--adm-text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Convocatoria</label>
+                <select id="sim-conv" style="width: 100%; padding: 8px 12px; border: 1px solid var(--adm-border); border-radius: 6px; font-size: 0.875rem; background: #fff; color: var(--adm-text);">
+                    <option value="">— Seleccionar —</option>
+                    {% for conv in convocatorias %}
+                    <option value="{{ conv.id }}">{{ conv.name }} ({{ conv.plazas }} plazas)</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="flex: 1; min-width: 200px;">
+                <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--adm-text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Versión de criterios</label>
+                <select id="sim-version" style="width: 100%; padding: 8px 12px; border: 1px solid var(--adm-border); border-radius: 6px; font-size: 0.875rem; background: #fff; color: var(--adm-text);">
+                    <option value="v3">v3 — Vigente (01/04/2026)</option>
+                    <option value="v2">v2 — Anterior (15/01/2026)</option>
+                    <option value="v1">v1 — Original (01/09/2025)</option>
+                </select>
+            </div>
+            <div>
+                <button class="adm-btn" onclick="simular()">
+                    <i class="ph ph-play"></i> Simular
+                </button>
+            </div>
+            <div>
+                <button class="adm-btn adm-btn--ghost" onclick="resetRules()">
+                    <i class="ph ph-arrow-counter-clockwise"></i> Resetear
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Tabla de reglas ──────────────────────────────────────────────────────── #}
+<div class="adm-card" style="margin-bottom: 20px;">
+    <div class="adm-card__header">
+        <span class="adm-card__title">Reglas de scoring (editable)</span>
+        <span style="font-size: 0.75rem; color: var(--adm-text-muted);">Modifique los valores y pulse Simular</span>
+    </div>
+    <div class="adm-card__body" style="padding: 0;">
+        <table class="adm-table" id="rules-table">
+            <thead>
+                <tr>
+                    <th>Familia</th>
+                    <th>Regla</th>
+                    <th style="text-align: right;">Peso (%)</th>
+                    <th style="text-align: right;">Umbral actual</th>
+                    <th style="text-align: right;">Nuevo umbral</th>
+                    <th style="text-align: right;">Nueva penalización</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="adm-badge" style="background: #eff6ff; color: #1d4ed8;">Estabilidad</span></td>
+                    <td>Desvío máx. de trayectoria</td>
+                    <td style="text-align: right;">25</td>
+                    <td style="text-align: right; color: var(--adm-text-muted);">1.5 m</td>
+                    <td style="text-align: right;"><input class="adm-sim-input" type="number" value="1.5" step="0.1" min="0" style="width: 70px;"></td>
+                    <td style="text-align: right;"><input class="adm-sim-input" type="number" value="-0.5" step="0.1" style="width: 70px;"></td>
+                </tr>
+                <tr>
+                    <td><span class="adm-badge" style="background: #eff6ff; color: #1d4ed8;">Estabilidad</span></td>
+                    <td>Brusquedad de frenada</td>
+                    <td style="text-align: right;">15</td>
+                    <td style="text-align: right; color: var(--adm-text-muted);">0.8 g</td>
+                    <td style="text-align: right;"><input class="adm-sim-input" type="number" value="0.8" step="0.05" min="0" style="width: 70px;"></td>
+                    <td style="text-align: right;"><input class="adm-sim-input" type="number" value="-0.3" step="0.1" style="width: 70px;"></td>
+                </tr>
+                <tr>
+                    <td><span class="adm-badge" style="background: #fef3c7; color: #92400e;">Velocidad</span></td>
+                    <td>Exceso de velocidad</td>
+                    <td style="text-align: right;">20</td>
+                    <td style="text-align: right; color: var(--adm-text-muted);">+5 km/h</td>
+                    <td style="text-align: right;"><input class="adm-sim-input" type="number" value="5" step="1" min="0" style="width: 70px;"></td>
+                    <td style="text-align: right;"><input class="adm-sim-input" type="number" value="-1.0" step="0.1" style="width: 70px;"></td>
+                </tr>
+                <tr>
+                    <td><span class="adm-badge" style="background: #fef3c7; color: #92400e;">Velocidad</span></td>
+                    <td>Velocidad mínima en zona</td>
+                    <td style="text-align: right;">10</td>
+                    <td style="text-align: right; color: var(--adm-text-muted);">15 km/h</td>
+                    <td style="text-align: right;"><input class="adm-sim-input" type="number" value="15" step="1" min="0" style="width: 70px;"></td>
+                    <td style="text-align: right;"><input class="adm-sim-input" type="number" value="-0.2" step="0.1" style="width: 70px;"></td>
+                </tr>
+                <tr>
+                    <td><span class="adm-badge" style="background: #dcfce7; color: #15803d;">Ruta</span></td>
+                    <td>Geofences completados</td>
+                    <td style="text-align: right;">20</td>
+                    <td style="text-align: right; color: var(--adm-text-muted);">100%</td>
+                    <td style="text-align: right;"><input class="adm-sim-input" type="number" value="100" step="5" min="50" max="100" style="width: 70px;"></td>
+                    <td style="text-align: right;"><input class="adm-sim-input" type="number" value="-2.0" step="0.1" style="width: 70px;"></td>
+                </tr>
+                <tr>
+                    <td><span class="adm-badge" style="background: #dcfce7; color: #15803d;">Ruta</span></td>
+                    <td>Tiempo total de ruta</td>
+                    <td style="text-align: right;">5</td>
+                    <td style="text-align: right; color: var(--adm-text-muted);">+10%</td>
+                    <td style="text-align: right;"><input class="adm-sim-input" type="number" value="10" step="1" min="0" style="width: 70px;"></td>
+                    <td style="text-align: right;"><input class="adm-sim-input" type="number" value="-0.3" step="0.1" style="width: 70px;"></td>
+                </tr>
+                <tr>
+                    <td><span class="adm-badge" style="background: #fce7f3; color: #9d174d;">Conducción</span></td>
+                    <td>Eventos de giro brusco</td>
+                    <td style="text-align: right;">3</td>
+                    <td style="text-align: right; color: var(--adm-text-muted);">3 eventos</td>
+                    <td style="text-align: right;"><input class="adm-sim-input" type="number" value="3" step="1" min="0" style="width: 70px;"></td>
+                    <td style="text-align: right;"><input class="adm-sim-input" type="number" value="-0.5" step="0.1" style="width: 70px;"></td>
+                </tr>
+                <tr>
+                    <td><span class="adm-badge" style="background: #fce7f3; color: #9d174d;">Conducción</span></td>
+                    <td>Uso de freno motor</td>
+                    <td style="text-align: right;">2</td>
+                    <td style="text-align: right; color: var(--adm-text-muted);">mín. 20%</td>
+                    <td style="text-align: right;"><input class="adm-sim-input" type="number" value="20" step="5" min="0" max="100" style="width: 70px;"></td>
+                    <td style="text-align: right;"><input class="adm-sim-input" type="number" value="-0.2" step="0.1" style="width: 70px;"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{# ── Resultados de la simulación ──────────────────────────────────────────── #}
+<div id="sim-results" class="adm-sim-result">
+
+    <div class="adm-grid-4" style="margin-bottom: 20px;">
+        <div class="adm-kpi-card adm-kpi-card--success">
+            <div class="adm-kpi-card__label">Entran en plaza</div>
+            <div class="adm-kpi-card__value" id="sim-kpi-entran">—</div>
+        </div>
+        <div class="adm-kpi-card" style="border-left-color: var(--adm-danger);">
+            <div class="adm-kpi-card__label">Salen del corte</div>
+            <div class="adm-kpi-card__value" id="sim-kpi-salen" style="color: var(--adm-danger);">—</div>
+        </div>
+        <div class="adm-kpi-card" style="border-left-color: #d97706;">
+            <div class="adm-kpi-card__label">Sin cambios</div>
+            <div class="adm-kpi-card__value" id="sim-kpi-igual">—</div>
+        </div>
+        <div class="adm-kpi-card" style="border-left-color: #6366f1;">
+            <div class="adm-kpi-card__label">Candidatos simulados</div>
+            <div class="adm-kpi-card__value" id="sim-kpi-total">—</div>
+        </div>
+    </div>
+
+    <div class="adm-grid-2">
+
+        <div class="adm-card">
+            <div class="adm-card__header">
+                <span class="adm-card__title" style="color: var(--adm-success);">
+                    <i class="ph ph-arrow-circle-up"></i> Entran en plaza con nuevo scoring
+                </span>
+            </div>
+            <div class="adm-card__body" style="padding: 0;">
+                <table class="adm-table" id="sim-entran-table">
+                    <thead>
+                        <tr>
+                            <th>Candidato</th>
+                            <th style="text-align: right;">Nota actual</th>
+                            <th style="text-align: right;">Nota simulada</th>
+                            <th style="text-align: right;">Δ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Roberto Díaz García</td>
+                            <td style="text-align: right; color: var(--adm-text-muted);">7.89</td>
+                            <td style="text-align: right; color: var(--adm-success); font-weight: 700;">8.24</td>
+                            <td style="text-align: right; color: var(--adm-success);">+0.35</td>
+                        </tr>
+                        <tr>
+                            <td>Sofía Vega Morales</td>
+                            <td style="text-align: right; color: var(--adm-text-muted);">7.72</td>
+                            <td style="text-align: right; color: var(--adm-success); font-weight: 700;">8.01</td>
+                            <td style="text-align: right; color: var(--adm-success);">+0.29</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="adm-card">
+            <div class="adm-card__header">
+                <span class="adm-card__title" style="color: var(--adm-danger);">
+                    <i class="ph ph-arrow-circle-down"></i> Salen del corte con nuevo scoring
+                </span>
+            </div>
+            <div class="adm-card__body" style="padding: 0;">
+                <table class="adm-table" id="sim-salen-table">
+                    <thead>
+                        <tr>
+                            <th>Candidato</th>
+                            <th style="text-align: right;">Nota actual</th>
+                            <th style="text-align: right;">Nota simulada</th>
+                            <th style="text-align: right;">Δ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Laura Fernández Ruiz</td>
+                            <td style="text-align: right; color: var(--adm-success); font-weight: 700;">8.05</td>
+                            <td style="text-align: right; color: var(--adm-danger);">7.61</td>
+                            <td style="text-align: right; color: var(--adm-danger);">-0.44</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <div style="margin-top: 16px; text-align: right;">
+        <button class="adm-btn adm-btn--ghost" onclick="exportSimulation()">
+            <i class="ph ph-file-xls"></i> Exportar comparativa
+        </button>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const DEFAULTS = [1.5, 0.8, 5, 15, 100, 10, 3, 20];
+    const DEFAULT_PENS = [-0.5, -0.3, -1.0, -0.2, -2.0, -0.3, -0.5, -0.2];
+
+    window.resetRules = function () {
+        const inputs = document.querySelectorAll('.adm-sim-input');
+        inputs.forEach(function (inp, i) {
+            if (i < DEFAULTS.length) inp.value = DEFAULTS[i];
+            else inp.value = DEFAULT_PENS[i - DEFAULTS.length];
+        });
+        document.getElementById('sim-results').classList.remove('visible');
+    };
+
+    window.simular = function () {
+        const conv = document.getElementById('sim-conv').value;
+        if (!conv) {
+            alert('Seleccione una convocatoria para simular.');
+            return;
+        }
+
+        // Demo: valores estáticos representativos
+        document.getElementById('sim-kpi-entran').textContent = '2';
+        document.getElementById('sim-kpi-salen').textContent = '1';
+        document.getElementById('sim-kpi-igual').textContent = '144';
+        document.getElementById('sim-kpi-total').textContent = '147';
+
+        const results = document.getElementById('sim-results');
+        results.classList.add('visible');
+        results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    window.exportSimulation = function () {
+        alert('Exportación de comparativa disponible en producción.');
+    };
+})();
+</script>
+
+<style>
+.adm-sim-input {
+    padding: 4px 8px;
+    border: 1px solid var(--adm-border);
+    border-radius: 4px;
+    font-size: 0.8rem;
+    text-align: right;
+    color: var(--adm-text);
+    background: #fff;
+}
+.adm-sim-input:focus {
+    outline: none;
+    border-color: var(--adm-primary);
+    box-shadow: 0 0 0 2px rgba(13, 71, 161, 0.1);
+}
+</style>
+{% endblock %}

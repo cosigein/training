@@ -16,33 +16,108 @@ class MockUser:
     class role:
         value = "SUPER_ADMIN"
 
+MOCK_CONVOCATORIAS = [
+    {
+        "id": "conv-a-2026", "name": "CM-2026-A", "status": "OPEN",
+        "plazas": 50, "candidatos": 198, "auditoria_pendientes": 3,
+        "cierre": "15/06/2026", "completados": 156, "pendientes": 42,
+    },
+    {
+        "id": "conv-b-2026", "name": "CM-2026-B", "status": "CLOSING",
+        "plazas": 30, "candidatos": 147, "auditoria_pendientes": 0,
+        "cierre": "20/05/2026", "completados": 147, "pendientes": 0,
+        "iniciado_por": "María García", "iniciado_hace": "12 minutos",
+    },
+    {
+        "id": "conv-z-2025", "name": "CM-2025-Z", "status": "LOCKED",
+        "plazas": 25, "candidatos": 112, "auditoria_pendientes": 0,
+        "cierre": "30/11/2025", "completados": 112, "pendientes": 0,
+    },
+]
+
+MOCK_SYSTEM_STATUS = {
+    "api_ok": True, "db_ok": True,
+    "webfleet_cuota": 22,
+    "kioskos_online": 4, "kioskos_total": 6,
+    "candidatos_total": 457,
+    "intentos_hoy": 12,
+    "auditorias_pendientes": 3,
+}
+
+MOCK_GDPR_REQUESTS = [
+    {"id": "gr-001", "alumno": "Juan Carlos Pérez López", "tipo": "Olvido", "fecha": "01/05/2026", "estado": "PENDING"},
+    {"id": "gr-002", "alumno": "María del Carmen García Ruiz", "tipo": "Acceso", "fecha": "28/04/2026", "estado": "APPROVED"},
+    {"id": "gr-003", "alumno": "Pedro Antonio Fernández Díaz", "tipo": "Olvido", "fecha": "25/04/2026", "estado": "REJECTED"},
+]
+
+MOCK_USUARIOS = [
+    {"id": "u-001", "nombre": "Antonio Hermoso", "email": "ahermoso@cmadrid.es", "rol": "SUPER_ADMIN", "acceso": "05/05/2026 09:12"},
+    {"id": "u-002", "nombre": "María García Soto", "email": "mgarcia@cmadrid.es", "rol": "ADMIN", "acceso": "05/05/2026 08:45"},
+    {"id": "u-003", "nombre": "Carlos Ruiz Martínez", "email": "cruiz@cmadrid.es", "rol": "ADMIN", "acceso": "04/05/2026 16:30"},
+    {"id": "u-004", "nombre": "Ana Romero Vidal", "email": "aromero@cmadrid.es", "rol": "MANAGER", "acceso": "05/05/2026 09:00"},
+    {"id": "u-005", "nombre": "Luis Castro Pinto", "email": "lcastro@cmadrid.es", "rol": "MANAGER", "acceso": "04/05/2026 14:22"},
+]
+
 # ─────────────────────────────────────────────────────────────────────────────
 # UI Views (Admin Portal)
 # ─────────────────────────────────────────────────────────────────────────────
 
 @admin_bp.route("/dashboard", endpoint="dashboard", methods=["GET"])
 def admin_dashboard():
-    return render_template("admin/dashboard.html", current_user=MockUser())
+    return render_template("admin/dashboard.html",
+        current_user=MockUser(),
+        active_page="dashboard",
+        convocatorias=MOCK_CONVOCATORIAS,
+        stats=MOCK_SYSTEM_STATUS,
+    )
 
 @admin_bp.route("/matriz", endpoint="matriz", methods=["GET"])
 def admin_matriz():
-    return render_template("admin/matriz.html", current_user=MockUser())
+    return render_template("admin/matriz.html",
+        current_user=MockUser(),
+        active_page="matriz",
+        convocatorias=MOCK_CONVOCATORIAS,
+    )
 
 @admin_bp.route("/simulador", endpoint="simulador", methods=["GET"])
 def admin_simulador():
-    return render_template("admin/simulador.html", current_user=MockUser())
+    return render_template("admin/simulador.html",
+        current_user=MockUser(),
+        active_page="simulador",
+        convocatorias=MOCK_CONVOCATORIAS,
+    )
 
 @admin_bp.route("/cierre", endpoint="cierre", methods=["GET"])
 def admin_cierre():
-    return render_template("admin/cierre.html", current_user=MockUser())
+    return render_template("admin/cierre.html",
+        current_user=MockUser(),
+        active_page="cierre",
+        convocatorias=[c for c in MOCK_CONVOCATORIAS if c["status"] in ("OPEN", "CLOSING", "CLOSED")],
+    )
 
 @admin_bp.route("/gdpr-panel", endpoint="gdpr", methods=["GET"])
 def admin_gdpr():
-    return render_template("admin/gdpr.html", current_user=MockUser())
+    return render_template("admin/gdpr.html",
+        current_user=MockUser(),
+        active_page="gdpr",
+        solicitudes=MOCK_GDPR_REQUESTS,
+    )
 
 @admin_bp.route("/convocatorias-panel", endpoint="convocatorias", methods=["GET"])
 def admin_convocatorias_ui():
-    return render_template("admin/convocatorias.html", current_user=MockUser())
+    return render_template("admin/convocatorias.html",
+        current_user=MockUser(),
+        active_page="convocatorias",
+        convocatorias=MOCK_CONVOCATORIAS,
+    )
+
+@admin_bp.route("/usuarios-panel", endpoint="usuarios", methods=["GET"])
+def admin_usuarios_ui():
+    return render_template("admin/usuarios.html",
+        current_user=MockUser(),
+        active_page="usuarios",
+        usuarios=MOCK_USUARIOS,
+    )
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Users / Organizations (legacy, usados por el sidebar)

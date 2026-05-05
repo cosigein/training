@@ -400,6 +400,132 @@ body {
 .ksk-ruta-badge--lq    { background: rgba(217,119,6,.25);  color: #fcd34d; }
 .ksk-ruta-badge--audit { background: rgba(124,58,237,.25); color: #c4b5fd; }
 
+/* ═══════════════════════════════════════════════════════════════════
+   STATUS BAR — persistent bottom strip (defensive mechanisms)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.ksk-statusbar {
+    height: 36px;
+    background: #060b14;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 20px;
+    flex-shrink: 0;
+    font-size: 11px;
+    color: #475569;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.ksk-statusbar__online {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ksk-statusbar__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #22c55e;
+    flex-shrink: 0;
+    transition: background 300ms;
+}
+
+.ksk-statusbar__dot--offline {
+    background: #ef4444;
+    animation: ksk-blink 1s step-start infinite;
+}
+
+@keyframes ksk-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.ksk-statusbar__online--offline { color: #ef4444; }
+
+.ksk-statusbar__sep {
+    width: 1px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.ksk-statusbar__pending {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #fbbf24;
+}
+
+.ksk-statusbar__pending--hidden { display: none; }
+
+.ksk-statusbar__clock {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* Recovery modal (shown on startup if pending taps in IndexedDB) */
+.ksk-recovery-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.88);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.ksk-recovery-modal {
+    background: #0d1527;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    border-radius: 16px;
+    padding: 36px;
+    max-width: 440px;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.ksk-recovery-modal__title {
+    font-family: var(--font-heading);
+    font-size: 18px;
+    font-weight: 700;
+    color: #fbbf24;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ksk-recovery-modal__body {
+    font-size: 14px;
+    color: #94a3b8;
+    line-height: 1.6;
+}
+
+.ksk-recovery-modal__count {
+    font-family: var(--font-heading);
+    font-size: 40px;
+    font-weight: 800;
+    color: #fbbf24;
+    text-align: center;
+    padding: 8px 0;
+}
+
+.ksk-recovery-modal__actions {
+    display: flex;
+    gap: 12px;
+}
+
 /* ── RESPONSIVE ───────────────────────────────────────────────────── */
 @media (max-width: 600px) {
     .ksk-rutas-grid { grid-template-columns: 1fr 1fr; }

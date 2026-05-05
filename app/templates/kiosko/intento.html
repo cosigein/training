@@ -76,11 +76,11 @@
 
             <div style="display:flex; flex-direction:column; gap:16px;">
                 {% for item in score_breakdown %}
+                {% set pct = (item.obtenido / item.maximo * 100)|int %}
                 <div style="display:grid; grid-template-columns: 110px 1fr 70px; align-items:center; gap:14px;">
                     <span style="font-size:13px; color:#94a3b8; font-weight:500;">{{ item.familia }}</span>
                     <div style="height:10px; background:rgba(255,255,255,0.06); border-radius:5px; overflow:hidden;">
-                        <div style="height:100%; width:{{ (item.obtenido / item.maximo * 100)|int }}%;
-                                    background:#1a56db; border-radius:5px;"></div>
+                        <div {{ {'style': 'height:100%; width:' ~ pct ~ '%; background:#1a56db; border-radius:5px;'} | xmlattr }}></div>
                     </div>
                     <span style="font-size:13px; font-weight:700; color:#e2e8f0; text-align:right;">
                         {{ item.obtenido }} / {{ item.maximo }}
@@ -116,12 +116,7 @@
         </div>
         {% endif %}
 
-        <!-- Botón volver grande (touch-friendly) -->
-        <a href="{{ url_for('kiosko.rutas', plaza=candidato.plaza) }}"
-           class="ksk-btn ksk-btn--ghost" style="align-self:stretch; margin-top:8px;">
-            <i class="ph ph-arrow-left"></i>
-            Volver a mis recorridos
-        </a>
+
 
     </div>
 </div>

@@ -10,6 +10,7 @@ from .student_service import (
     get_student_evolucion,
     get_solicitar_auditoria_ctx,
     submit_audit_request,
+    get_active_enrollments_summary,
 )
 from . import student_bp
 
@@ -24,12 +25,19 @@ def _current_user():
 @require_role(["STUDENT"])
 def dashboard():
     user = _current_user()
-    ctx = get_student_dashboard(user.id, user.organizationId)
+    conv_id = request.args.get("conv_id")
+
+    convocatorias_activas = get_active_enrollments_summary(user.id, user.organizationId)
+    if not conv_id and convocatorias_activas:
+        conv_id = convocatorias_activas[0]["conv_id"]
+
+    ctx = get_student_dashboard(user.id, user.organizationId, conv_id)
     if not ctx:
         return render_template("student/sin_inscripciones.html", user=user)
     return render_template(
         "student/dashboard.html",
         active_page="dashboard",
+        convocatorias_activas=convocatorias_activas,
         **ctx,
     )
 

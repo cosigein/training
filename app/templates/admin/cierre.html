@@ -1,0 +1,552 @@
+{% extends "admin/layout.html" %}
+
+{% set active_page = 'cierre' %}
+
+{% block title %}Cierre de Convocatoria | CMadrid Admin{% endblock %}
+
+{% block content %}
+
+<div class="adm-page-header" style="margin-bottom: 20px;">
+    <div>
+        <h1 class="adm-page-title"><i class="ph ph-lock" style="color: #dc2626;"></i> Cierre de Convocatoria</h1>
+        <p class="adm-page-subtitle">Proceso con doble validación administrativa</p>
+    </div>
+</div>
+
+{# ── Aviso legal ──────────────────────────────────────────────────────────── #}
+<div class="adm-alert adm-alert--warning" style="margin-bottom: 20px;">
+    <i class="ph ph-warning-diamond" style="font-size: 1.2rem; flex-shrink: 0;"></i>
+    <div>
+        <strong>Acción irreversible tras 24 horas.</strong> El cierre genera un Acta PDF con firma SHA-256 y convierte el ranking en FINAL. Requiere confirmación de un segundo administrador distinto al que inicia el proceso. Art. 22 GDPR — el sistema no decide automáticamente APTO/NO APTO: esa decisión es de CMadrid.
+    </div>
+</div>
+
+{# ── Selector de convocatoria ─────────────────────────────────────────────── #}
+<div class="adm-card" style="margin-bottom: 20px;">
+    <div class="adm-card__header">
+        <span class="adm-card__title">Seleccionar convocatoria</span>
+    </div>
+    <div class="adm-card__body">
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <select id="conv-selector" style="flex: 1; min-width: 240px; padding: 8px 12px; border: 1px solid var(--adm-border); border-radius: 6px; font-size: 0.875rem; background: #fff; color: var(--adm-text);">
+                <option value="">— Seleccionar convocatoria —</option>
+                {% for conv in convocatorias %}
+                <option value="{{ conv.id }}"
+                    data-status="{{ conv.status }}"
+                    data-name="{{ conv.name }}"
+                    data-plazas="{{ conv.plazas }}"
+                    data-candidatos="{{ conv.candidatos }}"
+                    data-completados="{{ conv.completados }}"
+                    data-pendientes="{{ conv.pendientes }}"
+                    data-auditoria="{{ conv.auditoria_pendientes }}"
+                    data-cierre="{{ conv.cierre }}"
+                    {% if conv.iniciado_por is defined %}data-iniciado-por="{{ conv.iniciado_por }}"{% endif %}
+                    {% if conv.iniciado_hace is defined %}data-iniciado-hace="{{ conv.iniciado_hace }}"{% endif %}
+                >
+                    {{ conv.name }} — {{ conv.status }}
+                    {% if conv.status == 'OPEN' %}(abierta)
+                    {% elif conv.status == 'CLOSING' %}(cierre en curso)
+                    {% elif conv.status == 'CLOSED' %}(cerrada)
+                    {% endif %}
+                </option>
+                {% endfor %}
+            </select>
+            <button id="btn-load-conv" class="adm-btn" onclick="loadConvocatoria()" style="flex-shrink: 0;">
+                <i class="ph ph-arrow-right"></i> Cargar
+            </button>
+        </div>
+    </div>
+</div>
+
+{# ── Panel de cierre (se muestra tras seleccionar) ───────────────────────── #}
+<div id="cierre-panel" style="display: none;">
+
+    {# Stepper #}
+    <div class="adm-stepper" id="adm-stepper">
+        <div class="adm-stepper__item" id="step-item-1">
+            <div class="adm-stepper__num">1</div>
+            <div class="adm-stepper__label">Vista previa</div>
+        </div>
+        <div class="adm-stepper__line"></div>
+        <div class="adm-stepper__item" id="step-item-2">
+            <div class="adm-stepper__num">2</div>
+            <div class="adm-stepper__label">Iniciar cierre</div>
+        </div>
+        <div class="adm-stepper__line"></div>
+        <div class="adm-stepper__item" id="step-item-3">
+            <div class="adm-stepper__num">3</div>
+            <div class="adm-stepper__label">Confirmar (2.º Admin)</div>
+        </div>
+    </div>
+
+    {# ── PASO 1: Preview ──────────────────────────────────────────────────── #}
+    <div class="adm-cierre-step" id="step-1">
+        <div class="adm-grid-2" style="margin-bottom: 16px;">
+
+            <div class="adm-card">
+                <div class="adm-card__header">
+                    <span class="adm-card__title">Resumen de la convocatoria</span>
+                    <span id="preview-badge" class="adm-badge adm-badge--open">OPEN</span>
+                </div>
+                <div class="adm-card__body" style="padding: 0;">
+                    <div class="adm-status-row">
+                        <span class="adm-status-row__label">Plazas disponibles</span>
+                        <span class="adm-status-row__value" id="preview-plazas">—</span>
+                    </div>
+                    <div class="adm-status-row">
+                        <span class="adm-status-row__label">Candidatos inscritos</span>
+                        <span class="adm-status-row__value" id="preview-candidatos">—</span>
+                    </div>
+                    <div class="adm-status-row">
+                        <span class="adm-status-row__label">Completados</span>
+                        <span class="adm-status-row__value" id="preview-completados">—</span>
+                    </div>
+                    <div class="adm-status-row">
+                        <span class="adm-status-row__label">Pendientes</span>
+                        <span class="adm-status-row__value" id="preview-pendientes" style="color: var(--adm-danger);">—</span>
+                    </div>
+                    <div class="adm-status-row">
+                        <span class="adm-status-row__label">Auditorías pendientes</span>
+                        <span class="adm-status-row__value" id="preview-auditoria">—</span>
+                    </div>
+                    <div class="adm-status-row">
+                        <span class="adm-status-row__label">Fecha de cierre prevista</span>
+                        <span class="adm-status-row__value" id="preview-cierre">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="adm-card">
+                <div class="adm-card__header">
+                    <span class="adm-card__title">Ranking provisional (top 5)</span>
+                    <span style="font-size: 0.75rem; color: var(--adm-text-muted);">Con scoring vigente</span>
+                </div>
+                <div class="adm-card__body" style="padding: 0;">
+                    <table class="adm-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Candidato</th>
+                                <th style="text-align: right;">Nota</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>Carlos Ruiz Martínez</td>
+                                <td style="text-align: right; font-weight: 700; color: var(--adm-success);">8.74</td>
+                                <td><span class="adm-badge" style="background: #dcfce7; color: #15803d;">Apto</span></td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>María García López</td>
+                                <td style="text-align: right; font-weight: 700; color: var(--adm-success);">8.51</td>
+                                <td><span class="adm-badge" style="background: #dcfce7; color: #15803d;">Apto</span></td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>Pedro Sánchez Villa</td>
+                                <td style="text-align: right; font-weight: 700; color: var(--adm-success);">8.12</td>
+                                <td><span class="adm-badge" style="background: #dcfce7; color: #15803d;">Apto</span></td>
+                            </tr>
+                            <tr style="border-top: 2px dashed var(--adm-border);">
+                                <td style="color: var(--adm-text-muted);">4</td>
+                                <td style="color: var(--adm-text-muted);">Ana Romero Díaz</td>
+                                <td style="text-align: right; color: var(--adm-text-muted);">7.98</td>
+                                <td><span class="adm-badge adm-badge--pending">Fuera</span></td>
+                            </tr>
+                            <tr>
+                                <td style="color: var(--adm-text-muted);">5</td>
+                                <td style="color: var(--adm-text-muted);">Luis Castro Pinto</td>
+                                <td style="text-align: right; color: var(--adm-text-muted);">7.65</td>
+                                <td><span class="adm-badge adm-badge--pending">Fuera</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style="padding: 10px 16px; font-size: 0.75rem; color: var(--adm-text-muted); border-top: 1px solid var(--adm-border);">
+                        <i class="ph ph-info"></i> El ranking final lo determina CMadrid al confirmar el cierre.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div id="step1-audit-warning" style="display: none; margin-bottom: 16px;">
+            <div class="adm-alert adm-alert--danger">
+                <i class="ph ph-warning" style="font-size: 1.2rem; flex-shrink: 0;"></i>
+                <div>
+                    <strong>Hay auditorías pendientes.</strong> Se recomienda resolverlas antes de iniciar el cierre para garantizar la integridad del ranking provisional.
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+            <button class="adm-btn" onclick="goToStep(2)">
+                <i class="ph ph-arrow-right"></i> Iniciar proceso de cierre
+            </button>
+            <button class="adm-btn adm-btn--ghost" onclick="cancelar()">
+                <i class="ph ph-x"></i> Cancelar
+            </button>
+        </div>
+    </div>
+
+    {# ── PASO 2: Iniciar cierre ────────────────────────────────────────────── #}
+    <div class="adm-cierre-step" id="step-2">
+        <div class="adm-grid-2" style="margin-bottom: 16px;">
+
+            <div class="adm-card">
+                <div class="adm-card__header">
+                    <span class="adm-card__title">Estado del proceso</span>
+                </div>
+                <div class="adm-card__body">
+                    <div class="adm-alert adm-alert--warning" style="margin-bottom: 16px;">
+                        <i class="ph ph-hourglass" style="font-size: 1.2rem; flex-shrink: 0;"></i>
+                        <div>
+                            El estado pasará a <strong>CLOSING</strong>. Se bloquearán nuevos intentos. Esperando confirmación de un segundo administrador.
+                        </div>
+                    </div>
+                    <div id="step2-iniciado-info" style="display: none; margin-bottom: 16px;">
+                        <div class="adm-status-row">
+                            <span class="adm-status-row__label">Iniciado por</span>
+                            <span class="adm-status-row__value" id="step2-iniciado-por">—</span>
+                        </div>
+                        <div class="adm-status-row">
+                            <span class="adm-status-row__label">Hace</span>
+                            <span class="adm-status-row__value" id="step2-iniciado-hace">—</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--adm-text); margin-bottom: 6px;">
+                            Texto de confirmación *
+                        </label>
+                        <input type="text" id="initiate-confirm-text"
+                            placeholder="Escriba: INICIAR CIERRE CM-2026-A"
+                            style="width: 100%; padding: 8px 12px; border: 1px solid var(--adm-border); border-radius: 6px; font-size: 0.875rem; box-sizing: border-box;">
+                        <p style="font-size: 0.75rem; color: var(--adm-text-muted); margin: 4px 0 0;">
+                            Debe escribir exactamente: <strong id="confirm-text-hint">INICIAR CIERRE [convocatoria]</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="adm-card">
+                <div class="adm-card__header">
+                    <span class="adm-card__title">¿Qué ocurre al iniciar?</span>
+                </div>
+                <div class="adm-card__body" style="padding: 0;">
+                    <div class="adm-status-row">
+                        <i class="ph ph-check-circle" style="color: var(--adm-danger); margin-right: 8px;"></i>
+                        <span class="adm-status-row__label">Nuevos intentos bloqueados</span>
+                    </div>
+                    <div class="adm-status-row">
+                        <i class="ph ph-check-circle" style="color: var(--adm-danger); margin-right: 8px;"></i>
+                        <span class="adm-status-row__label">Estado → CLOSING</span>
+                    </div>
+                    <div class="adm-status-row">
+                        <i class="ph ph-check-circle" style="color: var(--adm-success); margin-right: 8px;"></i>
+                        <span class="adm-status-row__label">Ranking provisional guardado</span>
+                    </div>
+                    <div class="adm-status-row">
+                        <i class="ph ph-check-circle" style="color: var(--adm-success); margin-right: 8px;"></i>
+                        <span class="adm-status-row__label">Notificación al 2.º Admin</span>
+                    </div>
+                    <div class="adm-status-row">
+                        <i class="ph ph-check-circle" style="color: #d97706; margin-right: 8px;"></i>
+                        <span class="adm-status-row__label">Espera confirmación 2.º Admin</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+            <button class="adm-btn adm-btn--danger" id="btn-initiate" onclick="iniciarCierre()">
+                <i class="ph ph-lock"></i> Iniciar cierre
+            </button>
+            <button class="adm-btn adm-btn--ghost" onclick="goToStep(1)">
+                <i class="ph ph-arrow-left"></i> Volver
+            </button>
+        </div>
+    </div>
+
+    {# ── PASO 3: Confirmación 2.º Admin ───────────────────────────────────── #}
+    <div class="adm-cierre-step" id="step-3">
+        <div class="adm-grid-2" style="margin-bottom: 16px;">
+
+            <div class="adm-card" style="border-left: 4px solid var(--adm-danger);">
+                <div class="adm-card__header">
+                    <span class="adm-card__title" style="color: var(--adm-danger);">
+                        <i class="ph ph-shield-warning"></i> Confirmación del segundo administrador
+                    </span>
+                </div>
+                <div class="adm-card__body">
+                    <div class="adm-alert adm-alert--danger" style="margin-bottom: 16px;">
+                        <i class="ph ph-warning" style="font-size: 1.2rem; flex-shrink: 0;"></i>
+                        <div>
+                            Este paso lo debe ejecutar un <strong>administrador distinto</strong> al que inició el proceso. Al confirmar, el ranking se vuelve FINAL e irrevocable tras 24h.
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--adm-text); margin-bottom: 6px;">
+                                Contraseña del segundo administrador *
+                            </label>
+                            <input type="password" id="confirm-password"
+                                placeholder="••••••••"
+                                style="width: 100%; padding: 8px 12px; border: 1px solid var(--adm-border); border-radius: 6px; font-size: 0.875rem; box-sizing: border-box;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--adm-text); margin-bottom: 6px;">
+                                Texto de confirmación *
+                            </label>
+                            <input type="text" id="confirm-final-text"
+                                placeholder="Escriba: CONFIRMAR CIERRE CM-2026-A"
+                                style="width: 100%; padding: 8px 12px; border: 1px solid var(--adm-border); border-radius: 6px; font-size: 0.875rem; box-sizing: border-box;">
+                            <p style="font-size: 0.75rem; color: var(--adm-text-muted); margin: 4px 0 0;">
+                                Debe escribir exactamente: <strong id="confirm-final-hint">CONFIRMAR CIERRE [convocatoria]</strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="adm-card">
+                <div class="adm-card__header">
+                    <span class="adm-card__title">¿Qué genera esta acción?</span>
+                </div>
+                <div class="adm-card__body" style="padding: 0;">
+                    <div class="adm-status-row">
+                        <i class="ph ph-file-pdf" style="color: var(--adm-danger); margin-right: 8px;"></i>
+                        <span class="adm-status-row__label">Acta PDF con firma SHA-256</span>
+                    </div>
+                    <div class="adm-status-row">
+                        <i class="ph ph-trophy" style="color: #d97706; margin-right: 8px;"></i>
+                        <span class="adm-status-row__label">Ranking final LOCKED (24h reversible)</span>
+                    </div>
+                    <div class="adm-status-row">
+                        <i class="ph ph-lock" style="color: var(--adm-danger); margin-right: 8px;"></i>
+                        <span class="adm-status-row__label">Convocatoria → CLOSED</span>
+                    </div>
+                    <div class="adm-status-row">
+                        <i class="ph ph-scroll" style="color: var(--adm-text-muted); margin-right: 8px;"></i>
+                        <span class="adm-status-row__label">Entrada en Audit Log inmutable</span>
+                    </div>
+                    <div class="adm-status-row">
+                        <i class="ph ph-bell" style="color: var(--adm-success); margin-right: 8px;"></i>
+                        <span class="adm-status-row__label">Notificación a candidatos</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+            <button class="adm-btn adm-btn--danger" id="btn-confirm" onclick="confirmarCierre()">
+                <i class="ph ph-lock-key"></i> Confirmar y cerrar definitivamente
+            </button>
+            <button class="adm-btn adm-btn--ghost" onclick="abortarCierre()">
+                <i class="ph ph-x-circle"></i> Abortar proceso
+            </button>
+        </div>
+    </div>
+
+    {# ── RESULTADO: Convocatoria cerrada ──────────────────────────────────── #}
+    <div class="adm-cierre-step" id="step-closed">
+        <div class="adm-card" style="border-left: 4px solid var(--adm-success);">
+            <div class="adm-card__header">
+                <span class="adm-card__title" style="color: var(--adm-success);">
+                    <i class="ph ph-check-circle"></i> Convocatoria cerrada correctamente
+                </span>
+            </div>
+            <div class="adm-card__body">
+                <p style="color: var(--adm-text-muted); margin: 0 0 16px;">
+                    El Acta oficial ha sido generada y firmada digitalmente. El ranking es ahora FINAL.
+                </p>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <a id="link-acta" href="#" class="adm-btn">
+                        <i class="ph ph-file-pdf"></i> Descargar Acta PDF
+                    </a>
+                    <a href="{{ url_for('admin.convocatorias') }}" class="adm-btn adm-btn--secondary">
+                        <i class="ph ph-list"></i> Ver todas las convocatorias
+                    </a>
+                </div>
+                <div style="margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 6px; border: 1px solid var(--adm-border);">
+                    <p style="font-size: 0.75rem; color: var(--adm-text-muted); margin: 0;">
+                        <strong>Firma SHA-256:</strong> <code id="acta-sha256" style="font-size: 0.75rem;">—</code><br>
+                        <strong>Ventana de reversión:</strong> <span id="acta-reverse-window">24 horas desde el cierre (solo SUPER_ADMIN)</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ── ESTADO: LOCKED ───────────────────────────────────────────────────── #}
+    <div class="adm-cierre-step" id="step-locked">
+        <div class="adm-card">
+            <div class="adm-card__header">
+                <span class="adm-card__title">
+                    <i class="ph ph-lock-key"></i> Convocatoria bloqueada (LOCKED)
+                </span>
+            </div>
+            <div class="adm-card__body">
+                <p style="color: var(--adm-text-muted); margin: 0 0 16px;">
+                    Han pasado más de 24 horas desde el cierre. El ranking es irrevocable.
+                </p>
+                <a href="{{ url_for('admin.download_acta', conv_id='__conv_id__') }}" id="link-acta-locked" class="adm-btn adm-btn--secondary">
+                    <i class="ph ph-file-pdf"></i> Ver acta
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    let currentConv = null;
+
+    window.loadConvocatoria = function () {
+        const sel = document.getElementById('conv-selector');
+        const opt = sel.selectedOptions[0];
+        if (!opt || !opt.value) return;
+
+        currentConv = {
+            id: opt.value,
+            status: opt.dataset.status,
+            name: opt.dataset.name,
+            plazas: opt.dataset.plazas,
+            candidatos: opt.dataset.candidatos,
+            completados: opt.dataset.completados,
+            pendientes: opt.dataset.pendientes,
+            auditoria: opt.dataset.auditoria,
+            cierre: opt.dataset.cierre,
+            iniciadoPor: opt.dataset.iniciadoPor || null,
+            iniciadoHace: opt.dataset.iniciadoHace || null,
+        };
+
+        // Rellena preview data
+        document.getElementById('preview-badge').textContent = currentConv.status;
+        document.getElementById('preview-badge').className = 'adm-badge adm-badge--' + currentConv.status.toLowerCase();
+        document.getElementById('preview-plazas').textContent = currentConv.plazas;
+        document.getElementById('preview-candidatos').textContent = currentConv.candidatos;
+        document.getElementById('preview-completados').textContent = currentConv.completados;
+        document.getElementById('preview-pendientes').textContent = currentConv.pendientes;
+        document.getElementById('preview-auditoria').textContent = currentConv.auditoria;
+        document.getElementById('preview-cierre').textContent = currentConv.cierre;
+
+        const auditWarn = document.getElementById('step1-audit-warning');
+        auditWarn.style.display = parseInt(currentConv.auditoria) > 0 ? 'block' : 'none';
+
+        // Hints de texto de confirmación
+        document.getElementById('confirm-text-hint').textContent = 'INICIAR CIERRE ' + currentConv.name;
+        document.getElementById('confirm-final-hint').textContent = 'CONFIRMAR CIERRE ' + currentConv.name;
+
+        // Mostrar panel
+        document.getElementById('cierre-panel').style.display = 'block';
+
+        // Decidir qué paso mostrar según status
+        if (currentConv.status === 'OPEN') {
+            showStep('step-1');
+            setStepperState(1);
+        } else if (currentConv.status === 'CLOSING') {
+            // Rellena info de quién inició
+            if (currentConv.iniciadoPor) {
+                document.getElementById('step2-iniciado-info').style.display = 'block';
+                document.getElementById('step2-iniciado-por').textContent = currentConv.iniciadoPor;
+                document.getElementById('step2-iniciado-hace').textContent = currentConv.iniciadoHace;
+            }
+            showStep('step-3'); // Ya está en paso 3 — espera 2.º admin
+            setStepperState(2);
+        } else if (currentConv.status === 'CLOSED') {
+            showStep('step-closed');
+            setStepperState(3, true);
+        } else if (currentConv.status === 'LOCKED') {
+            document.getElementById('link-acta-locked').href = '/admin/convocatorias/' + currentConv.id + '/acta';
+            showStep('step-locked');
+            setStepperState(3, true);
+        }
+    };
+
+    function showStep(id) {
+        document.querySelectorAll('.adm-cierre-step').forEach(function (el) {
+            el.classList.remove('visible');
+        });
+        const el = document.getElementById(id);
+        if (el) el.classList.add('visible');
+    }
+
+    function setStepperState(activeStep, done) {
+        for (let i = 1; i <= 3; i++) {
+            const item = document.getElementById('step-item-' + i);
+            item.classList.remove('adm-stepper__item--active', 'adm-stepper__item--done');
+            if (done) {
+                item.classList.add('adm-stepper__item--done');
+            } else if (i < activeStep) {
+                item.classList.add('adm-stepper__item--done');
+            } else if (i === activeStep) {
+                item.classList.add('adm-stepper__item--active');
+            }
+        }
+    }
+
+    window.goToStep = function (step) {
+        if (step === 2) {
+            showStep('step-2');
+            setStepperState(2);
+        } else if (step === 1) {
+            showStep('step-1');
+            setStepperState(1);
+        }
+    };
+
+    window.iniciarCierre = function () {
+        const text = document.getElementById('initiate-confirm-text').value.trim();
+        const expected = 'INICIAR CIERRE ' + currentConv.name;
+        if (text !== expected) {
+            alert('El texto de confirmación no coincide.\nEscriba exactamente: ' + expected);
+            return;
+        }
+        // Demo: pasar a paso 3
+        showStep('step-3');
+        setStepperState(3);
+    };
+
+    window.confirmarCierre = function () {
+        const password = document.getElementById('confirm-password').value;
+        const text = document.getElementById('confirm-final-text').value.trim();
+        const expected = 'CONFIRMAR CIERRE ' + currentConv.name;
+
+        if (!password) {
+            alert('Introduzca la contraseña del segundo administrador.');
+            return;
+        }
+        if (text !== expected) {
+            alert('El texto de confirmación no coincide.\nEscriba exactamente: ' + expected);
+            return;
+        }
+        // Demo: mostrar resultado
+        document.getElementById('acta-sha256').textContent =
+            'a3f1c8e2b4d6f0912345678abcdef0123456789abcdef0123456789abcdef01';
+        document.getElementById('link-acta').href = '/admin/convocatorias/' + currentConv.id + '/acta';
+        showStep('step-closed');
+        setStepperState(3, true);
+    };
+
+    window.abortarCierre = function () {
+        if (!confirm('¿Seguro que desea abortar el proceso de cierre? La convocatoria volverá a estado OPEN.')) return;
+        showStep('step-1');
+        setStepperState(1);
+    };
+
+    window.cancelar = function () {
+        document.getElementById('cierre-panel').style.display = 'none';
+        document.getElementById('conv-selector').value = '';
+    };
+})();
+</script>
+{% endblock %}
