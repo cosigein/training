@@ -27,17 +27,12 @@
 <!-- 2 columnas: Mapa + Score Breakdown -->
 <div class="mgr-detail-grid">
 
-    <!-- Mapa simulado -->
+    <!-- Telemetría/Mapa: NO HACER DE MOMENTO -->
+    {#
     <div class="mgr-card mgr-card--map">
-        <div class="mgr-card__header">
-            <h3><i class="ph ph-map-trifold"></i> Recorrido</h3>
-            <span class="mgr-pill" style="font-size:11px; cursor:default">{{ ruta.id if ruta else '—' }}</span>
-        </div>
-        <div class="mgr-map-placeholder">
-            <i class="ph ph-map-trifold" style="font-size:48px; color:#334155; opacity:0.3"></i>
-            <p style="color:#64748b; font-size:12px; margin-top:8px">MapViewer disponible en integración con datos reales</p>
-        </div>
+        ...
     </div>
+    #}
 
     <!-- Score Breakdown -->
     <div class="mgr-card">
@@ -71,47 +66,12 @@
     </div>
 </div>
 
-<!-- Timeline de eventos -->
+<!-- Timeline de eventos: NO HACER DE MOMENTO -->
+{#
 <div class="mgr-card" style="margin-top:16px">
-    <div class="mgr-card__header">
-        <h3><i class="ph ph-activity"></i> Eventos detectados</h3>
-        <span style="font-size:12px; color:#64748b">Sensores + Webfleet</span>
-    </div>
-
-    {% if eventos %}
-    <div class="mgr-timeline">
-        {% for ev in eventos %}
-        <div class="mgr-timeline-event mgr-timeline-event--{{ ev.confidence|lower }}">
-            <div class="mgr-timeline-event__header">
-                <span class="mgr-event-type">{{ ev.tipo.replace('_', ' ') }}</span>
-                <span class="mgr-event-source">
-                    <i class="ph ph-{{ 'broadcast' if ev.source == 'WEBFLEET' else 'device-mobile' }}"></i>
-                    {{ ev.source }}
-                </span>
-                <span class="mgr-event-confidence mgr-event-confidence--{{ ev.confidence|lower }}">
-                    {{ ev.confidence }}
-                </span>
-                <span class="mgr-event-ts">{{ ev.timestamp }}</span>
-            </div>
-            <p class="mgr-event-desc">{{ ev.descripcion }}</p>
-            {% set sev_class = 'mgr-sev-bar--high' if ev.severidad > 0.7 else ('mgr-sev-bar--medium' if ev.severidad > 0.4 else 'mgr-sev-bar--low') %}
-            <div class="mgr-event-severity">
-                <span style="font-size:11px; color:#94a3b8">Severidad</span>
-                <div class="mgr-sev-bar-wrap">
-                    <div class="mgr-sev-bar {{ sev_class }}" {{ {'style': 'width:' ~ (ev.severidad * 100)|int ~ '%'} | xmlattr }}></div>
-                </div>
-                <span style="font-size:11px; color:#475569">{{ (ev.severidad * 100)|int }}%</span>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="mgr-empty" style="padding:24px">
-        <i class="ph ph-check-circle" style="color:#16a34a"></i>
-        <p>Sin eventos detectados en este intento</p>
-    </div>
-    {% endif %}
+    ...
 </div>
+#}
 
 <!-- Auditoría (si la hay) -->
 {% if auditoria %}

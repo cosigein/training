@@ -39,7 +39,8 @@
             <div class="alu-card__body" style="padding:24px;">
                 <form class="alu-audit-form"
                       action="{{ url_for('student.solicitar_auditoria', attempt_id=attempt_id) }}"
-                      method="get">
+                      method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                     <div>
                         <label for="razon">Explique qué ocurrió (mínimo 30 caracteres)</label>

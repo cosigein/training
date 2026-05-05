@@ -87,7 +87,7 @@ def intento(attempt_id):
     )
 
 
-@student_bp.route("/intento/<string:attempt_id>/auditoria", methods=["GET"])
+@student_bp.route("/intento/<string:attempt_id>/auditoria", methods=["GET", "POST"])
 @require_role(["STUDENT"])
 def solicitar_auditoria(attempt_id):
     user = _current_user()
@@ -97,7 +97,11 @@ def solicitar_auditoria(attempt_id):
     if ctx.get("existing"):
         return redirect(url_for("student.intento", attempt_id=attempt_id))
 
-    razon = (request.args.get("razon") or "").strip()
+    razon = ""
+    if request.method == "POST":
+        razon = (request.form.get("razon") or "").strip()
+    else:
+        razon = (request.args.get("razon") or "").strip()
     error = None
 
     if razon:

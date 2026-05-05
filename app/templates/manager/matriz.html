@@ -146,7 +146,7 @@
                     <a href="{{ url_for('manager.intento_detalle', attempt_id=info.attempt_id) }}"
                        class="mgr-matrix-badge {{ badge_class }}">
                         {{ "%.1f"|format(info.nota) }}
-                        {% if info.audit %}<i class="ph ph-scales" style="font-size:8px"></i>{% endif %}
+                        {% if info.audit %}<i class="ph ph-scales" style="font-size:9px; margin-left:2px;"></i>{% endif %}
                     </a>
                 {% else %}
                     <span class="mgr-matrix-badge mgr-matrix-badge--pending">—</span>
