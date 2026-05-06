@@ -84,6 +84,39 @@ def create_student(org_id, actor_id, name, email, password, rfid_uid=None):
 
 # ── Attempts ──────────────────────────────────────────────────────────────────
 
+def invalidate_attempt(org_id, actor_id, attempt_id, reason):
+    """
+    Anula un Attempt: pasa a status=INVALIDATED y queda fuera del ranking.
+    El intento queda persistido para auditoría — no se borra ningún dato.
+    """
+    reason = (reason or "").strip()
+    if not reason:
+        raise ProvisioningError("La razón de invalidación es obligatoria.")
+
+    attempt = Attempt.query.filter_by(id=attempt_id, organizationId=org_id).first()
+    if not attempt:
+        raise ProvisioningError("Intento no encontrado.")
+    if attempt.status == AttemptStatus.INVALIDATED:
+        raise ProvisioningError("El intento ya estaba invalidado.")
+
+    attempt.status = AttemptStatus.INVALIDATED
+    attempt.invalidatedAt = datetime.utcnow()
+    attempt.invalidatedBy = actor_id
+    attempt.invalidatedReason = reason
+
+    db.session.add(TrainingAuditLog(
+        actorId=actor_id,
+        actorRole="MANAGER",
+        action=AuditAction.ATTEMPT_INVALIDATED,
+        resourceType="Attempt",
+        resourceId=attempt.id,
+        delta={"reason": reason, "previous_status": attempt.status.value},
+        organizationId=org_id,
+    ))
+    db.session.commit()
+    return attempt
+
+
 def open_attempt(org_id, actor_id, enrollment_id, vehicle_id=None, route_id=None):
     """Abre un Attempt en estado OPEN para un Enrollment activo, sin score.
 

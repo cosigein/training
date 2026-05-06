@@ -28,6 +28,7 @@ from .provisioning_service import (
     list_routes,
     create_route,
     toggle_route_active,
+    invalidate_attempt,
 )
 from .ranking_service import (
     get_convocatorias,
@@ -244,6 +245,7 @@ def intento_detalle(attempt_id):
         and attempt.closedAt is None
         and attempt.status in (AttemptStatus.OPEN, AttemptStatus.PROCESSING)
     )
+    is_invalidated = attempt is not None and attempt.status == AttemptStatus.INVALIDATED
 
     return render_template(
         "manager/intento.html",
@@ -258,6 +260,8 @@ def intento_detalle(attempt_id):
         auditoria=detail["auditoria"],
         convocatoria=detail["convocatoria"],
         can_score=can_score,
+        is_invalidated=is_invalidated,
+        invalidated_reason=attempt.invalidatedReason if is_invalidated else None,
     )
 
 
@@ -322,6 +326,28 @@ def upload_sensor_data(attempt_id):
         flash(f"Datos cargados ({parse_result.total_rows} filas) pero error en el pipeline: {exc}", "danger")
 
     return redirect(redirect_url)
+
+
+@manager_bp.route("/intento/<attempt_id>/invalidar", methods=["POST"])
+@require_role(["MANAGER", "ADMIN"])
+def invalidar_intento(attempt_id):
+    org_id = _get_org_id()
+    actor_id = get_jwt_identity()
+    reason = request.form.get("reason", "").strip()
+
+    try:
+        invalidate_attempt(
+            org_id=org_id,
+            actor_id=actor_id,
+            attempt_id=attempt_id,
+            reason=reason,
+        )
+    except ProvisioningError as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("manager.intento_detalle", attempt_id=attempt_id))
+
+    flash("Intento invalidado. Ya no aparece en el ranking.", "success")
+    return redirect(url_for("manager.intento_detalle", attempt_id=attempt_id))
 
 
 @manager_bp.route("/intento/<attempt_id>/score", methods=["POST"])

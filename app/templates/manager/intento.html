@@ -7,6 +7,17 @@
 
 {% block content %}
 
+{% if is_invalidated %}
+<div class="mgr-alert" style="background:#fee2e2; border:1px solid #fca5a5; color:#991b1b; padding:12px 16px; border-radius:8px; margin-bottom:16px; display:flex; align-items:center; gap:10px;">
+    <i class="ph ph-warning-octagon" style="font-size:20px;"></i>
+    <div>
+        <strong>Intento invalidado.</strong>
+        No cuenta para el ranking.
+        {% if invalidated_reason %}<br><small>Razón: {{ invalidated_reason }}</small>{% endif %}
+    </div>
+</div>
+{% endif %}
+
 <div class="mgr-back-bar">
     <a href="javascript:history.back()" class="mgr-btn-back">
         <i class="ph ph-arrow-left"></i> Volver
@@ -224,6 +235,24 @@
                 <a href="{{ url_for('manager.auditoria_detalle', audit_id=auditoria.id) }}" class="mgr-action-btn mgr-action-btn--primary" style="width:100%; margin-top:8px; justify-content:center; font-size: 12px; padding: 6px;">
                     Atender auditoría <i class="ph ph-caret-right"></i>
                 </a>
+            </div>
+            {% endif %}
+
+            {% if not is_invalidated %}
+            <div style="margin: 16px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+                <p style="color:#64748b; font-size:12px; margin:0 0 8px;">
+                    ¿El intento se cargó con datos erróneos? Podés invalidarlo — quedará registrado pero no contará para el ranking.
+                </p>
+                <form method="POST"
+                      action="{{ url_for('manager.invalidar_intento', attempt_id=attempt_id) }}"
+                      onsubmit="var r = prompt('Razón de invalidación (obligatoria):'); if (!r || !r.trim()) { return false; } this.querySelector('input[name=reason]').value = r; return confirm('¿Invalidar este intento? No se podrá deshacer.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="reason" value="">
+                    <button type="submit"
+                            style="width:100%; padding:8px; border:1px solid #fecaca; background:#fff; color:#dc2626; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">
+                        <i class="ph ph-x-circle"></i> Invalidar intento
+                    </button>
+                </form>
             </div>
             {% endif %}
         </div>
