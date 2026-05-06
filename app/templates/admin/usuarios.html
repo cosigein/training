@@ -9,8 +9,24 @@
 <div class="adm-page-header" style="margin-bottom: 20px;">
     <div>
         <h1 class="adm-page-title">Usuarios</h1>
-        <p class="adm-page-subtitle">Administradores y managers del sistema</p>
+        <p class="adm-page-subtitle">Gestión integral de administradores, managers y alumnos</p>
     </div>
+</div>
+
+{# ── Buscador y Filtro ────────────────────────────────────────────────────── #}
+<div style="margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+    <div style="position: relative; flex: 1; min-width: 280px;">
+        <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+        <input type="text" id="user-search" placeholder="Buscar por nombre o email..." oninput="filtrarUsuarios()"
+            style="width: 100%; padding: 8px 12px 8px 36px; border: 1px solid var(--adm-border); border-radius: 6px; font-size: 0.875rem;">
+    </div>
+    <select id="role-filter" onchange="filtrarUsuarios()" style="padding: 8px 12px; border: 1px solid var(--adm-border); border-radius: 6px; font-size: 0.875rem; background: #fff;">
+        <option value="all">Todos los roles</option>
+        <option value="SUPER_ADMIN">Super Admin</option>
+        <option value="ADMIN">Admin</option>
+        <option value="MANAGER">Manager</option>
+        <option value="ALUMNO">Alumno</option>
+    </select>
 </div>
 
 <div class="adm-alert adm-alert--info" style="margin-bottom: 16px;">
@@ -34,7 +50,7 @@
                 </thead>
                 <tbody>
                     {% for u in usuarios %}
-                    <tr>
+                    <tr class="user-row" data-role="{{ u.rol }}" data-search="{{ u.nombre.lower() }} {{ u.email.lower() }}">
                         <td>
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <div style="width: 32px; height: 32px; border-radius: 50%; background: #0d47a1; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; font-family: var(--font-heading);">
@@ -67,4 +83,28 @@
     </div>
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filtrarUsuarios() {
+    const term = document.getElementById('user-search').value.toLowerCase();
+    const role = document.getElementById('role-filter').value;
+    const rows = document.querySelectorAll('.user-row');
+
+    rows.forEach(row => {
+        const searchData = row.dataset.search;
+        const userRole = row.dataset.role;
+        
+        const matchesSearch = searchData.includes(term);
+        const matchesRole = (role === 'all' || userRole === role);
+        
+        row.style.display = (matchesSearch && matchesRole) ? '' : 'none';
+    });
+}
+</script>
+
+<style>
+    .adm-badge--alumno { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+</style>
 {% endblock %}

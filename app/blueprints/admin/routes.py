@@ -56,6 +56,18 @@ MOCK_USUARIOS = [
     {"id": "u-003", "nombre": "Carlos Ruiz Martínez", "email": "cruiz@cmadrid.es", "rol": "ADMIN", "acceso": "04/05/2026 16:30"},
     {"id": "u-004", "nombre": "Ana Romero Vidal", "email": "aromero@cmadrid.es", "rol": "MANAGER", "acceso": "05/05/2026 09:00"},
     {"id": "u-005", "nombre": "Luis Castro Pinto", "email": "lcastro@cmadrid.es", "rol": "MANAGER", "acceso": "04/05/2026 14:22"},
+    # Alumnos de las convocatorias
+    {"id": "u-006", "nombre": "María García López", "email": "mgarcia.l@alumno.es", "rol": "ALUMNO", "acceso": "06/05/2026 10:15"},
+    {"id": "u-007", "nombre": "Elena Jiménez Torres", "email": "ejimenez@alumno.es", "rol": "ALUMNO", "acceso": "06/05/2026 09:30"},
+    {"id": "u-008", "nombre": "Roberto Gómez Paz", "email": "rgomez@alumno.es", "rol": "ALUMNO", "acceso": "05/05/2026 18:20"},
+    {"id": "u-009", "nombre": "Pedro Sánchez Villa", "email": "psanchez@alumno.es", "rol": "ALUMNO", "acceso": "06/05/2026 11:00"},
+    {"id": "u-010", "nombre": "Ana Romero Díaz", "email": "aromero.d@alumno.es", "rol": "ALUMNO", "acceso": "05/05/2026 09:45"},
+    {"id": "u-011", "nombre": "Lucía Fernández", "email": "lfernandez@alumno.es", "rol": "ALUMNO", "acceso": "04/05/2026 12:10"},
+    {"id": "u-012", "nombre": "Francisco Morales Vega", "email": "fmorales@alumno.es", "rol": "ALUMNO", "acceso": "06/05/2026 08:50"},
+    {"id": "u-013", "nombre": "Carmen López Blanco", "email": "clopez@alumno.es", "rol": "ALUMNO", "acceso": "05/05/2026 20:15"},
+    {"id": "u-014", "nombre": "Javier Herrero Ortega", "email": "jherrero@alumno.es", "rol": "ALUMNO", "acceso": "05/05/2026 15:40"},
+    {"id": "u-015", "nombre": "Miguel Ángel Ruiz", "email": "mruiz@alumno.es", "rol": "ALUMNO", "acceso": "04/05/2026 17:22"},
+    {"id": "u-016", "nombre": "Isabel Navarro Cid", "email": "inavarro@alumno.es", "rol": "ALUMNO", "acceso": "Hoy 09:00"},
 ]
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -88,11 +100,13 @@ def admin_simulador():
     )
 
 @admin_bp.route("/cierre", endpoint="cierre", methods=["GET"])
-def admin_cierre():
+@admin_bp.route("/cierre/<string:conv_id>", endpoint="cierre_detail", methods=["GET"])
+def admin_cierre(conv_id=None):
     return render_template("admin/cierre.html",
         current_user=MockUser(),
         active_page="cierre",
         convocatorias=[c for c in MOCK_CONVOCATORIAS if c["status"] in ("OPEN", "CLOSING", "CLOSED")],
+        target_conv_id=conv_id
     )
 
 @admin_bp.route("/gdpr-panel", endpoint="gdpr", methods=["GET"])
@@ -426,10 +440,39 @@ def close_reverse(conv_id):
 def download_acta(conv_id):
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
+    # Demo/Mock check
+    mock_conv = next((c for c in MOCK_CONVOCATORIAS if c["id"] == conv_id), None)
+    
     from app.models.training import Convocatoria, ConvocatoriaStatus
     conv = Convocatoria.query.filter_by(id=conv_id, organizationId=user.organizationId).first()
-    if not conv:
+    
+    if not conv and not mock_conv:
         return jsonify({"message": "Convocatoria no encontrada"}), 404
+    
+    # If it's a mock or real but locked/closed
+    status = conv.status if conv else mock_conv["status"]
+    if status not in (ConvocatoriaStatus.CLOSED, ConvocatoriaStatus.LOCKED, "CLOSED", "LOCKED"):
+        return jsonify({"message": "El acta solo está disponible para convocatorias cerradas"}), 409
+    
+    from flask import Response
+    if mock_conv and not conv:
+        # Return a valid minimal PDF for demo
+        dummy_pdf = (
+            b"%PDF-1.1\n"
+            b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
+            b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n"
+            b"3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 612 792] /Contents 5 0 R >>\nendobj\n"
+            b"4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n"
+            b"5 0 obj\n<< /Length 50 >>\nstream\nBT /F1 24 Tf 100 700 Td (Acta de Convocatoria - DEMO) Tj ET\nendstream\n"
+            b"endobj\n"
+            b"xref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000059 00000 n \n0000000116 00000 n \n0000000223 00000 n \n0000000295 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n395\n%%EOF"
+        )
+        filename = f"acta_{mock_conv['name'].replace(' ', '_')}_20260101.pdf"
+        return Response(
+            dummy_pdf,
+            mimetype="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
     if conv.status not in (ConvocatoriaStatus.CLOSED, ConvocatoriaStatus.LOCKED):
         return jsonify({"message": "El acta solo está disponible para convocatorias cerradas"}), 409
     if not conv.acta:

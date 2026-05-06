@@ -62,7 +62,7 @@
                     </div>
                     <div class="adm-conv-row__actions">
                         {% if conv.status in ['OPEN', 'CLOSING'] %}
-                        <a href="{{ url_for('admin.cierre') }}" class="adm-btn adm-btn--sm">Gestionar</a>
+                        <a href="{{ url_for('admin.cierre_detail', conv_id=conv.id) }}" class="adm-btn adm-btn--sm">Gestionar</a>
                         {% else %}
                         <a href="{{ url_for('admin.download_acta', conv_id=conv.id) }}" class="adm-btn adm-btn--sm adm-btn--secondary">Ver acta</a>
                         {% endif %}

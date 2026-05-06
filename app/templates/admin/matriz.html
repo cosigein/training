@@ -6,77 +6,80 @@
 
 {% block content %}
 
-<div class="adm-page-header" style="margin-bottom: 20px;">
+<div class="adm-page-header" style="margin-bottom: 8px; padding-bottom: 0;">
     <div>
-        <h1 class="adm-page-title"><i class="ph ph-grid-nine"></i> Matriz de Progreso</h1>
-        <p class="adm-page-subtitle">Candidatos × Rutas por convocatoria</p>
+        <h1 class="adm-page-title" style="font-size: 1.15rem; margin: 0;"><i class="ph ph-grid-nine"></i> Matriz de Progreso</h1>
+        <p class="adm-page-subtitle" style="font-size: 0.7rem; margin: 0;">Candidatos × Rutas por convocatoria</p>
     </div>
     <div style="display: flex; gap: 8px; align-items: center;">
-        <select id="mat-conv" onchange="loadMatriz()" style="height: 36px; padding: 0 10px; border: 1.5px solid #e2e8f0; border-radius: 6px; font-size: 13px; background: #fff; color: #1e293b; font-family: var(--font-body); font-weight: 600;">
-            <option value="">— Seleccionar convocatoria —</option>
+        <select id="mat-conv" onchange="loadMatriz()" style="height: 28px; padding: 0 6px; border: 1.5px solid #e2e8f0; border-radius: 6px; font-size: 11px; background: #fff; color: #1e293b; font-family: var(--font-body); font-weight: 600;">
+            <option value="all">Todas las convocatorias</option>
             {% for conv in convocatorias %}
             <option value="{{ conv.id }}">{{ conv.name }}</option>
             {% endfor %}
         </select>
-        <button class="adm-btn adm-btn--sm adm-btn--secondary" onclick="exportMatriz()">
+        <button class="adm-btn adm-btn--sm adm-btn--secondary" onclick="exportMatriz()" style="height: 28px; padding: 0 10px; font-size: 11px;">
             <i class="ph ph-file-xls"></i> Exportar
         </button>
     </div>
 </div>
 
-{# ── Leyenda ──────────────────────────────────────────────────────────────── #}
-<div style="display: flex; gap: 16px; align-items: center; margin-bottom: 16px; flex-wrap: wrap;">
-    <span style="font-size: 0.78rem; font-weight: 600; color: var(--adm-text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Leyenda:</span>
-    <span class="adm-mat-legend adm-mat-legend--pass">Apto · en corte</span>
-    <span class="adm-mat-legend adm-mat-legend--fail">No apto · fuera de corte</span>
-    <span class="adm-mat-legend adm-mat-legend--pending">En progreso</span>
-    <span class="adm-mat-legend adm-mat-legend--empty">Sin intentos</span>
-    <span class="adm-mat-legend adm-mat-legend--audit">Auditoría pendiente</span>
+{# ── Toolbar Unificada (Leyenda + KPIs + Buscador) ────────────────────────── #}
+<div style="display: flex; gap: 16px; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: nowrap; background: #1e293b; padding: 6px 12px; border-radius: 6px; color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    
+    {# Lado Izquierdo: Leyenda #}
+    <div style="display: flex; gap: 8px; align-items: center; border-right: 1px solid #334155; padding-right: 16px;">
+        <span style="font-size: 0.6rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Leyenda</span>
+        <span class="adm-mat-legend" style="background: #10b981; color: #fff; border: none; padding: 1px 6px; font-size: 0.6rem; border-radius: 3px;">Apto</span>
+        <span class="adm-mat-legend" style="background: #ef4444; color: #fff; border: none; padding: 1px 6px; font-size: 0.6rem; border-radius: 3px;">No apto</span>
+        <span class="adm-mat-legend" style="background: #f59e0b; color: #fff; border: none; padding: 1px 6px; font-size: 0.6rem; border-radius: 3px;">Progreso</span>
+    </div>
+
+    {# Centro: KPIs #}
+    <div style="display: flex; gap: 16px; align-items: center; flex: 1; justify-content: center;">
+        <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="font-size: 0.65rem; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Aptos:</span>
+            <span id="mat-kpi-aptos" style="font-size: 0.9rem; font-weight: 800; color: #10b981;">—</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="font-size: 0.65rem; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Fuera:</span>
+            <span id="mat-kpi-fuera" style="font-size: 0.9rem; font-weight: 800; color: #ef4444;">—</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="font-size: 0.65rem; font-weight: 600; color: #94a3b8; text-transform: uppercase;">En curso:</span>
+            <span id="mat-kpi-progreso" style="font-size: 0.9rem; font-weight: 800; color: #f59e0b;">—</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="font-size: 0.65rem; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Total:</span>
+            <span id="mat-kpi-total" style="font-size: 0.9rem; font-weight: 800; color: #fff;">—</span>
+        </div>
+    </div>
+
+    {# Lado Derecho: Buscador #}
+    <div style="position: relative; width: 180px;">
+        <i class="ph ph-magnifying-glass" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.8rem;"></i>
+        <input type="text" id="mat-search" placeholder="Buscar..." oninput="buscarCandidato(this.value)"
+            style="padding: 3px 8px 3px 26px; border: 1px solid #334155; border-radius: 4px; font-size: 0.75rem; width: 100%; background: #0f172a; color: #fff; box-sizing: border-box;">
+    </div>
 </div>
 
-{# ── Buscador ─────────────────────────────────────────────────────────────── #}
-<div style="margin-bottom: 16px;">
-    <input type="text" id="mat-search" placeholder="Buscar candidato..." oninput="buscarCandidato(this.value)"
-        style="padding: 8px 12px; border: 1px solid var(--adm-border); border-radius: 6px; font-size: 0.875rem; width: 280px; background: #fff; color: var(--adm-text);">
-</div>
-
-{# ── Placeholder sin convocatoria ─────────────────────────────────────────── #}
-<div id="mat-placeholder" class="adm-card">
+{# El placeholder se elimina o se oculta por defecto #}
+<div id="mat-placeholder" class="adm-card" style="display: none;">
     <div class="adm-empty">
         <i class="ph ph-grid-nine"></i>
         <p>Seleccioná una convocatoria para ver la matriz de progreso.</p>
     </div>
 </div>
 
-{# ── Tabla de matriz (sticky header + sticky primera columna) ─────────────── #}
 <div id="mat-container" style="display: none;">
 
-    {# KPIs rápidos #}
-    <div class="adm-grid-4" style="margin-bottom: 16px;">
-        <div class="adm-kpi-card adm-kpi-card--success">
-            <div class="adm-kpi-card__label">Aptos en corte</div>
-            <div class="adm-kpi-card__value" id="mat-kpi-aptos">—</div>
-        </div>
-        <div class="adm-kpi-card" style="border-left-color: var(--adm-danger);">
-            <div class="adm-kpi-card__label">Fuera de corte</div>
-            <div class="adm-kpi-card__value" id="mat-kpi-fuera" style="color: var(--adm-danger);">—</div>
-        </div>
-        <div class="adm-kpi-card" style="border-left-color: #d97706;">
-            <div class="adm-kpi-card__label">En progreso</div>
-            <div class="adm-kpi-card__value" id="mat-kpi-progreso">—</div>
-        </div>
-        <div class="adm-kpi-card" style="border-left-color: var(--adm-text-muted);">
-            <div class="adm-kpi-card__label">Total candidatos</div>
-            <div class="adm-kpi-card__value" id="mat-kpi-total">—</div>
-        </div>
-    </div>
-
     <div class="adm-card">
-        <div class="adm-card__body" style="padding: 0; overflow: auto; max-height: calc(100vh - 340px);">
+        <div class="adm-card__body" style="padding: 0; overflow: auto; max-height: calc(100vh - 160px);">
             <table class="adm-table adm-mat-table" id="mat-table">
                 <thead>
                     <tr id="mat-header-row">
-                        <th class="adm-mat-sticky-col" style="min-width: 200px; background: #fafbfc; z-index: 10;">#&nbsp;&nbsp;Candidato</th>
+                        <th class="adm-mat-sticky-col" style="min-width: 200px; background: #1e3a8a; color: #ffffff; z-index: 10;">#&nbsp;&nbsp;Candidato</th>
+                        <th id="col-conv" style="text-align: left;">Convocatoria</th>
                         <th style="text-align: right;">Ranking</th>
                         <th style="text-align: right;">Nota</th>
                         <th class="adm-mat-route-cell">R-Norte A</th>
@@ -103,16 +106,19 @@
     const MOCK_DATA = {
         plazas: 3,
         candidatos: [
-            { pos: 1,  nombre: "Carlos Ruiz Martínez",         nota: 8.74, estado: "pass",    rutas: ["pass","pass","pass","pass","pass","pass"] },
-            { pos: 2,  nombre: "María García López",            nota: 8.51, estado: "pass",    rutas: ["pass","pass","pass","fail","pass","pass"] },
-            { pos: 3,  nombre: "Pedro Sánchez Villa",           nota: 8.12, estado: "pass",    rutas: ["pass","pass","fail","pass","pass","pass"] },
-            { pos: 4,  nombre: "Ana Romero Díaz",               nota: 7.98, estado: "fail",    rutas: ["pass","fail","pass","pass","pass","pending"] },
-            { pos: 5,  nombre: "Luis Castro Pinto",             nota: 7.65, estado: "fail",    rutas: ["fail","pass","pass","pass","pass","pass"] },
-            { pos: 6,  nombre: "Elena Jiménez Torres",          nota: 7.43, estado: "fail",    rutas: ["pass","pass","pass","pass","fail","fail"] },
-            { pos: 7,  nombre: "Francisco Morales Vega",        nota: 6.91, estado: "fail",    rutas: ["pass","pass","pass","empty","pass","pass"] },
-            { pos: 8,  nombre: "Carmen López Blanco",           nota: 6.77, estado: "pending", rutas: ["pass","pass","pending","pass","pass","empty"] },
-            { pos: 9,  nombre: "Javier Herrero Ortega",         nota: 6.54, estado: "pending", rutas: ["pass","audit","pass","pass","empty","empty"] },
-            { pos: 10, nombre: "Isabel Navarro Cid",            nota: 0,    estado: "empty",   rutas: ["empty","empty","empty","empty","empty","empty"] },
+            { pos: 1,  convId: "conv-a-2026", convName: "CM-2026-A", nombre: "Carlos Ruiz Martínez",         nota: 8.74, estado: "pass",    rutas: ["pass","pass","pass","pass","pass","pass"] },
+            { pos: 2,  convId: "conv-a-2026", convName: "CM-2026-A", nombre: "María García López",            nota: 8.51, estado: "pass",    rutas: ["pass","pass","pass","fail","pass","pass"] },
+            { pos: 1,  convId: "conv-b-2026", convName: "CM-2026-B", nombre: "Roberto Gómez Paz",            nota: 8.90, estado: "pass",    rutas: ["pass","pass","pass","pass","pass","pass"] },
+            { pos: 3,  convId: "conv-a-2026", convName: "CM-2026-A", nombre: "Pedro Sánchez Villa",           nota: 8.12, estado: "pass",    rutas: ["pass","pass","fail","pass","pass","pass"] },
+            { pos: 4,  convId: "conv-a-2026", convName: "CM-2026-A", nombre: "Ana Romero Díaz",               nota: 7.98, estado: "fail",    rutas: ["pass","fail","pass","pass","pass","pending"] },
+            { pos: 2,  convId: "conv-b-2026", convName: "CM-2026-B", nombre: "Lucía Fernández",               nota: 7.80, estado: "fail",    rutas: ["pass","pass","fail","pass","pass","pass"] },
+            { pos: 5,  convId: "conv-a-2026", convName: "CM-2026-A", nombre: "Luis Castro Pinto",             nota: 7.65, estado: "fail",    rutas: ["fail","pass","pass","pass","pass","pass"] },
+            { pos: 6,  convId: "conv-a-2026", convName: "CM-2026-A", nombre: "Elena Jiménez Torres",          nota: 7.43, estado: "fail",    rutas: ["pass","pass","pass","pass","fail","fail"] },
+            { pos: 7,  convId: "conv-a-2026", convName: "CM-2026-A", nombre: "Francisco Morales Vega",        nota: 6.91, estado: "fail",    rutas: ["pass","pass","pass","empty","pass","pass"] },
+            { pos: 8,  convId: "conv-a-2026", convName: "CM-2026-A", nombre: "Carmen López Blanco",           nota: 6.77, estado: "pending", rutas: ["pass","pass","pending","pass","pass","empty"] },
+            { pos: 9,  convId: "conv-a-2026", convName: "CM-2026-A", nombre: "Javier Herrero Ortega",         nota: 6.54, estado: "pending", rutas: ["pass","audit","pass","pass","empty","empty"] },
+            { pos: 3,  convId: "conv-b-2026", convName: "CM-2026-B", nombre: "Miguel Ángel Ruiz",             nota: 6.20, estado: "pending", rutas: ["pass","pending","empty","empty","empty","empty"] },
+            { pos: 10, convId: "conv-a-2026", convName: "CM-2026-A", nombre: "Isabel Navarro Cid",            nota: 0,    estado: "empty",   rutas: ["empty","empty","empty","empty","empty","empty"] },
         ]
     };
 
@@ -127,10 +133,9 @@
         return map[estado] || map.empty;
     }
 
-    function buildRows(data) {
-        return data.candidatos.map(function (c) {
-            const cutLine = c.pos === MOCK_DATA.plazas ? ' style="border-bottom: 2px dashed var(--adm-danger);"' : '';
-            const rowClass = c.estado === 'pass' ? '' : '';
+    function buildRows(data, isAll) {
+        return data.map(function (c) {
+            const cutLine = !isAll && c.pos === MOCK_DATA.plazas ? ' style="border-bottom: 2px dashed var(--adm-danger);"' : '';
             let rutaCells = c.rutas.map(renderCell).join('');
             return '<tr class="mat-candidate-row"' + cutLine + '>' +
                 '<td class="adm-mat-sticky-col">' +
@@ -140,6 +145,7 @@
                     '<div style="font-weight: 600; font-size: 0.85rem; color: var(--adm-text);">' + c.nombre + '</div>' +
                     '</div></div>' +
                 '</td>' +
+                '<td class="col-conv-val" style="font-size: 0.75rem; color: var(--adm-text-muted);">' + c.convName + '</td>' +
                 '<td style="text-align: right; color: var(--adm-text-muted);">#' + c.pos + '</td>' +
                 '<td style="text-align: right; font-weight: 700; color: ' + (c.estado === 'pass' ? 'var(--adm-success)' : 'var(--adm-text-muted)') + ';">' +
                     (c.nota > 0 ? c.nota.toFixed(2) : '—') + '</td>' +
@@ -150,27 +156,38 @@
 
     window.loadMatriz = function () {
         const conv = document.getElementById('mat-conv').value;
-        if (!conv) {
-            document.getElementById('mat-placeholder').style.display = 'block';
-            document.getElementById('mat-container').style.display = 'none';
-            return;
+        const isAll = conv === 'all' || !conv;
+        
+        let filteredCandidatos = MOCK_DATA.candidatos;
+        if (!isAll) {
+            filteredCandidatos = MOCK_DATA.candidatos.filter(c => c.convId === conv);
         }
 
-        const data = MOCK_DATA;
-        const aptos = data.candidatos.filter(function (c) { return c.estado === 'pass'; }).length;
-        const fuera = data.candidatos.filter(function (c) { return c.estado === 'fail'; }).length;
-        const progreso = data.candidatos.filter(function (c) { return c.estado === 'pending'; }).length;
+        // Mostrar/ocultar columna de convocatoria
+        document.getElementById('col-conv').style.display = isAll ? '' : 'none';
+
+        const aptos = filteredCandidatos.filter(function (c) { return c.estado === 'pass'; }).length;
+        const fuera = filteredCandidatos.filter(function (c) { return c.estado === 'fail'; }).length;
+        const progreso = filteredCandidatos.filter(function (c) { return c.estado === 'pending'; }).length;
 
         document.getElementById('mat-kpi-aptos').textContent = aptos;
         document.getElementById('mat-kpi-fuera').textContent = fuera;
         document.getElementById('mat-kpi-progreso').textContent = progreso;
-        document.getElementById('mat-kpi-total').textContent = data.candidatos.length;
+        document.getElementById('mat-kpi-total').textContent = filteredCandidatos.length;
 
-        document.getElementById('mat-tbody').innerHTML = buildRows(data);
+        document.getElementById('mat-tbody').innerHTML = buildRows(filteredCandidatos, isAll);
+
+        // Ocultar los valores de convocatoria si no es "Todas"
+        document.querySelectorAll('.col-conv-val').forEach(td => {
+            td.style.display = isAll ? '' : 'none';
+        });
 
         document.getElementById('mat-placeholder').style.display = 'none';
         document.getElementById('mat-container').style.display = 'block';
     };
+
+    // Carga inicial
+    document.addEventListener('DOMContentLoaded', loadMatriz);
 
     window.buscarCandidato = function (term) {
         const rows = document.querySelectorAll('.mat-candidate-row');

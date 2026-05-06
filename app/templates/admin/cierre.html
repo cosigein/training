@@ -410,6 +410,16 @@
 (function () {
     let currentConv = null;
 
+    // ── Auto-load if target_conv_id is provided ──────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        const targetId = "{{ target_conv_id or '' }}";
+        if (targetId) {
+            const sel = document.getElementById('conv-selector');
+            sel.value = targetId;
+            loadConvocatoria();
+        }
+    });
+
     window.loadConvocatoria = function () {
         const sel = document.getElementById('conv-selector');
         const opt = sel.selectedOptions[0];
