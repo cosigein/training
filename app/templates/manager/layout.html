@@ -76,6 +76,21 @@
     </header>
 
     <main class="mgr-body">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div style="margin-bottom: 24px;">
+            {% for category, message in messages %}
+            <div class="mgr-alert mgr-alert--{% if category == 'danger' %}warning{% else %}info{% endif %}" 
+                 style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 10px; font-size: 14px; font-weight: 500;">
+                <i class="ph {% if category == 'success' %}ph-check-circle{% elif category == 'danger' %}ph-warning-circle{% else %}ph-info{% endif %}" 
+                   style="font-size: 20px;"></i>
+                <span>{{ message }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
         {% block content %}{% endblock %}
     </main>
 

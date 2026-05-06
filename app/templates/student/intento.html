@@ -96,6 +96,7 @@
             </div>
         </div>
 
+        {% if false %}
         <!-- Banner de confirmación tras solicitar auditoría -->
         {% if auditoria_solicitada %}
         <div class="alu-alert alu-alert--success">
@@ -106,6 +107,7 @@
             </div>
         </div>
         {% endif %}
+        {% endif %}
 
         <!-- Calidad de datos -->
         {% if nota_info.data_quality != 'HIGH' %}
@@ -114,11 +116,12 @@
             <div>
                 <strong>Calidad de datos {{ nota_info.data_quality }}.</strong>
                 La nota puede ser menos precisa de lo habitual debido a pérdida de señal GPS o datos del sensor incompletos.
-                {% if puede_solicitar %}Puede solicitar revisión manual si cree que afectó a su puntuación.{% endif %}
+                {# Comentado: {% if puede_solicitar %}Puede solicitar revisión manual si cree que afectó a su puntuación.{% endif %} #}
             </div>
         </div>
         {% endif %}
 
+        {% if false %}
         <!-- Estado de auditoría existente -->
         {% if auditoria %}
             {% if auditoria.status == 'PENDING' %}
@@ -139,19 +142,10 @@
             </div>
 
             {% elif auditoria.status == 'RESOLVED' %}
-            <div class="alu-card" style="border-left:4px solid
-                {% if auditoria.raw_status == 'CONFIRMED' %}#16a34a
-                {% elif auditoria.raw_status == 'REJECTED' %}#dc2626
-                {% else %}#0d47a1{% endif %};">
+            <div class="alu-card" style="border-left: 4px solid #0d47a1;"> {# Lógica original: #16a34a si CONFIRMED, #dc2626 si REJECTED #}
                 <div class="alu-card__body" style="padding:20px; display:flex; align-items:flex-start; gap:16px;">
-                    <i class="ph
-                        {% if auditoria.raw_status == 'CONFIRMED' %}ph-check-circle
-                        {% elif auditoria.raw_status == 'REJECTED' %}ph-x-circle
-                        {% else %}ph-arrows-clockwise{% endif %}"
-                       style="font-size:24px; flex-shrink:0; margin-top:2px; color:
-                        {% if auditoria.raw_status == 'CONFIRMED' %}#16a34a
-                        {% elif auditoria.raw_status == 'REJECTED' %}#dc2626
-                        {% else %}#0d47a1{% endif %};"></i>
+                    <i class="ph {% if auditoria.raw_status == 'CONFIRMED' %}ph-check-circle{% elif auditoria.raw_status == 'REJECTED' %}ph-x-circle{% else %}ph-arrows-clockwise{% endif %}"
+                       style="font-size: 24px; flex-shrink: 0; margin-top: 2px; color: #0d47a1;"> {# Lógica original: #16a34a si CONFIRMED, #dc2626 si REJECTED #}</i>
                     <div>
                         <div style="font-weight:700; color:#1e293b; margin-bottom:4px;">
                             Auditoría resuelta ·
@@ -196,6 +190,7 @@
                 </a>
             </div>
         </div>
+        {% endif %}
         {% endif %}
 
         <p class="alu-disclaimer">
