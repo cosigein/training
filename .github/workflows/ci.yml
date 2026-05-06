@@ -62,8 +62,21 @@ jobs:
    - name: Run unit tests
      run: pytest tests/ -v --ignore=tests/e2e
 
+   # tests/e2e/ todavía no existe (Joel lo va a crear). Skipear si no hay tests.
+   - name: Check for E2E tests
+     id: e2e_check
+     run: |
+      if [ -d tests/e2e ] && [ -n "$(ls -A tests/e2e 2>/dev/null)" ]; then
+        echo "exists=true" >> "$GITHUB_OUTPUT"
+      else
+        echo "exists=false" >> "$GITHUB_OUTPUT"
+        echo "::notice::tests/e2e/ no existe o está vacío — saltando E2E."
+      fi
+
    - name: Install Playwright
+     if: steps.e2e_check.outputs.exists == 'true'
      run: playwright install --with-deps chromium
 
    - name: Run E2E tests
+     if: steps.e2e_check.outputs.exists == 'true'
      run: pytest tests/e2e/ -v
