@@ -16,12 +16,12 @@
         <span class="mgr-kpi__sub">en curso</span>
         <i class="ph-fill ph-clipboard-text mgr-kpi__icon"></i>
     </a>
-    <a href="#auditorias" class="mgr-kpi mgr-kpi--red mgr-kpi--link {% if pendientes_total > 0 %}mgr-kpi--urgent{% endif %}">
+    <!-- <a href="#auditorias" class="mgr-kpi mgr-kpi--red mgr-kpi--link {% if pendientes_total > 0 %}mgr-kpi--urgent{% endif %}">
         <span class="mgr-kpi__label">Auditorías pendientes</span>
         <span class="mgr-kpi__value" data-counter>{{ pendientes_total }}</span>
         <span class="mgr-kpi__sub">requieren revisión</span>
         <i class="ph-fill ph-scales mgr-kpi__icon"></i>
-    </a>
+    </a> -->
     <a href="{{ url_for('manager.convocatorias') }}" class="mgr-kpi mgr-kpi--gray mgr-kpi--link">
         <span class="mgr-kpi__label">Total candidatos</span>
         {% set ns = namespace(total=0) %}
@@ -41,11 +41,12 @@
 </div>
 
 <!-- Convocatorias activas (M2 según paper) -->
-<div>
-    <h2 class="mgr-section-title">Convocatorias activas</h2>
+<div style="margin-top: 32px;">
+    <h2 class="mgr-section-title" style="margin-bottom: 20px;">Convocatorias activas</h2>
     <div class="mgr-conv-grid">
         {% for conv in convocatorias %}
-        <div class="mgr-conv-card">
+        <div class="mgr-conv-card mgr-conv-card--clickable" 
+             data-href="{{ url_for('manager.matriz', conv_id=conv.id) }}">
             <div class="mgr-conv-card__header">
                 <div>
                     <span class="mgr-conv-card__name">{{ conv.nombre }}</span>
@@ -53,12 +54,6 @@
                         {{ conv.status }}
                     </span>
                 </div>
-                {% if conv.auditorias_pendientes > 0 %}
-                <span class="mgr-conv-alert">
-                    <i class="ph ph-warning"></i>
-                    {{ conv.auditorias_pendientes }} auditoría{{ 's' if conv.auditorias_pendientes != 1 }}
-                </span>
-                {% endif %}
             </div>
 
             <div class="mgr-conv-card__meta">
@@ -68,10 +63,6 @@
             </div>
 
             <div class="mgr-conv-card__actions">
-                <a href="{{ url_for('manager.matriz', conv_id=conv.id) }}"
-                   class="mgr-action-btn mgr-action-btn--primary">
-                    <i class="ph ph-table"></i> Ver matriz
-                </a>
                 <a href="{{ url_for('manager.ranking', conv_id=conv.id) }}"
                    class="mgr-action-btn">
                     <i class="ph ph-ranking"></i> Ver ranking
@@ -83,7 +74,7 @@
 </div>
 
 <!-- Auditorías pendientes -->
-{% if auditorias %}
+{% if false %}
 <div id="auditorias">
     <h2 class="mgr-section-title">
         Auditorías pendientes
@@ -131,11 +122,6 @@
         </table>
     </div>
 </div>
-{% else %}
-<div class="mgr-empty">
-    <i class="ph ph-check-circle" style="color:#16a34a"></i>
-    <p>No hay auditorías pendientes. Todo al día.</p>
-</div>
 {% endif %}
 
 {% endblock %}
@@ -166,6 +152,14 @@ document.querySelectorAll('[data-anim-width]').forEach(el => {
         el.style.transition = 'width 800ms cubic-bezier(.4,0,.2,1)';
         el.style.width = target;
     }));
+});
+
+// ── Clickable convocatoria cards ───────────────────────────────────
+document.querySelectorAll('.mgr-conv-card--clickable').forEach(card => {
+    card.addEventListener('click', e => {
+        if (e.target.closest('.mgr-conv-card__actions')) return;
+        window.location.href = card.dataset.href;
+    });
 });
 
 // ── Clickable rows ──────────────────────────────────────────────────

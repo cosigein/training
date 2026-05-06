@@ -37,16 +37,13 @@
                             <th>Circuito</th>
                             <th>Nota</th>
                             <th>Estado</th>
-                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for intento in intentos %}
                         <tr data-testid="student-historial-row-{{ loop.index }}"
-                            {% if intento.es_actual %}
                             class="alu-hist-row--clickable"
-                            data-href="{{ url_for('student.intento', attempt_id=intento.attempt_id) }}"
-                            {% endif %}>
+                            data-href="{{ url_for('student.intento', attempt_id=intento.attempt_id) }}">
                             <td style="white-space:nowrap;">
                                 {% if intento.fecha %}
                                 <div style="font-size:13px; font-weight:600; color:#334155;">{{ intento.fecha[:5] }}</div>
@@ -75,12 +72,6 @@
                                     </span>
                                 {% endif %}
                             </td>
-                            <td style="text-align:right;">
-                                <a href="{{ url_for('student.intento', attempt_id=intento.attempt_id) }}"
-                                   class="alu-ruta-btn">
-                                    <i class="ph ph-eye"></i> Ver
-                                </a>
-                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -98,10 +89,6 @@
         </div>
         {% endif %}
 
-        <a href="{{ url_for('student.dashboard') }}"
-           class="alu-ruta-btn" style="align-self:flex-start;">
-            <i class="ph ph-arrow-left"></i> Volver a mis resultados
-        </a>
         <p class="alu-disclaimer">
             Resultados provisionales. No tienen efecto jurídico hasta el cierre oficial de la convocatoria.
         </p>

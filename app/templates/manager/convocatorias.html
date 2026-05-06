@@ -3,6 +3,17 @@
 
 {% block content %}
 
+<div class="mgr-back-bar">
+    <a href="{{ url_for('manager.dashboard') }}" class="mgr-btn-back">
+        <i class="ph ph-arrow-left"></i> Volver al inicio
+    </a>
+    <span class="mgr-breadcrumb">
+        <span>Inicio</span>
+        <span class="mgr-breadcrumb__sep">›</span>
+        <span>Convocatorias</span>
+    </span>
+</div>
+
 <div>
     <h1 class="mgr-page-title">Convocatorias</h1>
     <p class="mgr-page-subtitle">Listado de todos los procesos de selección activos y cerrados</p>
@@ -85,9 +96,6 @@
         </div>
 
         <div class="mgr-conv-row__actions">
-            <a href="{{ url_for('manager.matriz', conv_id=conv.id) }}" class="mgr-action-btn mgr-action-btn--secondary">
-                <i class="ph ph-grid-nine"></i> Matriz
-            </a>
             <a href="{{ url_for('manager.ranking', conv_id=conv.id) }}" class="mgr-action-btn mgr-action-btn--primary">
                 <i class="ph ph-trophy"></i> Ranking
             </a>

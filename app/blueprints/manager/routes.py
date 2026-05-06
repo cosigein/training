@@ -22,6 +22,7 @@ from .ranking_service import (
     get_alumno_active_conv_id,
     get_alumno_detail,
     get_intento_detail,
+    get_all_matrix_data,
 )
 from .audit_service import (
     list_audit_requests,
@@ -148,20 +149,14 @@ def ranking():
 @require_role(["MANAGER", "ADMIN"])
 def matriz():
     org_id = _get_org_id()
-    conv_id = _resolve_conv_id(org_id)
-    if not conv_id:
-        return render_template(
-            "manager/matriz.html",
-            active_page="matriz",
-            convocatorias=[],
-            convocatoria=None,
-            candidatos=[],
-            circuitos=[],
-        )
+    conv_id = request.args.get("conv_id")
 
-    conv_dict, candidatos, circuitos = get_matrix_data(conv_id, org_id)
-    if not conv_dict:
-        abort(404)
+    if not conv_id or conv_id == "all":
+        conv_dict, candidatos, circuitos = get_all_matrix_data(org_id)
+    else:
+        conv_dict, candidatos, circuitos = get_matrix_data(conv_id, org_id)
+        if not conv_dict:
+            abort(404)
 
     return render_template(
         "manager/matriz.html",
@@ -416,9 +411,7 @@ def auditoria_detalle(audit_id):
     user = User.query.get(user_id)
     ar = get_audit_request(audit_id, user.organizationId)
     if not ar:
-        return jsonify({"message": "Auditoría no encontrada"}), 404
-    if request.is_json:
-        return jsonify(ar), 200
+        abort(404)
     return render_template("manager/auditoria_detalle.html", auditoria=ar, active_page="auditorias")
 
 
@@ -429,8 +422,6 @@ def auditoria_list():
     user = User.query.get(user_id)
     status_filter = request.args.get("status")
     auditorias = list_audit_requests(user.organizationId, status=status_filter)
-    if request.is_json:
-        return jsonify(auditorias), 200
     return render_template(
         "manager/auditorias.html",
         auditorias=auditorias,

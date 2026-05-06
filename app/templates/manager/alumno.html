@@ -3,9 +3,19 @@
 
 {% block content %}
 
-<a href="{{ url_for('manager.matriz', conv_id=convocatoria.id) }}" class="mgr-action-btn mgr-action-btn--secondary" style="margin-bottom:12px;">
-    <i class="ph ph-arrow-left"></i> Volver a Matriz
-</a>
+<div class="mgr-back-bar">
+    <a href="javascript:history.back()" class="mgr-btn-back">
+        <i class="ph ph-arrow-left"></i> Volver
+    </a>
+    <a href="{{ url_for('manager.dashboard') }}" class="mgr-btn-back">
+        <i class="ph ph-house"></i> Inicio
+    </a>
+    <span class="mgr-breadcrumb">
+        <span>Inicio</span>
+        <span class="mgr-breadcrumb__sep">›</span>
+        <span>Perfil Aspirante</span>
+    </span>
+</div>
 
 <div class="mgr-page-header">
     <div>
@@ -47,42 +57,41 @@
     </div>
 </div>
 
-<div class="mgr-card">
-    <div class="mgr-card__header">
-        <h3><i class="ph ph-map-trifold"></i> Desglose por Rutas ({{ candidato.rutas_completadas }} / {{ candidato.rutas_total }})</h3>
+<div style="margin-top: 24px;">
+    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
+        <i class="ph ph-map-trifold" style="font-size: 18px; color: #64748b;"></i>
+        <h3 style="font-size: 14px; font-weight: 700; color: #1e293b; margin: 0;">
+            Desglose por Rutas ({{ candidato.rutas_completadas }} / {{ candidato.rutas_total }})
+        </h3>
     </div>
 
-    <div class="mgr-conv-list">
+    <div class="mgr-routes-grid">
         {% for intento in intentos %}
-        <div class="mgr-conv-row mgr-conv-row--compact mgr-conv-row--clickable"
+        <div class="mgr-route-card mgr-route-card--clickable"
              data-href="{{ url_for('manager.intento_detalle', attempt_id=intento.attempt_id) }}">
-            <div class="mgr-conv-row__main">
-                <div class="mgr-conv-row__title">
-                    <strong>{{ intento.ruta_label }}</strong>
-                    <span class="mgr-text-mono-muted">({{ intento.ruta_id }})</span>
+            
+            <div class="mgr-route-card__header">
+                <span class="mgr-route-id">{{ intento.ruta_id }}</span>
+                <div class="mgr-route-score {% if intento.nota >= 5 %}pass{% else %}fail{% endif %}">
+                    {{ "%.1f"|format(intento.nota) }}
                 </div>
             </div>
 
-            <div class="mgr-conv-row__stats mgr-flex-center-gap">
-                {% if intento.audit %}
-                <span class="mgr-audit-chip" title="Auditoría pendiente">
-                    <i class="ph ph-scales"></i>
-                </span>
-                {% endif %}
-
-                <div class="mgr-score-row-val {% if intento.nota >= 5 %}mgr-color-success{% else %}mgr-color-danger{% endif %}">
-                    {{ "%.1f"|format(intento.nota) }}
+            <div class="mgr-route-card__body">
+                <h4 class="mgr-route-title">{{ intento.ruta_label }}</h4>
+                
+                <div class="mgr-route-footer">
+                    <span class="mgr-route-date">
+                        <i class="ph ph-calendar"></i> {{ intento.fecha }}
+                    </span>
+                    <i class="ph ph-arrow-right"></i>
                 </div>
-
-                <a href="{{ url_for('manager.intento_detalle', attempt_id=intento.attempt_id) }}" class="mgr-action-btn mgr-action-btn--secondary">
-                    Ver intento <i class="ph ph-caret-right"></i>
-                </a>
             </div>
         </div>
         {% endfor %}
 
         {% if not intentos %}
-        <div class="mgr-empty">
+        <div class="mgr-empty" style="grid-column: 1 / -1;">
             <i class="ph ph-clipboard-text"></i>
             <p>Este candidato aún no ha completado ninguna ruta en esta convocatoria.</p>
         </div>
@@ -94,11 +103,9 @@
 
 {% block extra_js %}
 <script>
-document.querySelectorAll('.mgr-conv-row--clickable').forEach(row => {
-    row.style.cursor = 'pointer';
-    row.addEventListener('click', e => {
-        if (e.target.closest('a, button')) return;
-        window.location.href = row.dataset.href;
+document.querySelectorAll('.mgr-route-card--clickable').forEach(card => {
+    card.addEventListener('click', () => {
+        window.location.href = card.dataset.href;
     });
 });
 </script>

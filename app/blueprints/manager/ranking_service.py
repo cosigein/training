@@ -237,6 +237,88 @@ def get_matrix_data(conv_id, org_id):
     return _conv_to_dict(conv, org_id), candidatos, circuitos
 
 
+def get_all_matrix_data(org_id):
+    # Obtener todos los alumnos que tienen al menos un enrollment activo
+    enrollments = (
+        Enrollment.query
+        .filter_by(organizationId=org_id)
+        .filter(Enrollment.status != EnrollmentStatus.INVALIDATED)
+        .all()
+    )
+    student_ids = {e.studentId for e in enrollments}
+
+    # Obtener todos los intentos cerrados de estos alumnos
+    attempts = (
+        Attempt.query
+        .filter(Attempt.studentId.in_(student_ids))
+        .filter_by(organizationId=org_id, status=AttemptStatus.CLOSED)
+        .filter(Attempt.score.isnot(None), Attempt.routeId.isnot(None))
+        .all()
+    )
+
+    route_ids = sorted({a.routeId for a in attempts})
+    circuitos = [{"id": r, "label": r} for r in route_ids]
+
+    students = User.query.filter(User.id.in_(student_ids)).all()
+    student_map = {s.id: s for s in students}
+
+    candidatos = []
+    for sid in student_ids:
+        student = student_map.get(sid)
+        if not student:
+            continue
+
+        # Mejor intento por ruta en TODAS sus participaciones
+        best_by_route = {}
+        student_attempts = [a for a in attempts if a.studentId == sid]
+        for a in student_attempts:
+            if a.routeId:
+                prev = best_by_route.get(a.routeId)
+                if prev is None or (a.score or 0) > (prev.score or 0):
+                    best_by_route[a.routeId] = a
+
+        notas = {}
+        for route_id in route_ids:
+            att = best_by_route.get(route_id)
+            if att is None:
+                notas[route_id] = None
+            else:
+                has_audit = AuditRequest.query.filter(
+                    AuditRequest.originalAttemptId == att.id,
+                    AuditRequest.status.in_([AuditStatus.PENDING, AuditStatus.REVIEWING]),
+                ).first() is not None
+                notas[route_id] = {
+                    "nota": att.score,
+                    "data_quality": _data_quality_label(att.dataQuality),
+                    "audit": has_audit,
+                    "attempt_id": att.id,
+                }
+
+        candidatos.append({
+            "id": student.id,
+            "nombre": student.name,
+            "plaza": "—",
+            "categoria": "G", # Global
+            "notas": notas,
+            "rutas_completadas": len(best_by_route),
+            "rutas_total": len(student_attempts),
+        })
+
+    all_conv_dict = {
+        "id": "all",
+        "nombre": "Todos los candidatos",
+        "descripcion": "Vista global de todos los procesos",
+        "status": "OPEN",
+        "plazas": 0,
+        "total_candidatos": len(candidatos),
+        "fecha_cierre": "—",
+        "ultima_actualizacion": "—",
+        "auditorias_pendientes": 0,
+    }
+
+    return all_conv_dict, candidatos, circuitos
+
+
 def get_alumno_active_conv_id(student_id, org_id):
     enrollment = (
         Enrollment.query
@@ -285,6 +367,7 @@ def get_alumno_detail(student_id, conv_id, org_id):
             "data_quality": _data_quality_label(a.dataQuality),
             "audit": False,  # TODO Tarea 12
             "attempt_id": a.id,
+            "fecha": a.endTime.strftime("%d/%m/%Y") if a.endTime else "—",
         }
         for a in scored_attempts
     ]

@@ -30,6 +30,17 @@
     {% endif %}
 {% endfor %}
 
+<div class="mgr-back-bar">
+    <a href="{{ url_for('manager.dashboard') }}" class="mgr-btn-back">
+        <i class="ph ph-arrow-left"></i> Volver al inicio
+    </a>
+    <span class="mgr-breadcrumb">
+        <span>Inicio</span>
+        <span class="mgr-breadcrumb__sep">›</span>
+        <span>Matriz de resultados</span>
+    </span>
+</div>
+
 <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; background: #fff; padding: 6px 12px; border-radius: 6px; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,.04);">
     
     <!-- Título y Selector -->
@@ -38,6 +49,9 @@
             <i class="ph ph-grid-nine" style="color:#0d47a1;"></i> Matriz
         </h1>
         <select class="mgr-conv-selector" onchange="window.location.href='?conv_id=' + this.value" style="height:24px; font-size:11px; padding:0 6px; border:1px solid #e2e8f0; border-radius:4px; outline:none; background:#f8fafc; cursor:pointer;">
+            <option value="all" {% if convocatoria.id == 'all' %}selected{% endif %}>
+                Todas las convocatorias
+            </option>
             {% for c in convocatorias %}
             <option value="{{ c.id }}" {% if c.id == convocatoria.id %}selected{% endif %}>
                 {{ c.nombre }}
@@ -82,9 +96,9 @@
     <span class="mgr-legend__item">
         <span class="mgr-matrix-badge mgr-matrix-badge--fail">3.2</span> Suspenso
     </span>
-    <span class="mgr-legend__item">
+    <!-- <span class="mgr-legend__item">
         <span class="mgr-matrix-badge mgr-matrix-badge--audit">6.5 <i class="ph ph-scales" style="font-size:9px"></i></span> Auditoría pendiente
-    </span>
+    </span> -->
     <span class="mgr-legend__item">
         <span class="mgr-matrix-badge mgr-matrix-badge--pending">—</span> Pendiente
     </span>
@@ -136,7 +150,7 @@
             {% set info = c.notas.get(circ.id) %}
             <td title="{{ circ.label }}: {% if info %}{{ '%.1f'|format(info.nota) }}{% else %}Pendiente{% endif %}">
                 {% if info %}
-                    {% if info.audit %}
+                    {% if false and info.audit %}
                         {% set badge_class = 'mgr-matrix-badge--audit' %}
                     {% elif info.nota < 5 %}
                         {% set badge_class = 'mgr-matrix-badge--fail' %}
@@ -146,7 +160,7 @@
                     <a href="{{ url_for('manager.intento_detalle', attempt_id=info.attempt_id) }}"
                        class="mgr-matrix-badge {{ badge_class }}">
                         {{ "%.1f"|format(info.nota) }}
-                        {% if info.audit %}<i class="ph ph-scales" style="font-size:9px; margin-left:2px;"></i>{% endif %}
+                        <!-- {% if info.audit %}<i class="ph ph-scales" style="font-size:9px; margin-left:2px;"></i>{% endif %} -->
                     </a>
                 {% else %}
                     <span class="mgr-matrix-badge mgr-matrix-badge--pending">—</span>

@@ -7,9 +7,21 @@
 
 {% block content %}
 
-<a href="{{ url_for('manager.alumno_detalle', candidato_id=candidato.id) }}" class="mgr-action-btn mgr-action-btn--secondary" style="margin-bottom:12px;">
-    <i class="ph ph-arrow-left"></i> Volver a recorridos de {{ candidato.nombre.split()[0] }}
-</a>
+<div class="mgr-back-bar">
+    <a href="javascript:history.back()" class="mgr-btn-back">
+        <i class="ph ph-arrow-left"></i> Volver
+    </a>
+    <a href="{{ url_for('manager.dashboard') }}" class="mgr-btn-back">
+        <i class="ph ph-house"></i> Inicio
+    </a>
+    <span class="mgr-breadcrumb">
+        <span>Inicio</span>
+        <span class="mgr-breadcrumb__sep">›</span>
+        <span>{{ candidato.nombre.split()[0] }}</span>
+        <span class="mgr-breadcrumb__sep">›</span>
+        <span>Detalle de recorrido</span>
+    </span>
+</div>
 
 <div class="mgr-page-header">
     <div>
@@ -28,75 +40,150 @@
     </span>
 </div>
 
-<!-- 2 columnas: Mapa + Score Breakdown -->
+<!-- Layout dividido: Mapa Izquierda | Otros Derecha -->
 <div class="mgr-detail-grid">
 
-    <!-- Mapa GPS -->
-    <div class="mgr-card mgr-card--map">
-        <div class="mgr-card__header">
-            <h3><i class="ph ph-map-pin-line"></i> Recorrido GPS</h3>
-        </div>
-        <div class="mgr-map-container" id="mgr-map">
-            <div class="mgr-map-placeholder" id="mgr-map-placeholder">
-                <i class="ph ph-compass"></i>
-                <span id="mgr-map-msg">Cargando recorrido…</span>
+    <!-- COLUMNA IZQUIERDA: MAPA -->
+    <div class="mgr-left-col">
+        <div class="mgr-card mgr-card--map" style="height: 100%;">
+            <div class="mgr-card__header">
+                <div style="display:flex; align-items:center; gap:8px">
+                    <i class="ph ph-map-pin-line" style="color: #3b82f6;"></i>
+                    <h3 style="margin:0; font-size:15px">Recorrido GPS</h3>
+                </div>
+                <div class="mgr-tag mgr-tag--blue">GPS ACTIVO</div>
+            </div>
+            <div class="mgr-map-container" id="mgr-map" style="height: 600px;">
+                <div class="mgr-map-placeholder" id="mgr-map-placeholder">
+                    <i class="ph ph-compass ph-spin"></i>
+                    <span id="mgr-map-msg">Cargando recorrido…</span>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Score Breakdown -->
-    <div class="mgr-card">
-        <div class="mgr-card__header">
-            <h3><i class="ph ph-chart-bar"></i> Desglose de puntuación</h3>
+    <!-- COLUMNA DERECHA: DESGLOSE + TIMELINE + INFO -->
+    <div class="mgr-right-col" style="display: flex; flex-direction: column; gap: 16px;">
+        
+        <!-- Score Breakdown -->
+        <div class="mgr-card">
+            <div class="mgr-card__header">
+                <div style="display:flex; align-items:center; gap:8px">
+                    <i class="ph ph-chart-bar" style="color: #10b981;"></i>
+                    <h3 style="margin:0; font-size:15px">Desglose de puntuación</h3>
+                </div>
+                <div class="mgr-tag {% if nota_info.nota >= 5 %}mgr-tag--green{% else %}mgr-tag--red{% endif %}">
+                    {{ "APTO" if nota_info.nota >= 5 else "NO APTO" }}
+                </div>
+            </div>
+            <div class="mgr-score-breakdown">
+                {% for item in score_breakdown %}
+                <div class="mgr-breakdown-row">
+                    <span class="mgr-breakdown-row__familia">{{ item.familia }}</span>
+                    <div class="mgr-breakdown-bar-wrap">
+                        <div class="mgr-breakdown-bar"
+                             data-anim-width="{{ (item.obtenido / item.maximo * 100)|int }}%"
+                             style="width:0">
+                        </div>
+                    </div>
+                    <span class="mgr-breakdown-row__valor">
+                        <strong>{{ item.obtenido }}</strong> <span style="color:#94a3b8">/ {{ item.maximo }}</span>
+                    </span>
+                </div>
+                {% endfor %}
+                <div class="mgr-breakdown-total">
+                    <div style="display:flex; flex-direction:column">
+                        <span style="font-size:11px; color:#64748b; font-weight:600">PUNTUACIÓN FINAL</span>
+                        <span style="font-size:12px; color:#94a3b8">v2.1 criteria</span>
+                    </div>
+                    <span class="mgr-score-hero {% if nota_info.nota >= 5 %}mgr-score-hero--pass{% else %}mgr-score-hero--fail{% endif %}" style="font-size: 32px; padding: 0 16px;">
+                        {{ "%.1f"|format(nota_info.nota) }}
+                    </span>
+                </div>
+            </div>
         </div>
-        <div class="mgr-score-breakdown">
-            {% for item in score_breakdown %}
-            <div class="mgr-breakdown-row">
-                <span class="mgr-breakdown-row__familia">{{ item.familia }}</span>
-                <div class="mgr-breakdown-bar-wrap">
-                    <div class="mgr-breakdown-bar"
-                         data-anim-width="{{ (item.obtenido / item.maximo * 100)|int }}%"
-                         style="width:0">
+
+        <!-- Timeline de Eventos -->
+        <div class="mgr-card">
+            <div class="mgr-card__header">
+                <div style="display:flex; align-items:center; gap:8px">
+                    <i class="ph ph-list-numbers" style="color: #f59e0b;"></i>
+                    <h3 style="margin:0; font-size:15px">Línea de tiempo de eventos</h3>
+                </div>
+                <span style="font-size:12px; color:#64748b">{{ eventos|length }} eventos registrados</span>
+            </div>
+            
+            <div class="mgr-timeline">
+                {% for ev in eventos %}
+                <div class="mgr-timeline-item" data-sev="{{ ev.severidad }}">
+                    <div class="mgr-timeline-dot"></div>
+                    <div class="mgr-timeline-time">{{ ev.timestamp }}</div>
+                    <div class="mgr-timeline-content">
+                        <div class="mgr-timeline-header">
+                            <span class="mgr-timeline-title">{{ ev.descripcion }}</span>
+                            <span class="mgr-tag mgr-tag--compact" style="background: rgba(0,0,0,0.05);">{{ ev.source }}</span>
+                        </div>
+                        {% if ev.severidad > 0.6 %}
+                        <div class="mgr-timeline-alert">
+                            <i class="ph ph-warning-circle"></i>
+                            Severidad detectada: {{ (ev.severidad * 100)|int }}%
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
-                <span class="mgr-breakdown-row__valor">
-                    {{ item.obtenido }} / {{ item.maximo }}
-                </span>
-            </div>
-            {% endfor %}
-            <div class="mgr-breakdown-total">
-                <span>TOTAL</span>
-                <span class="mgr-score
-                    {% if nota_info.nota >= 5 %}mgr-score--pass{% else %}mgr-score--fail{% endif %}">
-                    {{ "%.1f"|format(nota_info.nota) }} / 10
-                </span>
+                {% endfor %}
+
+                {% if not eventos %}
+                <div class="mgr-empty-timeline">
+                    <i class="ph ph-check-circle" style="color: #10b981;"></i>
+                    <p>No se registraron anomalías durante el recorrido.</p>
+                </div>
+                {% endif %}
             </div>
         </div>
+
+        <!-- Información adicional / Auditoría -->
+        <div class="mgr-card">
+            <div class="mgr-card__header">
+                <div style="display:flex; align-items:center; gap:8px">
+                    <i class="ph ph-info" style="color: #6366f1;"></i>
+                    <h3 style="margin:0; font-size:15px">Información adicional</h3>
+                </div>
+            </div>
+            
+            <div class="mgr-info-list">
+                <div class="mgr-info-item">
+                    <span class="mgr-info-label">Calidad de datos</span>
+                    <span class="mgr-tag {% if nota_info.data_quality == 'HIGH' %}mgr-tag--green{% else %}mgr-tag--yellow{% endif %}">
+                        {{ nota_info.data_quality }}
+                    </span>
+                </div>
+                <div class="mgr-info-item">
+                    <span class="mgr-info-label">ID de Intento</span>
+                    <code style="font-size:11px; background:#f1f5f9; padding:2px 6px; border-radius:4px">{{ attempt_id }}</code>
+                </div>
+                <div class="mgr-info-item">
+                    <span class="mgr-info-label">Sincronizado</span>
+                    <span style="font-size:13px; color:#1e293b"><i class="ph ph-cloud-check" style="color:#10b981"></i> Sí</span>
+                </div>
+            </div>
+
+            {% if auditoria %}
+            <div class="mgr-audit-box" style="margin-top: 16px; margin: 16px; border-width: 1px;">
+                <div class="mgr-audit-box__title" style="font-size: 13px;">
+                    <i class="ph ph-scales"></i> Solicitud de Auditoría
+                </div>
+                <p class="mgr-audit-box__reason" style="font-size: 12px; padding: 8px;">"{{ auditoria.reason }}"</p>
+                <a href="{{ url_for('manager.auditoria_detalle', audit_id=auditoria.id) }}" class="mgr-action-btn mgr-action-btn--primary" style="width:100%; margin-top:8px; justify-content:center; font-size: 12px; padding: 6px;">
+                    Atender auditoría <i class="ph ph-caret-right"></i>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
     </div>
 
 </div>
-
-<!-- Auditoría (si la hay) -->
-{% if auditoria %}
-<div class="mgr-card mgr-card--audit" style="margin-top:16px">
-    <div class="mgr-card__header">
-        <h3><i class="ph ph-scales"></i> Solicitud de auditoría</h3>
-        <span style="font-size:12px; color:#94a3b8">
-            {{ auditoria.fecha_solicitud }} · {{ auditoria.hora_solicitud }}
-        </span>
-    </div>
-    <div class="mgr-audit-panel">
-        <div class="mgr-audit-panel__razon">
-            <span class="mgr-label">Razón del candidato</span>
-            <blockquote class="mgr-quote">{{ auditoria.razon }}</blockquote>
-        </div>
-        <a href="{{ url_for('manager.auditoria_detalle', audit_id=auditoria.id) }}"
-           class="mgr-action-btn mgr-action-btn--primary" style="margin-top:16px">
-            <i class="ph ph-arrow-square-out"></i> Revisar y responder
-        </a>
-    </div>
-</div>
-{% endif %}
 
 {% endblock %}
 

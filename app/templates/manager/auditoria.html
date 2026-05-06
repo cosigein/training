@@ -3,12 +3,23 @@
 
 {% block content %}
 
+<div class="mgr-back-bar">
+    <a href="javascript:history.back()" class="mgr-btn-back">
+        <i class="ph ph-arrow-left"></i> Volver
+    </a>
+    <a href="{{ url_for('manager.dashboard') }}" class="mgr-btn-back">
+        <i class="ph ph-house"></i> Inicio
+    </a>
+    <span class="mgr-breadcrumb">
+        <span>Inicio</span>
+        <span class="mgr-breadcrumb__sep">›</span>
+        <span>Revisión de auditoría</span>
+    </span>
+</div>
+
 <div class="mgr-page-header">
     <div>
-        <a href="{{ url_for('manager.dashboard') }}" class="mgr-back-link">
-            <i class="ph ph-arrow-left"></i> Volver al Dashboard
-        </a>
-        <h1 class="mgr-page-title" style="margin-top:8px">Revisión de auditoría</h1>
+        <h1 class="mgr-page-title">Revisión de auditoría</h1>
         <p class="mgr-page-subtitle">
             Solicitada por <strong>{{ auditoria.candidato }}</strong> ·
             {{ auditoria.fecha_solicitud }} a las {{ auditoria.hora_solicitud }}

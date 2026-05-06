@@ -3,9 +3,21 @@
 
 {% block content %}
 
-<a href="{{ url_for('manager.auditoria_list') }}" class="mgr-action-btn mgr-action-btn--secondary" style="margin-bottom:12px;">
-    <i class="ph ph-arrow-left"></i> Auditorías
-</a>
+<div class="mgr-back-bar">
+    <a href="javascript:history.back()" class="mgr-btn-back">
+        <i class="ph ph-arrow-left"></i> Volver
+    </a>
+    <a href="{{ url_for('manager.dashboard') }}" class="mgr-btn-back">
+        <i class="ph ph-house"></i> Inicio
+    </a>
+    <span class="mgr-breadcrumb">
+        <span>Inicio</span>
+        <span class="mgr-breadcrumb__sep">›</span>
+        <span>Auditorías</span>
+        <span class="mgr-breadcrumb__sep">›</span>
+        <span>Revisión</span>
+    </span>
+</div>
 
 <div class="mgr-page-header">
     <div>
@@ -14,12 +26,7 @@
             Solicitada por <strong>{{ auditoria.requester }}</strong> · {{ auditoria.createdAt }}
         </p>
     </div>
-    <span style="font-size:12px; font-weight:600; padding:4px 14px; border-radius:20px;
-        {% if auditoria.status == 'PENDING' %}background:#fef9c3; color:#92400e;
-        {% elif auditoria.status == 'REVIEWING' %}background:#dbeafe; color:#1d4ed8;
-        {% elif auditoria.status == 'CONFIRMED' %}background:#dcfce7; color:#15803d;
-        {% elif auditoria.status == 'REJECTED' %}background:#fee2e2; color:#dc2626;
-        {% else %}background:#f1f5f9; color:#475569;{% endif %}">
+    <span class="mgr-estado-badge mgr-estado-badge--{{ auditoria.status|lower if auditoria.status in ['PENDING', 'REVIEWING', 'CONFIRMED', 'REJECTED'] else 'default' }}">
         {{ auditoria.status }}
     </span>
 </div>
@@ -180,7 +187,6 @@
     </div>
 
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
