@@ -45,8 +45,7 @@
     <h2 class="mgr-section-title">Convocatorias activas</h2>
     <div class="mgr-conv-grid">
         {% for conv in convocatorias %}
-        <div class="mgr-conv-card mgr-conv-card--clickable"
-             data-href="{{ url_for('manager.matriz', conv_id=conv.id) }}">
+        <div class="mgr-conv-card">
             <div class="mgr-conv-card__header">
                 <div>
                     <span class="mgr-conv-card__name">{{ conv.nombre }}</span>
@@ -68,7 +67,16 @@
                 <span><i class="ph ph-calendar"></i> Cierre: {{ conv.fecha_cierre }}</span>
             </div>
 
-
+            <div class="mgr-conv-card__actions">
+                <a href="{{ url_for('manager.matriz', conv_id=conv.id) }}"
+                   class="mgr-action-btn mgr-action-btn--primary">
+                    <i class="ph ph-table"></i> Ver matriz
+                </a>
+                <a href="{{ url_for('manager.ranking', conv_id=conv.id) }}"
+                   class="mgr-action-btn">
+                    <i class="ph ph-ranking"></i> Ver ranking
+                </a>
+            </div>
         </div>
         {% endfor %}
     </div>
@@ -160,14 +168,7 @@ document.querySelectorAll('[data-anim-width]').forEach(el => {
     }));
 });
 
-// ── Clickable cards / rows ──────────────────────────────────────────
-document.querySelectorAll('.mgr-conv-card--clickable').forEach(card => {
-    card.style.cursor = 'pointer';
-    card.addEventListener('click', e => {
-        if (e.target.closest('a')) return;
-        window.location.href = card.dataset.href;
-    });
-});
+// ── Clickable rows ──────────────────────────────────────────────────
 document.querySelectorAll('.mgr-clickable-row').forEach(row => {
     row.addEventListener('click', e => {
         if (e.target.closest('a')) return;

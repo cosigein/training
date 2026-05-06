@@ -4,122 +4,263 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{{ ruta.label if ruta else attempt_id }} — {{ candidato.nombre }}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/kiosko.css') }}">
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230d47a1'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='system-ui,sans-serif' font-size='13' font-weight='700' fill='white'%3ECM%3C/text%3E%3C/svg%3E">
+    <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 </head>
-<body>
+<body class="ksk-intento-body">
 
-<div class="ksk-root">
+<!-- ═══════════════════════════════════════════════════════════
+     LAYOUT: header fino → mapa (flex:1) → panel compacto → statusbar
+     ═══════════════════════════════════════════════════════════ -->
 
-    <!-- Header -->
-    <header class="ksk-header">
-        <div class="ksk-driver-info">
-            <div class="ksk-driver-name">
-                {{ ruta.label if ruta else attempt_id }}
-            </div>
-            <div class="ksk-driver-meta">
-                <span>{{ candidato.nombre }}</span>
-                <span>·</span>
-                <span>Plaza #{{ candidato.plaza }}</span>
-                <span class="ksk-badge-cat">{{ candidato.categoria }}</span>
-            </div>
+<!-- Header fino -->
+<header class="ksk-intento-header">
+    <a href="{{ url_for('kiosko.rutas', plaza=candidato.plaza) }}"
+       class="ksk-intento-back" aria-label="Volver a mis recorridos">
+        <i class="ph ph-arrow-left"></i>
+    </a>
+    <div class="ksk-intento-header__info">
+        <span class="ksk-intento-header__ruta">{{ ruta.label if ruta else attempt_id }}</span>
+        <span class="ksk-intento-header__candidato">{{ candidato.nombre }} · Plaza #{{ candidato.plaza }}</span>
+    </div>
+    <div class="ksk-intento-header__score
+        {% if nota_info.nota >= 5 %}ksk-intento-header__score--pass{% else %}ksk-intento-header__score--fail{% endif %}">
+        {{ "%.1f"|format(nota_info.nota) }}
+    </div>
+</header>
+
+<!-- Mapa ocupa todo el espacio disponible -->
+<div class="ksk-intento-map" id="ksk-map">
+
+    <!-- Placeholder mientras carga -->
+    <div class="ksk-intento-map__placeholder" id="ksk-map-placeholder">
+        <i class="ph ph-compass"></i>
+        <span id="ksk-map-msg">Cargando recorrido…</span>
+    </div>
+
+    <!-- Overlay: score + badges (esquina superior derecha del mapa) -->
+    <div class="ksk-map-overlay-score">
+        <div class="ksk-map-score-badge
+            {% if nota_info.nota >= 5 %}ksk-map-score-badge--pass{% else %}ksk-map-score-badge--fail{% endif %}">
+            <span class="ksk-map-score-badge__num">{{ "%.1f"|format(nota_info.nota) }}</span>
+            <span class="ksk-map-score-badge__label">/ 10</span>
         </div>
-
-        <!-- Nota grande -->
-        <div style="display:flex; align-items:center; gap:20px;">
-            <div style="text-align:center;">
-                <div class="ksk-ruta-score {% if nota_info.nota >= 5 %}ksk-ruta-score--pass{% else %}ksk-ruta-score--fail{% endif %}"
-                     style="font-size:42px;">
-                    {{ "%.1f"|format(nota_info.nota) }}
-                </div>
-                <div style="font-size:11px; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">
-                    sobre 10
-                </div>
-            </div>
-            <a href="{{ url_for('kiosko.rutas', plaza=candidato.plaza) }}"
-               class="ksk-btn ksk-btn--secondary" style="height:44px; padding:0 20px; font-size:13px;">
-                <i class="ph ph-arrow-left"></i>
-                Volver
-            </a>
-        </div>
-    </header>
-
-    <!-- Body -->
-    <div class="ksk-body">
-
-        <!-- Calidad y flags -->
-        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-            {% if nota_info.data_quality != 'HIGH' %}
-            <span class="ksk-ruta-badge ksk-ruta-badge--lq" style="position:static; font-size:11px; padding:5px 12px;">
-                <i class="ph ph-warning"></i>
-                Calidad de datos: {{ nota_info.data_quality }}
-                — la nota puede ser menos precisa
-            </span>
-            {% endif %}
-            {% if auditoria %}
-            <span class="ksk-ruta-badge ksk-ruta-badge--audit" style="position:static; font-size:11px; padding:5px 12px;">
-                <i class="ph ph-scales"></i>
-                Auditoría en curso · {{ auditoria.fecha_solicitud }}
-            </span>
-            {% endif %}
-        </div>
-
-        <!-- Score breakdown -->
-        <div style="background:#0d1527; border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:24px;">
-            <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#475569; margin-bottom:20px;">
-                Desglose de puntuación
-            </div>
-
-            <div style="display:flex; flex-direction:column; gap:16px;">
-                {% for item in score_breakdown %}
-                {% set pct = (item.obtenido / item.maximo * 100)|int %}
-                <div style="display:grid; grid-template-columns: 110px 1fr 70px; align-items:center; gap:14px;">
-                    <span style="font-size:13px; color:#94a3b8; font-weight:500;">{{ item.familia }}</span>
-                    <div style="height:10px; background:rgba(255,255,255,0.06); border-radius:5px; overflow:hidden;">
-                        <div {{ {'style': 'height:100%; width:' ~ pct ~ '%; background:#1a56db; border-radius:5px;'} | xmlattr }}></div>
-                    </div>
-                    <span style="font-size:13px; font-weight:700; color:#e2e8f0; text-align:right;">
-                        {{ item.obtenido }} / {{ item.maximo }}
-                    </span>
-                </div>
-                {% endfor %}
-
-                <div style="display:flex; justify-content:space-between; align-items:center;
-                            padding-top:16px; border-top:1px solid rgba(255,255,255,0.08);
-                            font-weight:700; font-size:15px; color:#f1f5f9;">
-                    <span>TOTAL</span>
-                    <span class="ksk-ruta-score {% if nota_info.nota >= 5 %}ksk-ruta-score--pass{% else %}ksk-ruta-score--fail{% endif %}"
-                          style="font-size:24px;">
-                        {{ "%.1f"|format(nota_info.nota) }} / 10
-                    </span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Auditoría (si la hay) -->
-        {% if auditoria %}
-        <div style="background:#160d27; border:1px solid rgba(196,181,253,0.2); border-radius:14px; padding:20px;">
-            <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px;
-                        color:#7c3aed; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
-                <i class="ph ph-scales"></i> Solicitud de auditoría pendiente
-            </div>
-            <p style="font-size:14px; color:#c4b5fd; line-height:1.6; margin:0; font-style:italic;">
-                "{{ auditoria.razon }}"
-            </p>
-            <div style="font-size:11px; color:#7c3aed; margin-top:10px;">
-                Solicitada el {{ auditoria.fecha_solicitud }} a las {{ auditoria.hora_solicitud }}
-            </div>
+        {% if nota_info.data_quality != 'HIGH' %}
+        <div class="ksk-map-badge ksk-map-badge--lq">
+            <i class="ph ph-warning"></i> {{ nota_info.data_quality }}
         </div>
         {% endif %}
-
-
-
+        {% if auditoria %}
+        <div class="ksk-map-badge ksk-map-badge--audit">
+            <i class="ph ph-scales"></i> Auditoría
+        </div>
+        {% endif %}
     </div>
+
+    <!-- Overlay: incidencias (esquina inferior izquierda del mapa) -->
+    {% if pedagogico and pedagogico.infracciones %}
+    <button class="ksk-map-incidents-pill" id="ksk-incidents-toggle" aria-expanded="false">
+        <i class="ph ph-warning-diamond"></i>
+        {{ pedagogico.infracciones|length }} incidencia{{ 's' if pedagogico.infracciones|length != 1 }}
+        <i class="ph ph-caret-up" id="ksk-incidents-caret"></i>
+    </button>
+    {% else %}
+    <div class="ksk-map-incidents-pill ksk-map-incidents-pill--ok">
+        <i class="ph ph-check-circle"></i> Sin incidencias
+    </div>
+    {% endif %}
+
 </div>
 
+<!-- Panel inferior compacto: desglose + incidencias expandibles -->
+<div class="ksk-intento-panel" id="ksk-panel">
+
+    <!-- Score breakdown: una línea por familia -->
+    <div class="ksk-panel-breakdown">
+        {% for item in score_breakdown %}
+        {% set pct = (item.obtenido / item.maximo * 100)|int %}
+        <div class="ksk-panel-breakdown__item">
+            <span class="ksk-panel-breakdown__familia">{{ item.familia }}</span>
+            <div class="ksk-panel-breakdown__bar">
+                <div class="ksk-panel-breakdown__fill" {{ {'style': 'width:' ~ pct ~ '%;'} | xmlattr }}></div>
+            </div>
+            <span class="ksk-panel-breakdown__val">{{ item.obtenido }}/{{ item.maximo }}</span>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Incidencias expandibles (ocultas por defecto) -->
+    {% if pedagogico and pedagogico.infracciones %}
+    <div class="ksk-panel-incidents" id="ksk-incidents-panel" hidden>
+        {% for inf in pedagogico.infracciones %}
+        <div class="ksk-panel-incident">
+            <span class="ksk-panel-incident__count">{{ inf.cantidad }}×</span>
+            <span class="ksk-panel-incident__tipo">{{ inf.tipo }}</span>
+            <span class="ksk-panel-incident__zona">
+                <i class="ph ph-map-pin"></i>{{ inf.zona }}
+            </span>
+            <span class="ksk-panel-incident__pts">−{{ inf.puntos }} pts</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Botón volver grande (touch-friendly) -->
+    <a href="{{ url_for('kiosko.rutas', plaza=candidato.plaza) }}"
+       class="ksk-intento-volver">
+        <i class="ph ph-arrow-left"></i> Volver a mis recorridos
+    </a>
+
+</div>
+
+<!-- Status bar -->
+<div class="ksk-statusbar ksk-statusbar--intento">
+    <div class="ksk-statusbar__online" id="ksk-status-label">
+        <span class="ksk-statusbar__dot" id="ksk-dot"></span>
+        <span id="ksk-status-text">EN LÍNEA</span>
+    </div>
+    <div class="ksk-statusbar__sep"></div>
+    <div class="ksk-statusbar__pending ksk-statusbar__pending--hidden" id="ksk-pending">
+        <i class="ph ph-cloud-slash"></i>
+        <span>0 pendientes</span>
+    </div>
+    <span class="ksk-statusbar__clock" id="ksk-clock"></span>
+</div>
+
+<script>
+(function () {
+    var GPS_URL = '{{ url_for("kiosko.intento_gps", attempt_id=attempt_id) }}';
+
+    // ── Clock ─────────────────────────────────────────────────────────
+    var clockEl = document.getElementById('ksk-clock');
+    function updateClock() {
+        var now = new Date();
+        clockEl.textContent =
+            String(now.getHours()).padStart(2,'0') + ':' +
+            String(now.getMinutes()).padStart(2,'0') + ':' +
+            String(now.getSeconds()).padStart(2,'0');
+    }
+    setInterval(updateClock, 1000); updateClock();
+
+    // ── Online / offline ───────────────────────────────────────────────
+    var dot = document.getElementById('ksk-dot');
+    var statusLabel = document.getElementById('ksk-status-label');
+    var statusText = document.getElementById('ksk-status-text');
+    var pendingEl = document.getElementById('ksk-pending');
+
+    function updateOnline() {
+        var online = navigator.onLine;
+        dot.classList.toggle('ksk-statusbar__dot--offline', !online);
+        statusLabel.classList.toggle('ksk-statusbar__online--offline', !online);
+        statusText.textContent = online ? 'EN LÍNEA' : 'SIN CONEXIÓN';
+    }
+    window.addEventListener('online', updateOnline);
+    window.addEventListener('offline', updateOnline);
+    updateOnline();
+
+    // ── IndexedDB badge ────────────────────────────────────────────────
+    var DB_NAME = 'ksk_offline', STORE = 'taps', db = null;
+    function openDB(cb) {
+        if (db) { cb(db); return; }
+        var req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = function (e) {
+            e.target.result.createObjectStore(STORE, { autoIncrement: true });
+        };
+        req.onsuccess = function (e) { db = e.target.result; cb(db); };
+        req.onerror = function () {};
+    }
+    function updateBadge() {
+        openDB(function (d) {
+            var req = d.transaction(STORE, 'readonly').objectStore(STORE).count();
+            req.onsuccess = function () {
+                var n = req.result;
+                if (n > 0) {
+                    pendingEl.classList.remove('ksk-statusbar__pending--hidden');
+                    pendingEl.querySelector('span').textContent = n + ' pendiente' + (n !== 1 ? 's' : '');
+                } else {
+                    pendingEl.classList.add('ksk-statusbar__pending--hidden');
+                }
+            };
+        });
+    }
+    openDB(function () { updateBadge(); });
+    setInterval(updateBadge, 5000);
+
+    // ── Toggle incidencias ─────────────────────────────────────────────
+    var toggleBtn = document.getElementById('ksk-incidents-toggle');
+    var incPanel = document.getElementById('ksk-incidents-panel');
+    var caret = document.getElementById('ksk-incidents-caret');
+    if (toggleBtn && incPanel) {
+        toggleBtn.addEventListener('click', function () {
+            var expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+            toggleBtn.setAttribute('aria-expanded', !expanded);
+            incPanel.hidden = expanded;
+            if (caret) caret.className = expanded ? 'ph ph-caret-up' : 'ph ph-caret-down';
+        });
+    }
+
+    // ── Mapa Leaflet ───────────────────────────────────────────────────
+    window.addEventListener('load', function () {
+        if (typeof L === 'undefined') return;
+
+        var placeholder = document.getElementById('ksk-map-placeholder');
+        var mapMsg = document.getElementById('ksk-map-msg');
+
+        var map = L.map('ksk-map', {
+            zoomControl: true,
+            scrollWheelZoom: true,
+            attributionControl: false,
+        });
+
+        // Dark tile para cabina de camión
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
+        }).addTo(map);
+
+        fetch(GPS_URL)
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                var points = data.points || [];
+
+                if (points.length === 0) {
+                    if (mapMsg) mapMsg.textContent = 'Datos GPS no disponibles — hardware pendiente de sincronización';
+                    map.setView([40.4168, -3.7038], 13);
+                    return;
+                }
+
+                if (placeholder) placeholder.style.display = 'none';
+
+                var latlngs = points.map(function (p) { return [p.lat, p.lng]; });
+
+                var polyline = L.polyline(latlngs, {
+                    color: '#1a56db',
+                    weight: 5,
+                    opacity: 0.9,
+                }).addTo(map);
+
+                // Inicio (verde) y Fin (rojo)
+                L.circleMarker(latlngs[0], {
+                    radius: 9, color: '#fff', weight: 2,
+                    fillColor: '#16a34a', fillOpacity: 1,
+                }).bindTooltip('Inicio', { permanent: false }).addTo(map);
+
+                L.circleMarker(latlngs[latlngs.length - 1], {
+                    radius: 9, color: '#fff', weight: 2,
+                    fillColor: '#dc2626', fillOpacity: 1,
+                }).bindTooltip('Fin', { permanent: false }).addTo(map);
+
+                map.fitBounds(polyline.getBounds(), { padding: [32, 32] });
+            })
+            .catch(function () {
+                if (mapMsg) mapMsg.textContent = 'No se pudo cargar el recorrido';
+            });
+    });
+}());
+</script>
 </body>
 </html>

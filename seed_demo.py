@@ -115,6 +115,16 @@ STUDENTS_A = [
         "R04": (9.5, "HIGH"), "R05": (9.4, "HIGH"), "R06": (9.2, "HIGH"),
         "R07": (9.0, "HIGH"), "R08": (9.3, "HIGH"),
     }),
+    # Usuarios de prueba rápida creados por setup_db.py — se inscriben aquí
+    ("Alumno Uno",        "alumno1@cmadrid.com",           "009", "C", {
+        "R01": (7.2, "HIGH"), "R02": (6.5, "HIGH"), "R03": (5.8, "MEDIUM"),
+        "R04": (8.0, "HIGH"),
+        "R05": None, "R06": None, "R07": None, "R08": None,
+    }),
+    ("Alumno Dos",        "alumno2@cmadrid.com",           "010", "C+E", {
+        "R01": (9.0, "HIGH"), "R02": (8.4, "HIGH"),
+        "R03": None, "R04": None, "R05": None, "R06": None, "R07": None, "R08": None,
+    }),
 ]
 
 STUDENTS_B = [

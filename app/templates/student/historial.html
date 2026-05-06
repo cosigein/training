@@ -2,10 +2,21 @@
 
 {% block content %}
 
+        <div class="alu-back-bar">
+            <a href="{{ url_for('student.dashboard') }}" class="alu-back-btn" aria-label="Volver a la página principal">
+                <i class="ph ph-arrow-left" aria-hidden="true"></i> Volver al inicio
+            </a>
+            <span class="alu-breadcrumb" aria-label="Ubicación actual">
+                <span>Inicio</span>
+                <span class="alu-breadcrumb__sep">›</span>
+                <strong>Historial</strong>
+            </span>
+        </div>
+
         <div>
             <h1 class="alu-welcome__title">Historial de intentos</h1>
             <p class="alu-welcome__sub">
-                {{ convocatoria.nombre }} · todos tus recorridos registrados
+                {{ convocatoria.nombre }} · todos sus recorridos registrados
             </p>
         </div>
 

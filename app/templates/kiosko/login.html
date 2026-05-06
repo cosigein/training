@@ -10,7 +10,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/kiosko.css') }}">
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230d47a1'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='system-ui,sans-serif' font-size='13' font-weight='700' fill='white'%3ECM%3C/text%3E%3C/svg%3E">
+    <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
 </head>
 
 <body>
@@ -44,6 +45,181 @@
         </div>
     </div>
 
-</body>
+    <!-- Recovery modal: shown if there are pending offline taps -->
+    <div id="ksk-recovery" class="ksk-recovery-overlay" style="display:none;" role="dialog" aria-modal="true">
+        <div class="ksk-recovery-modal">
+            <div class="ksk-recovery-modal__title">
+                <i class="ph ph-warning-circle"></i>
+                Registros pendientes
+            </div>
+            <div class="ksk-recovery-modal__body">
+                Se detectaron registros sin sincronizar de la sesión anterior. Puede reenviarlos ahora
+                o limpiarlos si ya fueron procesados manualmente.
+            </div>
+            <div class="ksk-recovery-modal__count" id="ksk-recovery-count">0</div>
+            <div class="ksk-recovery-modal__body" style="font-size:11px;color:#475569;text-align:center;margin-top:-12px;">
+                registros sin sincronizar
+            </div>
+            <div class="ksk-recovery-modal__actions">
+                <button class="ksk-btn ksk-btn--primary" style="flex:1;" onclick="kskRetryQueue()">
+                    <i class="ph ph-arrows-clockwise"></i> Reintentar
+                </button>
+                <button class="ksk-btn ksk-btn--ghost" style="flex:1;" onclick="kskClearQueue()">
+                    <i class="ph ph-trash"></i> Limpiar
+                </button>
+            </div>
+            <button class="ksk-btn ksk-btn--ghost" onclick="document.getElementById('ksk-recovery').style.display='none'">
+                Continuar sin sincronizar
+            </button>
+        </div>
+    </div>
 
+    <!-- Persistent status bar -->
+    <div class="ksk-statusbar" style="position:fixed;bottom:0;left:0;right:0;z-index:10;">
+        <div class="ksk-statusbar__online" id="ksk-status-label">
+            <span class="ksk-statusbar__dot" id="ksk-dot"></span>
+            <span id="ksk-status-text">EN LÍNEA</span>
+        </div>
+        <div class="ksk-statusbar__sep"></div>
+        <div class="ksk-statusbar__pending ksk-statusbar__pending--hidden" id="ksk-pending">
+            <i class="ph ph-cloud-slash"></i>
+            <span>0 pendientes</span>
+        </div>
+        <span class="ksk-statusbar__clock" id="ksk-clock"></span>
+    </div>
+
+<script>
+(function () {
+    var dot = document.getElementById('ksk-dot');
+    var statusLabel = document.getElementById('ksk-status-label');
+    var statusText = document.getElementById('ksk-status-text');
+    var clockEl = document.getElementById('ksk-clock');
+    var pendingEl = document.getElementById('ksk-pending');
+    var recoveryEl = document.getElementById('ksk-recovery');
+    var recoveryCount = document.getElementById('ksk-recovery-count');
+
+    function updateClock() {
+        var now = new Date();
+        clockEl.textContent =
+            String(now.getHours()).padStart(2,'0') + ':' +
+            String(now.getMinutes()).padStart(2,'0') + ':' +
+            String(now.getSeconds()).padStart(2,'0');
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    function updateOnline() {
+        var online = navigator.onLine;
+        dot.classList.toggle('ksk-statusbar__dot--offline', !online);
+        statusLabel.classList.toggle('ksk-statusbar__online--offline', !online);
+        statusText.textContent = online ? 'EN LÍNEA' : 'SIN CONEXIÓN';
+        if (online) syncQueue();
+    }
+    window.addEventListener('online', updateOnline);
+    window.addEventListener('offline', updateOnline);
+    updateOnline();
+
+    var DB_NAME = 'ksk_offline', STORE = 'taps', db = null;
+
+    function openDB(cb) {
+        if (db) { cb(db); return; }
+        var req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = function (e) {
+            e.target.result.createObjectStore(STORE, { autoIncrement: true });
+        };
+        req.onsuccess = function (e) { db = e.target.result; cb(db); };
+        req.onerror = function () {};
+    }
+
+    function countPending(cb) {
+        openDB(function (d) {
+            var req = d.transaction(STORE, 'readonly').objectStore(STORE).count();
+            req.onsuccess = function () { cb(req.result); };
+            req.onerror = function () { cb(0); };
+        });
+    }
+
+    function updateBadge() {
+        countPending(function (n) {
+            if (n > 0) {
+                pendingEl.classList.remove('ksk-statusbar__pending--hidden');
+                pendingEl.querySelector('span').textContent = n + ' pendiente' + (n !== 1 ? 's' : '');
+            } else {
+                pendingEl.classList.add('ksk-statusbar__pending--hidden');
+            }
+        });
+    }
+
+    function syncQueue() {
+        if (!navigator.onLine) return;
+        openDB(function (d) {
+            var tx = d.transaction(STORE, 'readonly'), store = tx.objectStore(STORE);
+            var items, keys;
+            store.getAll().onsuccess = function (e) { items = e.target.result; };
+            store.getAllKeys().onsuccess = function (e) {
+                keys = e.target.result;
+                tx.oncomplete = function () {
+                    if (!items || !items.length) return;
+                    items.forEach(function (item, i) {
+                        fetch('/kiosko/tap', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(item)
+                        }).then(function (r) {
+                            if (r.ok) openDB(function (d2) {
+                                d2.transaction(STORE, 'readwrite').objectStore(STORE).delete(keys[i]);
+                                updateBadge();
+                            });
+                        }).catch(function () {});
+                    });
+                };
+            };
+        });
+    }
+
+    // Recovery check on page load
+    openDB(function () {
+        countPending(function (n) {
+            updateBadge();
+            if (n > 0) {
+                if (recoveryCount) recoveryCount.textContent = n;
+                if (recoveryEl) recoveryEl.style.display = 'flex';
+            }
+        });
+    });
+
+    window.kskRetryQueue = function () {
+        if (recoveryEl) recoveryEl.style.display = 'none';
+        syncQueue();
+    };
+    window.kskClearQueue = function () {
+        openDB(function (d) {
+            d.transaction(STORE, 'readwrite').objectStore(STORE).clear().onsuccess = function () {
+                updateBadge();
+                if (recoveryEl) recoveryEl.style.display = 'none';
+            };
+        });
+    };
+    window.kskAddOfflineTap = function (data) {
+        openDB(function (d) {
+            d.transaction(STORE, 'readwrite').objectStore(STORE).add(data);
+            updateBadge();
+        });
+    };
+
+    // Form debounce — evita doble submit por RFID
+    var lastSubmit = 0;
+    var form = document.querySelector('.ksk-login-form');
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            var now = Date.now();
+            if (now - lastSubmit < 2000) { e.preventDefault(); return; }
+            lastSubmit = now;
+        });
+    }
+
+    setInterval(updateBadge, 5000);
+}());
+</script>
+</body>
 </html>
