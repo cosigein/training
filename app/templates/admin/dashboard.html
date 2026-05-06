@@ -1,0 +1,145 @@
+{% extends "admin/layout.html" %}
+
+{% set active_page = 'dashboard' %}
+
+{% block title %}Dashboard | CMadrid Admin{% endblock %}
+
+{% block content %}
+
+<div class="adm-page-header" style="margin-bottom: 20px;">
+    <div>
+        <h1 class="adm-page-title">Dashboard General</h1>
+        <p class="adm-page-subtitle" id="adm-datetime">—</p>
+    </div>
+</div>
+
+{# ── KPI cards ─────────────────────────────────────────────────────────────── #}
+{% set active_count = convocatorias | selectattr('status', 'in', ['OPEN', 'CLOSING']) | list | length %}
+
+<div class="adm-grid-4">
+    <div class="adm-kpi-card">
+        <div class="adm-kpi-card__label">Convocatorias Activas</div>
+        <div class="adm-kpi-card__value">{{ active_count }}</div>
+    </div>
+    <div class="adm-kpi-card" style="border-left-color: #64748b;">
+        <div class="adm-kpi-card__label">Candidatos Totales</div>
+        <div class="adm-kpi-card__value">{{ stats.candidatos_total }}</div>
+    </div>
+    <div class="adm-kpi-card {% if stats.auditorias_pendientes > 0 %}adm-kpi-card--danger{% else %}adm-kpi-card--amber{% endif %}">
+        <div class="adm-kpi-card__label">Auditorías Pendientes</div>
+        <div class="adm-kpi-card__value">{{ stats.auditorias_pendientes }}</div>
+    </div>
+    <div class="adm-kpi-card adm-kpi-card--success">
+        <div class="adm-kpi-card__label">Kioskos Online</div>
+        <div class="adm-kpi-card__value">{{ stats.kioskos_online }}<span style="font-size: 1rem; font-weight: 400; color: #94a3b8;"> / {{ stats.kioskos_total }}</span></div>
+    </div>
+</div>
+
+{# ── Two-column body ───────────────────────────────────────────────────────── #}
+<div class="adm-grid-2">
+
+    {# Left — Convocatorias #}
+    <div class="adm-card">
+        <div class="adm-card__header">
+            <span class="adm-card__title"><i class="ph ph-clipboard-text"></i> Convocatorias</span>
+            <a href="{{ url_for('admin.convocatorias') }}" class="adm-btn adm-btn--sm adm-btn--secondary">Ver todas</a>
+        </div>
+        <div class="adm-card__body" style="padding: 0;">
+            {% if convocatorias %}
+                {% for conv in convocatorias %}
+                <div class="adm-conv-row">
+                    <div class="adm-conv-row__main">
+                        <div class="adm-conv-row__name">
+                            {{ conv.name }}
+                            <span class="adm-badge adm-badge--{{ conv.status | lower }}">{{ conv.status }}</span>
+                        </div>
+                        <div class="adm-conv-row__meta">
+                            {{ conv.plazas }} plazas · {{ conv.candidatos }} candidatos · {{ conv.cierre }}
+                            {% if conv.auditoria_pendientes > 0 %}
+                            · <span style="color: #dc2626; font-weight: 600;">{{ conv.auditoria_pendientes }} auditorías</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="adm-conv-row__actions">
+                        {% if conv.status in ['OPEN', 'CLOSING'] %}
+                        <a href="{{ url_for('admin.cierre') }}" class="adm-btn adm-btn--sm">Gestionar</a>
+                        {% else %}
+                        <a href="{{ url_for('admin.download_acta', conv_id=conv.id) }}" class="adm-btn adm-btn--sm adm-btn--secondary">Ver acta</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="adm-empty">
+                    <i class="ph ph-clipboard-text"></i>
+                    <p>No hay convocatorias registradas.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Right — Estado del sistema #}
+    <div class="adm-card">
+        <div class="adm-card__header">
+            <span class="adm-card__title"><i class="ph ph-pulse"></i> Estado del sistema</span>
+        </div>
+        <div class="adm-card__body" style="padding: 0;">
+            <div class="adm-status-row">
+                <span class="adm-status-dot {% if stats.api_ok %}adm-status-dot--ok{% else %}adm-status-dot--error{% endif %}"></span>
+                <span class="adm-status-row__label">API</span>
+                <span class="adm-status-row__value">{% if stats.api_ok %}Operativa{% else %}Error{% endif %}</span>
+            </div>
+            <div class="adm-status-row">
+                <span class="adm-status-dot {% if stats.db_ok %}adm-status-dot--ok{% else %}adm-status-dot--error{% endif %}"></span>
+                <span class="adm-status-row__label">Base de datos</span>
+                <span class="adm-status-row__value">{% if stats.db_ok %}Conectada{% else %}Error{% endif %}</span>
+            </div>
+            <div class="adm-status-row">
+                <span class="adm-status-dot {% if stats.webfleet_cuota < 80 %}adm-status-dot--ok{% else %}adm-status-dot--warn{% endif %}"></span>
+                <span class="adm-status-row__label">Webfleet cuota</span>
+                <span class="adm-status-row__value">{{ stats.webfleet_cuota }}%{% if stats.webfleet_cuota >= 80 %} <span style="color: #d97706;">— límite próximo</span>{% endif %}</span>
+            </div>
+            <div class="adm-status-row">
+                <span class="adm-status-dot {% if stats.kioskos_online == stats.kioskos_total and stats.kioskos_total > 0 %}adm-status-dot--ok{% elif stats.kioskos_online == 0 %}adm-status-dot--error{% else %}adm-status-dot--warn{% endif %}"></span>
+                <span class="adm-status-row__label">Kioskos</span>
+                <span class="adm-status-row__value">{{ stats.kioskos_online }} / {{ stats.kioskos_total }} en línea</span>
+            </div>
+            <div class="adm-status-row">
+                <span class="adm-status-dot adm-status-dot--ok"></span>
+                <span class="adm-status-row__label">Intentos hoy</span>
+                <span class="adm-status-row__value">{{ stats.intentos_hoy }}</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{# ── Auditorías pendientes alert ───────────────────────────────────────────── #}
+{% if stats.auditorias_pendientes > 0 %}
+<div class="adm-alert adm-alert--danger">
+    <i class="ph ph-warning" style="font-size: 1.2rem;"></i>
+    <div>
+        Hay <strong>{{ stats.auditorias_pendientes }}</strong> solicitudes de auditoría pendientes de revisión.
+        <a href="{{ url_for('manager.auditoria_list') }}" style="color: inherit; font-weight: 700; margin-left: 8px;">Revisar →</a>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    function updateClock() {
+        const el = document.getElementById('adm-datetime');
+        if (!el) return;
+        const now = new Date();
+        el.textContent = now.toLocaleDateString('es-ES', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        }) + ' · ' + now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    }
+    updateClock();
+    setInterval(updateClock, 60000);
+})();
+</script>
+{% endblock %}

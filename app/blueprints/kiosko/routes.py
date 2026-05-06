@@ -1,107 +1,89 @@
 """
 Endpoints del kiosko.
 
-Contiene tanto las vistas para el portal del kiosko (UI) como el endpoint de telemetría (TAP).
+Contiene tanto las vistas para el portal del kiosko (UI) como el endpoint de
+telemetría (TAP). El UI es público (sin auth) y consulta BD real para mostrar
+plazas, rutas y notas. La identificación es por nº de plaza (V1, single-tenant);
+en V2 pasa a kioskCode + RFID.
 """
 from flask import render_template, request, redirect, url_for, jsonify, current_app
 from . import kiosko_bp
 from app.extensions import csrf
-from .services import kiosko_service, KioskoError
-from app.blueprints.manager.routes import (
-    CANDIDATOS, CONVOCATORIAS, AUDITORIAS, _calcular_nota_media
+from .services import (
+    kiosko_service,
+    KioskoError,
+    resolve_enrollment_by_plaza,
+    resolve_attempt_view,
 )
+from app.blueprints.student.student_service import (
+    get_student_dashboard,
+    get_student_intento,
+)
+from app.models.session import GpsMeasurement
 
-# ── VISTAS (UI) ─────────────────────────────────────────────────────────────
 
-@kiosko_bp.route('/')
+# ── VISTAS (UI pública del kiosko) ──────────────────────────────────────────
+
+@kiosko_bp.route("/")
 def login():
-    return render_template('kiosko/login.html')
+    return render_template("kiosko/login.html")
 
 
-@kiosko_bp.route('/entrar', methods=['POST'])
+@kiosko_bp.route("/entrar", methods=["POST"])
 def entrar():
-    plaza = request.form.get('plaza', '').strip()
-    return redirect(url_for('kiosko.rutas', plaza=plaza))
+    plaza = (request.form.get("plaza") or "").strip()
+    return redirect(url_for("kiosko.rutas", plaza=plaza))
 
 
-@kiosko_bp.route('/rutas')
+@kiosko_bp.route("/rutas")
 def rutas():
-    plaza = request.args.get('plaza', '')
-    candidato = next((c for c in CANDIDATOS if c['plaza'] == plaza), None)
+    plaza = (request.args.get("plaza") or "").strip()
+    resolved = resolve_enrollment_by_plaza(plaza)
+    if not resolved:
+        return redirect(url_for("kiosko.login"))
 
-    if not candidato:
-        return redirect(url_for('kiosko.login'))
-
-    conv = next(
-        (cv for cv in CONVOCATORIAS if cv['id'] == candidato.get('convocatoria_id')),
-        CONVOCATORIAS[0]
-    )
-    nota_media = _calcular_nota_media(candidato)
-
-    rutas_data = []
-    for circ in conv['rutas']:
-        info = candidato['notas'].get(circ['id'])
-        rutas_data.append({
-            'id': circ['id'],
-            'label': circ['label'],
-            'info': info,
-            'attempt_id': info['attempt_id'] if info else None,
-        })
+    enrollment, conv, org = resolved
+    ctx = get_student_dashboard(enrollment.studentId, org.id, conv.id)
+    if not ctx:
+        return redirect(url_for("kiosko.login"))
 
     return render_template(
-        'kiosko/rutas.html',
-        candidato=candidato,
-        convocatoria=conv,
-        rutas=rutas_data,
-        nota_media=nota_media,
+        "kiosko/rutas.html",
+        candidato=ctx["candidato"],
+        convocatoria=ctx["convocatoria"],
+        rutas=ctx["rutas"],
+        nota_media=ctx["nota_media"],
     )
 
 
-@kiosko_bp.route('/intento/<attempt_id>')
+@kiosko_bp.route("/intento/<attempt_id>")
 def intento(attempt_id):
-    candidato = None
-    ruta_info = None
-    nota_info = None
-    conv = None
+    resolved = resolve_attempt_view(attempt_id)
+    if not resolved:
+        return redirect(url_for("kiosko.login"))
 
-    for c in CANDIDATOS:
-        for ruta_id, info in c['notas'].items():
-            if info and info.get('attempt_id') == attempt_id:
-                candidato = c
-                nota_info = info
-                conv = next(
-                    (cv for cv in CONVOCATORIAS if cv['id'] == c.get('convocatoria_id')),
-                    CONVOCATORIAS[0]
-                )
-                ruta_info = next((r for r in conv['rutas'] if r['id'] == ruta_id), None)
-                break
-        if candidato:
-            break
+    attempt, org = resolved
+    if not attempt.studentId:
+        return redirect(url_for("kiosko.login"))
 
-    if not candidato:
-        return redirect(url_for('kiosko.login'))
-
-    auditoria = next((a for a in AUDITORIAS if a['attempt_id'] == attempt_id), None)
-
-    score_breakdown = [
-        {'familia': 'Estabilidad', 'obtenido': round(nota_info['nota'] * 0.40, 1), 'maximo': 4.0},
-        {'familia': 'Velocidad',   'obtenido': round(nota_info['nota'] * 0.30, 1), 'maximo': 3.0},
-        {'familia': 'Ruta',        'obtenido': round(nota_info['nota'] * 0.15, 1), 'maximo': 1.5},
-        {'familia': 'Conducción',  'obtenido': round(nota_info['nota'] * 0.15, 1), 'maximo': 1.5},
-    ]
+    ctx = get_student_intento(attempt_id, attempt.studentId, org.id)
+    if not ctx:
+        return redirect(url_for("kiosko.login"))
 
     return render_template(
-        'kiosko/intento.html',
-        candidato=candidato,
-        ruta=ruta_info,
-        nota_info=nota_info,
+        "kiosko/intento.html",
+        candidato=ctx["candidato"],
+        ruta=ctx["ruta"],
+        nota_info=ctx["nota_info"],
         attempt_id=attempt_id,
-        score_breakdown=score_breakdown,
-        auditoria=auditoria,
-        convocatoria=conv,
+        score_breakdown=ctx["score_breakdown"],
+        pedagogico=ctx["pedagogico"],
+        auditoria=ctx["auditoria"],
+        convocatoria=ctx["convocatoria"],
     )
 
-# ── API (TELEMETRÍA) ────────────────────────────────────────────────────────
+
+# ── API (TELEMETRÍA HARDWARE) ───────────────────────────────────────────────
 
 @kiosko_bp.route("/tap", methods=["POST"])
 @csrf.exempt   # los kioskos no son navegadores; auth real va en V2 vía device token
@@ -142,3 +124,36 @@ def kiosk_tap():
         ),
     }), 201
 
+
+@kiosko_bp.route("/intento/<attempt_id>/gps")
+def intento_gps(attempt_id):
+    """Devuelve la traza GPS del intento como JSON para Leaflet."""
+    resolved = resolve_attempt_view(attempt_id)
+    if not resolved:
+        return jsonify({"points": []}), 200
+
+    attempt, org = resolved
+    points = (
+        GpsMeasurement.query
+        .filter_by(attemptId=attempt_id, organizationId=org.id)
+        .order_by(GpsMeasurement.timestamp.asc())
+        .with_entities(
+            GpsMeasurement.latitude,
+            GpsMeasurement.longitude,
+            GpsMeasurement.speed,
+            GpsMeasurement.confidence,
+        )
+        .all()
+    )
+
+    # Submuestrear si hay muchos puntos (máx 500 para el mapa)
+    step = max(1, len(points) // 500)
+    sampled = points[::step]
+
+    return jsonify({
+        "points": [
+            {"lat": p.latitude, "lng": p.longitude,
+             "speed": p.speed, "confidence": p.confidence}
+            for p in sampled
+        ]
+    })

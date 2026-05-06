@@ -55,11 +55,11 @@
 
     <!-- Filtros -->
     <div style="display:flex; gap:4px; align-items:center;">
-        <div class="mgr-pill active" style="padding:2px 6px; font-size:10px; border-radius:4px; cursor:pointer; user-select:none; line-height:1.2; border:none; background:#f1f5f9; color:#64748b;" onclick="setFiltro(this, 'todos')">Todos</div>
-        <div class="mgr-pill" style="padding:2px 6px; font-size:10px; border-radius:4px; cursor:pointer; user-select:none; line-height:1.2; border:none; background:#f1f5f9; color:#64748b;" onclick="setFiltro(this, 'aprobados')">Aprobados</div>
-        <div class="mgr-pill" style="padding:2px 6px; font-size:10px; border-radius:4px; cursor:pointer; user-select:none; line-height:1.2; border:none; background:#f1f5f9; color:#64748b;" onclick="setFiltro(this, 'suspensos')">Suspensos</div>
-        <div class="mgr-pill" style="padding:2px 6px; font-size:10px; border-radius:4px; cursor:pointer; user-select:none; line-height:1.2; border:none; background:#f1f5f9; color:#64748b;" onclick="setFiltro(this, 'completados')">Completados</div>
-        <div class="mgr-pill" style="padding:2px 6px; font-size:10px; border-radius:4px; cursor:pointer; user-select:none; line-height:1.2; border:none; background:#f1f5f9; color:#64748b;" onclick="setFiltro(this, 'sin_terminar')">Incompletos</div>
+        <div class="mgr-pill active" style="padding:2px 6px; font-size:10px; border-radius:4px; cursor:pointer; user-select:none; line-height:1.2;" onclick="setFiltro(this, 'todos')">Todos</div>
+        <div class="mgr-pill" style="padding:2px 6px; font-size:10px; border-radius:4px; cursor:pointer; user-select:none; line-height:1.2;" onclick="setFiltro(this, 'aprobados')">Aprobados</div>
+        <div class="mgr-pill" style="padding:2px 6px; font-size:10px; border-radius:4px; cursor:pointer; user-select:none; line-height:1.2;" onclick="setFiltro(this, 'suspensos')">Suspensos</div>
+        <div class="mgr-pill" style="padding:2px 6px; font-size:10px; border-radius:4px; cursor:pointer; user-select:none; line-height:1.2;" onclick="setFiltro(this, 'completados')">Completados</div>
+        <div class="mgr-pill" style="padding:2px 6px; font-size:10px; border-radius:4px; cursor:pointer; user-select:none; line-height:1.2;" onclick="setFiltro(this, 'sin_terminar')">Incompletos</div>
     </div>
 
     <!-- Micro KPIs -->
@@ -77,10 +77,10 @@
 <!-- Leyenda -->
 <div class="mgr-legend">
     <span class="mgr-legend__item">
-        <span class="mgr-matrix-badge mgr-matrix-badge--high">8.8</span> Nota · calidad HIGH
+        <span class="mgr-matrix-badge mgr-matrix-badge--high">8.8</span> Aprobado
     </span>
     <span class="mgr-legend__item">
-        <span class="mgr-matrix-badge mgr-matrix-badge--low">3.2 <i class="ph ph-warning" style="font-size:9px"></i></span> Nota · calidad LOW
+        <span class="mgr-matrix-badge mgr-matrix-badge--fail">3.2</span> Suspenso
     </span>
     <span class="mgr-legend__item">
         <span class="mgr-matrix-badge mgr-matrix-badge--audit">6.5 <i class="ph ph-scales" style="font-size:9px"></i></span> Auditoría pendiente
@@ -136,21 +136,17 @@
             {% set info = c.notas.get(circ.id) %}
             <td title="{{ circ.label }}: {% if info %}{{ '%.1f'|format(info.nota) }}{% else %}Pendiente{% endif %}">
                 {% if info %}
-                    {% set badge_class = 'mgr-matrix-badge--high' %}
                     {% if info.audit %}
                         {% set badge_class = 'mgr-matrix-badge--audit' %}
-                    {% elif info.data_quality == 'LOW' %}
-                        {% set badge_class = 'mgr-matrix-badge--low' %}
                     {% elif info.nota < 5 %}
                         {% set badge_class = 'mgr-matrix-badge--fail' %}
+                    {% else %}
+                        {% set badge_class = 'mgr-matrix-badge--high' %}
                     {% endif %}
                     <a href="{{ url_for('manager.intento_detalle', attempt_id=info.attempt_id) }}"
                        class="mgr-matrix-badge {{ badge_class }}">
                         {{ "%.1f"|format(info.nota) }}
-                        {% if info.audit %}<i class="ph ph-scales" style="font-size:8px"></i>{% endif %}
-                        {% if info.data_quality == 'LOW' and not info.audit %}
-                            <i class="ph ph-warning" style="font-size:8px"></i>
-                        {% endif %}
+                        {% if info.audit %}<i class="ph ph-scales" style="font-size:9px; margin-left:2px;"></i>{% endif %}
                     </a>
                 {% else %}
                     <span class="mgr-matrix-badge mgr-matrix-badge--pending">—</span>

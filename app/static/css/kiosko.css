@@ -400,6 +400,132 @@ body {
 .ksk-ruta-badge--lq    { background: rgba(217,119,6,.25);  color: #fcd34d; }
 .ksk-ruta-badge--audit { background: rgba(124,58,237,.25); color: #c4b5fd; }
 
+/* ═══════════════════════════════════════════════════════════════════
+   STATUS BAR — persistent bottom strip (defensive mechanisms)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.ksk-statusbar {
+    height: 36px;
+    background: #060b14;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 20px;
+    flex-shrink: 0;
+    font-size: 11px;
+    color: #475569;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.ksk-statusbar__online {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ksk-statusbar__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #22c55e;
+    flex-shrink: 0;
+    transition: background 300ms;
+}
+
+.ksk-statusbar__dot--offline {
+    background: #ef4444;
+    animation: ksk-blink 1s step-start infinite;
+}
+
+@keyframes ksk-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.ksk-statusbar__online--offline { color: #ef4444; }
+
+.ksk-statusbar__sep {
+    width: 1px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.ksk-statusbar__pending {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #fbbf24;
+}
+
+.ksk-statusbar__pending--hidden { display: none; }
+
+.ksk-statusbar__clock {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* Recovery modal (shown on startup if pending taps in IndexedDB) */
+.ksk-recovery-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.88);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.ksk-recovery-modal {
+    background: #0d1527;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    border-radius: 16px;
+    padding: 36px;
+    max-width: 440px;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.ksk-recovery-modal__title {
+    font-family: var(--font-heading);
+    font-size: 18px;
+    font-weight: 700;
+    color: #fbbf24;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ksk-recovery-modal__body {
+    font-size: 14px;
+    color: #94a3b8;
+    line-height: 1.6;
+}
+
+.ksk-recovery-modal__count {
+    font-family: var(--font-heading);
+    font-size: 40px;
+    font-weight: 800;
+    color: #fbbf24;
+    text-align: center;
+    padding: 8px 0;
+}
+
+.ksk-recovery-modal__actions {
+    display: flex;
+    gap: 12px;
+}
+
 /* ── RESPONSIVE ───────────────────────────────────────────────────── */
 @media (max-width: 600px) {
     .ksk-rutas-grid { grid-template-columns: 1fr 1fr; }
@@ -409,4 +535,638 @@ body {
 
 @media (min-width: 1024px) {
     .ksk-rutas-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ── INTENTO — Score display (header) ──────────────────────────────── */
+.ksk-score-display {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.ksk-score-display__value {
+    text-align: center;
+}
+
+.ksk-score-display__num {
+    font-size: 42px;
+}
+
+.ksk-score-display__sub {
+    font-size: 11px;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ksk-score-display__back {
+    height: 44px;
+    padding: 0 20px;
+    font-size: 13px;
+}
+
+/* ── INTENTO — Flags row ──────────────────────────────────────────── */
+.ksk-flags {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.ksk-badge-inline {
+    position: static;
+    font-size: 11px;
+    padding: 5px 12px;
+}
+
+/* ── INTENTO — Score breakdown card ──────────────────────────────── */
+.ksk-breakdown {
+    background: #0d1527;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 14px;
+    padding: 24px;
+}
+
+.ksk-breakdown__title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #475569;
+    margin-bottom: 20px;
+}
+
+.ksk-breakdown__list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.ksk-breakdown__row {
+    display: grid;
+    grid-template-columns: 110px 1fr 70px;
+    align-items: center;
+    gap: 14px;
+}
+
+.ksk-breakdown__label {
+    font-size: 13px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.ksk-breakdown__bar-track {
+    height: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.ksk-breakdown__bar-fill {
+    height: 100%;
+    background: #1a56db;
+    border-radius: 5px;
+}
+
+.ksk-breakdown__value {
+    font-size: 13px;
+    font-weight: 700;
+    color: #e2e8f0;
+    text-align: right;
+}
+
+.ksk-breakdown__total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    font-weight: 700;
+    font-size: 15px;
+    color: #f1f5f9;
+}
+
+.ksk-breakdown__total-score {
+    font-size: 24px;
+}
+
+/* ── INTENTO — Audit card ─────────────────────────────────────────── */
+.ksk-audit-card {
+    background: #160d27;
+    border: 1px solid rgba(196, 181, 253, 0.2);
+    border-radius: 14px;
+    padding: 20px;
+}
+
+.ksk-audit-card__header {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #7c3aed;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ksk-audit-card__reason {
+    font-size: 14px;
+    color: #c4b5fd;
+    line-height: 1.6;
+    margin: 0;
+    font-style: italic;
+}
+
+.ksk-audit-card__date {
+    font-size: 11px;
+    color: #7c3aed;
+    margin-top: 10px;
+}
+
+/* ── INTENTO — Map section ────────────────────────────────────────── */
+.ksk-map-section {
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: #0d1527;
+}
+
+.ksk-map-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: #94a3b8;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ksk-map-header i { font-size: 15px; color: #1a56db; }
+
+.ksk-map-header__sub {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 400;
+    color: #475569;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.ksk-map-container {
+    height: 320px;
+    position: relative;
+    background: #0a0f1e;
+}
+
+.ksk-map-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #475569;
+    font-size: 13px;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.ksk-map-placeholder i { font-size: 32px; color: #1e3a5f; }
+
+/* ── INTENTO — Incidents section ──────────────────────────────────── */
+.ksk-incidents {
+    background: #0d1527;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 14px;
+    padding: 16px 20px;
+}
+
+.ksk-incidents--ok {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #16a34a;
+}
+
+.ksk-incidents--ok i { font-size: 18px; }
+
+.ksk-incidents__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: #f59e0b;
+    margin-bottom: 14px;
+}
+
+.ksk-incidents__title i { font-size: 14px; }
+
+.ksk-incidents__list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ksk-incident-row {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: rgba(245, 158, 11, 0.06);
+    border-left: 3px solid #f59e0b;
+    border-radius: 6px;
+}
+
+.ksk-incident-row__count {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f59e0b;
+    text-align: center;
+}
+
+.ksk-incident-row__body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.ksk-incident-row__tipo {
+    font-size: 13px;
+    font-weight: 600;
+    color: #e2e8f0;
+}
+
+.ksk-incident-row__zona {
+    font-size: 11px;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.ksk-incident-row__pts {
+    font-size: 12px;
+    font-weight: 700;
+    color: #dc2626;
+    white-space: nowrap;
+}
+
+/* ── INTENTO — Full-width back button ────────────────────────────── */
+.ksk-back-full {
+    align-self: stretch;
+    margin-top: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   INTENTO MAP-FIRST LAYOUT
+   Estructura: header (48px) | mapa (flex:1) | panel (auto) | bar (28px)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.ksk-intento-body {
+    background: #060d1a;
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+}
+
+/* ── Header fino ──────────────────────────────────────────────────── */
+.ksk-intento-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    height: 48px;
+    background: #0a1628;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+    z-index: 20;
+}
+
+.ksk-intento-back {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    text-decoration: none;
+    transition: background 0.15s;
+}
+.ksk-intento-back:hover { background: rgba(255,255,255,0.12); }
+
+.ksk-intento-header__info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    overflow: hidden;
+}
+
+.ksk-intento-header__ruta {
+    font-size: 13px;
+    font-weight: 700;
+    color: #e2e8f0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ksk-intento-header__candidato {
+    font-size: 10px;
+    color: #475569;
+}
+
+.ksk-intento-header__score {
+    font-size: 22px;
+    font-weight: 900;
+    padding: 4px 12px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.ksk-intento-header__score--pass {
+    color: #16a34a;
+    background: rgba(22,163,74,0.12);
+}
+
+.ksk-intento-header__score--fail {
+    color: #dc2626;
+    background: rgba(220,38,38,0.12);
+}
+
+/* ── Mapa: ocupa todo el espacio disponible ───────────────────────── */
+.ksk-intento-map {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+    background: #0a0f1e;
+}
+
+/* Placeholder centrado en el mapa */
+.ksk-intento-map__placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #334155;
+    font-size: 13px;
+    text-align: center;
+    padding: 24px;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.ksk-intento-map__placeholder i {
+    font-size: 40px;
+    color: #1e3a5f;
+}
+
+/* Overlay: score badge (esquina superior derecha del mapa) */
+.ksk-map-overlay-score {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 500;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    pointer-events: none;
+}
+
+.ksk-map-score-badge {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    padding: 8px 14px;
+    border-radius: 12px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.ksk-map-score-badge--pass {
+    background: rgba(22,163,74,0.85);
+    border: 1px solid rgba(255,255,255,0.15);
+}
+
+.ksk-map-score-badge--fail {
+    background: rgba(220,38,38,0.85);
+    border: 1px solid rgba(255,255,255,0.15);
+}
+
+.ksk-map-score-badge__num {
+    font-size: 28px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1;
+}
+
+.ksk-map-score-badge__label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+}
+
+/* Badges pequeños (LQ, auditoría) bajo el score */
+.ksk-map-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.ksk-map-badge--lq {
+    background: rgba(245,158,11,0.8);
+    color: #fff;
+}
+
+.ksk-map-badge--audit {
+    background: rgba(124,58,237,0.8);
+    color: #fff;
+}
+
+/* Pill de incidencias: esquina inferior izquierda del mapa */
+.ksk-map-incidents-pill {
+    position: absolute;
+    bottom: 14px;
+    left: 14px;
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    border-radius: 20px;
+    background: rgba(10,22,40,0.88);
+    border: 1px solid rgba(245,158,11,0.4);
+    color: #f59e0b;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+}
+
+.ksk-map-incidents-pill--ok {
+    border-color: rgba(22,163,74,0.4);
+    color: #16a34a;
+    cursor: default;
+}
+
+/* ── Panel inferior compacto ──────────────────────────────────────── */
+.ksk-intento-panel {
+    flex-shrink: 0;
+    background: #0a1628;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-height: 40vh;
+    overflow-y: auto;
+}
+
+/* Score breakdown: fila compacta horizontal */
+.ksk-panel-breakdown {
+    display: flex;
+    gap: 0;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    overflow-x: auto;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ksk-panel-breakdown__item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex: 1;
+    min-width: 120px;
+}
+
+.ksk-panel-breakdown__familia {
+    font-size: 11px;
+    color: #64748b;
+    white-space: nowrap;
+    width: 80px;
+    flex-shrink: 0;
+}
+
+.ksk-panel-breakdown__bar {
+    flex: 1;
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.ksk-panel-breakdown__fill {
+    height: 100%;
+    background: #1a56db;
+    border-radius: 3px;
+}
+
+.ksk-panel-breakdown__val {
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    white-space: nowrap;
+    min-width: 36px;
+    text-align: right;
+}
+
+/* Incidencias expandibles */
+.ksk-panel-incidents {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.ksk-panel-incident {
+    display: grid;
+    grid-template-columns: 24px 1fr auto auto;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: rgba(245,158,11,0.05);
+    border-left: 3px solid rgba(245,158,11,0.5);
+    border-radius: 6px;
+}
+
+.ksk-panel-incident__count {
+    font-size: 12px;
+    font-weight: 800;
+    color: #f59e0b;
+    text-align: center;
+}
+
+.ksk-panel-incident__tipo {
+    font-size: 12px;
+    color: #cbd5e1;
+    font-weight: 500;
+}
+
+.ksk-panel-incident__zona {
+    font-size: 11px;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.ksk-panel-incident__pts {
+    font-size: 12px;
+    font-weight: 700;
+    color: #dc2626;
+    white-space: nowrap;
+}
+
+/* Botón volver en el panel */
+.ksk-intento-volver {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px;
+    background: transparent;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    transition: color 0.15s, background 0.15s;
+}
+.ksk-intento-volver:hover { color: #94a3b8; background: rgba(255,255,255,0.03); }
+
+/* Statusbar en el intento: no fixed, parte del flex column */
+.ksk-statusbar--intento {
+    position: static;
+    flex-shrink: 0;
 }

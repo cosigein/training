@@ -1,9 +1,20 @@
-{% extends "alumno_portal/layout.html" %}
+{% extends "student/layout.html" %}
 
 {% block content %}
 
+        <div class="alu-back-bar">
+            <a href="{{ url_for('student.dashboard') }}" class="alu-back-btn" aria-label="Volver a la página principal">
+                <i class="ph ph-arrow-left" aria-hidden="true"></i> Volver al inicio
+            </a>
+            <span class="alu-breadcrumb" aria-label="Ubicación actual">
+                <span>Inicio</span>
+                <span class="alu-breadcrumb__sep">›</span>
+                <strong>Mi evolución</strong>
+            </span>
+        </div>
+
         <div>
-            <h1 class="alu-welcome__title">Tu evolución</h1>
+            <h1 class="alu-welcome__title">Su evolución</h1>
             <p class="alu-welcome__sub">
                 {{ convocatoria.nombre }} · nota media general:
                 <strong>{{ "%.2f"|format(nota_media) if nota_media > 0 else "—" }}</strong>
@@ -12,7 +23,6 @@
 
         {% if evolucion %}
 
-        <!-- Resumen mejor / peor -->
         {% if mejor and peor and mejor.ruta_id != peor.ruta_id %}
         <div class="alu-evo-summary">
             <div class="alu-evo-highlight alu-evo-highlight--mejor">
@@ -34,15 +44,15 @@
         </div>
         {% endif %}
 
-        <!-- Grid de rutas -->
         <div>
             <div style="font-size:13px; font-weight:600; color:#475569; margin-bottom:12px;">
                 Detalle por circuito
             </div>
             <div class="alu-evo-grid">
                 {% for item in evolucion %}
-                <a href="{{ url_for('alumno.intento', attempt_id=item.attempt_id) }}"
-                   class="alu-evo-card alu-evo-card--{{ item.color }}">
+                <a href="{{ url_for('student.intento', attempt_id=item.attempt_id) }}"
+                   class="alu-evo-card alu-evo-card--{{ item.color }}"
+                   data-testid="student-evolucion-card-{{ item.ruta_id }}">
                     <span class="alu-evo-card__id">{{ item.ruta_id }}</span>
                     <span class="alu-evo-card__label">{{ item.label }}</span>
                     <span class="alu-evo-card__nota">{{ "%.1f"|format(item.nota) }}</span>
@@ -66,7 +76,6 @@
             </div>
         </div>
 
-        <!-- Leyenda -->
         <div style="display:flex; gap:16px; flex-wrap:wrap; padding:14px 20px;
                     background:#fff; border-radius:10px; border:1.5px solid #e2e8f0;
                     font-size:12px; color:#64748b;">
@@ -85,11 +94,6 @@
             </div>
         </div>
         {% endif %}
-
-        <a href="{{ url_for('alumno.dashboard', plaza=candidato.plaza) }}"
-           class="alu-ruta-btn" style="align-self:flex-start;">
-            <i class="ph ph-arrow-left"></i> Volver a mis resultados
-        </a>
 
         <p class="alu-disclaimer">
             Indicadores provisionales basados en los intentos registrados hasta la fecha.

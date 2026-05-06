@@ -1,0 +1,32 @@
+{% extends "student/layout.html" %}
+
+{% block content %}
+
+        <div class="alu-welcome">
+            <div>
+                <h1 class="alu-welcome__title">
+                    Hola, <span>{{ user.name.split()[0] }}</span>
+                </h1>
+                <p class="alu-welcome__sub">
+                    Todavía no tiene ninguna inscripción activa
+                </p>
+            </div>
+        </div>
+
+        <div class="alu-card">
+            <div class="alu-card__body" style="padding:64px 20px; text-align:center;">
+                <i class="ph ph-clipboard-text" style="font-size:48px; color:#cbd5e1; display:block; margin-bottom:16px;"></i>
+                <div style="font-size:16px; font-weight:600; color:#475569; margin-bottom:8px;">
+                    Sin convocatoria asignada
+                </div>
+                <div style="font-size:13px; color:#94a3b8; max-width:420px; margin:0 auto; line-height:1.6;">
+                    Aún no está inscrito en ninguna convocatoria activa. Cuando un administrador le dé de alta en una convocatoria, podrá ver aquí su panel con resultados, ranking y evolución.
+                </div>
+                <a href="{{ url_for('auth.logout') }}"
+                   class="alu-ruta-btn" style="margin-top:24px; display:inline-flex;">
+                    <i class="ph ph-sign-out"></i> Cerrar sesión
+                </a>
+            </div>
+        </div>
+
+{% endblock %}

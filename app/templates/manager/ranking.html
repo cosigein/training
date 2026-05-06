@@ -5,10 +5,7 @@
 
 <div class="mgr-page-header">
     <div>
-        <a href="{{ url_for('manager.dashboard') }}" class="mgr-back-link">
-            <i class="ph ph-arrow-left"></i> Volver al Dashboard
-        </a>
-        <h1 class="mgr-page-title" style="display:flex; align-items:center; gap:12px; margin-top:8px;">
+        <h1 class="mgr-page-title" style="display:flex; align-items:center; gap:12px;">
             Ranking de clasificación
             <select class="mgr-conv-selector" onchange="window.location.href='?conv_id=' + this.value">
                 {% for c in convocatorias %}
@@ -117,10 +114,21 @@
             </td>
 
             <td style="text-align:center">
-                {% if entry.tiene_auditoria %}
-                <span class="mgr-audit-chip">
+                {% if entry.tiene_auditoria and entry.audit_data %}
+                <button class="mgr-audit-chip mgr-audit-chip--btn"
+                        data-audit-id="{{ entry.audit_data.id }}"
+                        data-audit-nombre="{{ entry.candidato.nombre }}"
+                        data-audit-plaza="{{ entry.candidato.plaza }}"
+                        data-candidato-id="{{ entry.candidato.id }}"
+                        data-audit-ruta="{{ entry.audit_data.ruta }}"
+                        data-audit-reason="{{ entry.audit_data.reason }}"
+                        data-audit-fecha="{{ entry.audit_data.fecha }}"
+                        data-audit-hora="{{ entry.audit_data.hora }}"
+                        data-audit-attempt="{{ entry.audit_data.attempt_id }}"
+                        onclick="abrirAuditDrawer(this); event.stopPropagation();"
+                        aria-label="Ver solicitud de auditoría de {{ entry.candidato.nombre }}">
                     <i class="ph ph-scales"></i> Pendiente
-                </span>
+                </button>
                 {% else %}
                 <span style="color:#94a3b8; font-size:12px">—</span>
                 {% endif %}
@@ -159,6 +167,43 @@
     El resultado definitivo se emite al cierre de la convocatoria.
 </p>
 
+<!-- Audit Drawer -->
+<div class="mgr-drawer-backdrop" id="auditBackdrop" onclick="cerrarAuditDrawer()" hidden></div>
+<aside class="mgr-drawer" id="auditDrawer" aria-label="Detalle de auditoría" hidden>
+    <div class="mgr-drawer__header">
+        <div>
+            <div class="mgr-drawer__title">
+                <i class="ph ph-scales"></i> Solicitud de auditoría
+            </div>
+            <div class="mgr-drawer__sub" id="drawerSub">—</div>
+        </div>
+        <button class="mgr-drawer__close" onclick="cerrarAuditDrawer()" aria-label="Cerrar">
+            <i class="ph ph-x"></i>
+        </button>
+    </div>
+
+    <div class="mgr-drawer__body">
+        <div class="mgr-drawer__meta">
+            <span><i class="ph ph-map-pin"></i> Ruta: <strong id="drawerRuta">—</strong></span>
+            <span><i class="ph ph-calendar"></i> <span id="drawerFecha">—</span></span>
+        </div>
+
+        <div class="mgr-drawer__section-label">Motivo del candidato</div>
+        <blockquote class="mgr-quote" id="drawerReason">—</blockquote>
+
+        <div class="mgr-drawer__actions">
+            <a id="drawerReviewBtn" href="#"
+               class="mgr-action-btn mgr-action-btn--primary">
+                <i class="ph ph-arrow-square-out"></i> Revisar y responder
+            </a>
+            <a id="drawerProfileBtn" href="#"
+               class="mgr-action-btn mgr-action-btn--secondary">
+                <i class="ph ph-user"></i> Ver perfil del candidato
+            </a>
+        </div>
+    </div>
+</aside>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -180,12 +225,50 @@ document.querySelectorAll('[data-filter-rank]').forEach(pill => {
         });
     });
 });
+
 // Click en filas
 document.querySelectorAll('.mgr-clickable-row').forEach(row => {
     row.addEventListener('click', e => {
-        if (e.target.closest('a')) return;
+        if (e.target.closest('a, button')) return;
         window.location.href = row.dataset.href;
     });
+});
+
+// Audit drawer
+const drawer = document.getElementById('auditDrawer');
+const backdrop = document.getElementById('auditBackdrop');
+
+function abrirAuditDrawer(btn) {
+    document.getElementById('drawerSub').textContent =
+        btn.dataset.auditNombre + ' · Plaza #' + btn.dataset.auditPlaza;
+    document.getElementById('drawerRuta').textContent = btn.dataset.auditRuta;
+    document.getElementById('drawerFecha').textContent =
+        btn.dataset.auditFecha + ' a las ' + btn.dataset.auditHora;
+    document.getElementById('drawerReason').textContent = btn.dataset.auditReason;
+    document.getElementById('drawerReviewBtn').href =
+        '{{ url_for("manager.auditoria_detalle", audit_id="AUDIT_ID") }}'.replace('AUDIT_ID', btn.dataset.auditId);
+    document.getElementById('drawerProfileBtn').href =
+        '{{ url_for("manager.alumno_detalle", candidato_id="CAND_ID") }}'.replace('CAND_ID', btn.dataset.auditNombre);
+
+    drawer.hidden = false;
+    backdrop.hidden = false;
+    requestAnimationFrame(() => {
+        drawer.classList.add('mgr-drawer--open');
+        backdrop.classList.add('mgr-drawer-backdrop--visible');
+    });
+}
+
+function cerrarAuditDrawer() {
+    drawer.classList.remove('mgr-drawer--open');
+    backdrop.classList.remove('mgr-drawer-backdrop--visible');
+    drawer.addEventListener('transitionend', () => {
+        drawer.hidden = true;
+        backdrop.hidden = true;
+    }, { once: true });
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') cerrarAuditDrawer();
 });
 </script>
 {% endblock %}

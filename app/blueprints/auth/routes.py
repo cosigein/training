@@ -44,8 +44,10 @@ def login():
         else:
             role = user.role.value if hasattr(user.role, 'value') else user.role
             if role == "STUDENT":
-                dest = url_for('alumno.dashboard')
-            elif role in ("MANAGER", "ADMIN", "SUPER_ADMIN"):
+                dest = url_for('student.dashboard')
+            elif role in ("ADMIN", "SUPER_ADMIN"):
+                dest = url_for('admin.dashboard')
+            elif role == "MANAGER":
                 dest = url_for('manager.dashboard')
             else:
                 dest = url_for('sessions.list_attempts')
@@ -88,11 +90,11 @@ def register():
             
         if request.is_json:
             return jsonify({
-                "message": "Usuario creado exitosamente",
+                "message": "Usuario creado correctamente",
                 "user": {"id": user.id, "email": user.email}
             }), 201
-        
-        flash("Cuenta creada exitosamente. Por favor inicia sesión.", "success")
+
+        flash("Cuenta creada correctamente. Por favor, inicie sesión.", "success")
         return redirect(url_for('auth.login'))
 
     return render_template("auth/register.html")
@@ -102,7 +104,7 @@ def logout():
     logout_user()  # Importante: limpia la sesión de flask-login
     response = redirect(url_for('auth.login'))
     unset_jwt_cookies(response)
-    flash("Has cerrado sesión.", "info")
+    flash("Ha cerrado sesión correctamente.", "info")
     return response
 
 @auth_bp.route("/me", methods=["GET"])

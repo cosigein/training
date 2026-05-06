@@ -78,7 +78,7 @@
                             <span style="font-size: 0.7rem; font-weight: 600;">{{ session.status }}</span>
                         </td>
                         <td>
-                            <a href="{{ url_for('sessions.get_session', session_id=session.id) }}" class="btn btn--icon btn--ghost btn--sm">
+                            <a href="{{ url_for('sessions.get_attempt_detail', id=session.id) }}" class="btn btn--icon btn--ghost btn--sm">
                                 <i class="ph ph-arrow-right"></i>
                             </a>
                         </td>

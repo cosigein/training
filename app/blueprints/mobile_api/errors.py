@@ -27,7 +27,7 @@ def _unauthenticated(_e):
 
 @mobile_api_bp.errorhandler(403)
 def _forbidden(_e):
-    return error_response(403, "forbidden", "No tenés permisos para este recurso")
+    return error_response(403, "forbidden", "No tiene permisos para este recurso")
 
 
 @mobile_api_bp.errorhandler(404)

@@ -1,106 +1,200 @@
 {% extends "student/layout.html" %}
-{% block title %}Detalle de intento — CMadrid Training{% endblock %}
+
+{% block title %}{{ ruta.label if ruta else attempt_id }} — Mis resultados{% endblock %}
 
 {% block content %}
-<div class="mgr-body-inner">
 
-    {# ── Breadcrumb ───────────────────────────────────────────────── #}
-    <div style="margin-bottom:24px; font-size:13px; color:#64748b;">
-        <a href="{{ url_for('student.dashboard') }}" style="color:#0d47a1; text-decoration:none;">Mi Portal</a>
-        <span style="margin:0 8px;">›</span>
-        <span>{{ intento.conv_nombre }}</span>
-        <span style="margin:0 8px;">›</span>
-        <span>Ruta {{ intento.ruta_id }}</span>
-    </div>
-
-    {# ── Cabecera ──────────────────────────────────────────────────── #}
-    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:24px; margin-bottom:20px;
-                display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap;
-                box-shadow:0 1px 3px rgba(0,0,0,.04);">
-        <div>
-            <div style="font-size:12px; font-weight:600; color:#94a3b8; text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px;">
-                Ruta {{ intento.ruta_id }}
-            </div>
-            <div style="font-size:20px; font-weight:700; color:#0f172a;">{{ intento.conv_nombre }}</div>
-            <div style="font-size:13px; color:#94a3b8; margin-top:4px;">{{ intento.fecha }}</div>
-        </div>
-        <div style="text-align:right; flex-shrink:0;">
-            <div style="font-size:40px; font-weight:800; line-height:1; color:#0d47a1;">
-                {{ "%.1f"|format(intento.nota) }}
-            </div>
-            <div style="font-size:11px; color:#94a3b8; margin-top:2px;">puntos / 10</div>
-            {% if intento.data_quality == 'HIGH' %}{% set quality_style = 'background:#dcfce7; color:#15803d;' %}
-            {% elif intento.data_quality == 'MEDIUM' %}{% set quality_style = 'background:#fef9c3; color:#854d0e;' %}
-            {% else %}{% set quality_style = 'background:#fee2e2; color:#dc2626;' %}{% endif %}
-            <span {{ {'style': 'display:inline-block; margin-top:6px; font-size:11px; font-weight:600; padding:2px 10px; border-radius:12px; ' ~ quality_style} | xmlattr }}>
-                Calidad {{ intento.data_quality }}
+        <div class="alu-back-bar">
+            <a href="{{ url_for('student.dashboard') }}" class="alu-back-btn" aria-label="Volver a la página principal">
+                <i class="ph ph-arrow-left" aria-hidden="true"></i> Volver al inicio
+            </a>
+            <span class="alu-breadcrumb" aria-label="Ubicación actual">
+                <span>Inicio</span>
+                <span class="alu-breadcrumb__sep">›</span>
+                <span>{{ ruta.label if ruta else 'Detalle' }}</span>
             </span>
         </div>
-    </div>
 
-    {# ── Score breakdown ───────────────────────────────────────────── #}
-    {% if intento.score_breakdown %}
-    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:24px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,.04);">
-        <div style="font-size:14px; font-weight:700; color:#1e293b; margin-bottom:16px;">
-            Desglose por familia
+        <div>
+            <h1 class="alu-welcome__title">{{ ruta.label if ruta else attempt_id }}</h1>
+            <p class="alu-welcome__sub">Detalle de su recorrido</p>
         </div>
-        {% for fam in intento.score_breakdown %}
-        <div style="margin-bottom:14px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                <span style="font-size:13px; font-weight:600; color:#475569;">{{ fam.familia }}</span>
-                <span style="font-size:13px; font-weight:700; color:#1e293b;">
-                    {{ "%.1f"|format(fam.obtenido) }} / {{ "%.1f"|format(fam.maximo) }}
-                </span>
+
+        <div class="alu-card">
+            <div class="alu-card__head">
+                <h2><i class="ph ph-chart-bar"></i> Desglose de puntuación</h2>
             </div>
-            <div style="background:#f1f5f9; border-radius:6px; height:8px; overflow:hidden;">
-                {% set pct = [(fam.obtenido / fam.maximo * 100) if fam.maximo > 0 else 0, 100] | min %}
-                <div {{ {'style': 'height:100%; width:' ~ pct|int ~ '%; background:#0d47a1; border-radius:6px; transition:width .3s;'} | xmlattr }}></div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    {# ── Eventos detectados ────────────────────────────────────────── #}
-    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:24px; box-shadow:0 1px 3px rgba(0,0,0,.04);">
-        <div style="font-size:14px; font-weight:700; color:#1e293b; margin-bottom:16px;">
-            Eventos del recorrido
-        </div>
-
-        {% if intento.eventos %}
-        <table style="width:100%; border-collapse:collapse; font-size:13px;">
-            <thead>
-                <tr style="border-bottom:2px solid #e2e8f0;">
-                    <th style="text-align:left; padding:8px 12px; color:#94a3b8; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.5px;">Hora</th>
-                    <th style="text-align:left; padding:8px 12px; color:#94a3b8; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.5px;">Evento</th>
-                    <th style="text-align:center; padding:8px 12px; color:#94a3b8; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.5px;">Severidad</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for ev in intento.eventos %}
-            <tr style="border-bottom:1px solid #f1f5f9;" data-testid="student-intento-event-{{ loop.index }}">
-                <td style="padding:10px 12px; color:#94a3b8; font-variant-numeric:tabular-nums;">{{ ev.timestamp }}</td>
-                <td style="padding:10px 12px; color:#1e293b;">{{ ev.descripcion }}</td>
-                <td style="padding:10px 12px; text-align:center;">
-                    {% set sev_pct = (ev.severidad * 100) | int %}
-                    <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
-                        <div style="width:60px; background:#f1f5f9; border-radius:6px; height:6px; overflow:hidden;">
-                            {% if sev_pct >= 80 %}{% set sev_color = '#dc2626' %}
-                            {% elif sev_pct >= 50 %}{% set sev_color = '#f59e0b' %}
-                            {% else %}{% set sev_color = '#22c55e' %}{% endif %}
-                            <div {{ {'style': 'height:100%; width:' ~ sev_pct ~ '%; background:' ~ sev_color ~ '; border-radius:6px;'} | xmlattr }}></div>
+            <div class="alu-card__body" style="padding:20px;">
+                <div style="display:flex; flex-direction:column; gap:14px;">
+                    {% for item in score_breakdown %}
+                    <div style="display:grid; grid-template-columns: 110px 1fr 70px; align-items:center; gap:12px;">
+                        <span style="font-size:13px; color:#64748b; font-weight:500;">{{ item.familia }}</span>
+                        <div class="alu-score-track">
+                            {% set pct = ((item.obtenido / item.maximo * 100)|int) if item.maximo > 0 else 0 %}
+                            <div class="alu-score-fill" {{ {'style': 'width: ' ~ pct ~ '%;'} | xmlattr }}></div>
                         </div>
-                        <span style="font-size:11px; color:#94a3b8;">{{ sev_pct }}%</span>
+                        <span style="font-size:13px; font-weight:700; color:#1e293b; text-align:right;">
+                            {{ item.obtenido }} / {{ item.maximo }}
+                        </span>
                     </div>
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p style="font-size:13px; color:#94a3b8;">Sin eventos detectados en este recorrido.</p>
-        {% endif %}
-    </div>
+                    {% endfor %}
 
-</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;
+                                padding-top:14px; border-top:2px solid #e2e8f0;
+                                font-weight:700; font-size:14px; color:#1e293b;">
+                        <span>TOTAL</span>
+                        <span class="alu-total-score {% if nota_info.nota >= 5 %}alu-total-score--pass{% else %}alu-total-score--fail{% endif %}">
+                            {{ "%.1f"|format(nota_info.nota) }} / 10
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alu-ped">
+            <div class="alu-ped__head">
+                <i class="ph ph-question" style="font-size:18px; color:#0d47a1;"></i>
+                <h2>¿Por qué obtuve esta nota?</h2>
+            </div>
+            <div class="alu-ped__body">
+
+                <div class="alu-ped__resumen">{{ pedagogico.resumen }}</div>
+
+                {% if pedagogico.infracciones %}
+                <div>
+                    <div class="alu-ped__section-title">Incidencias detectadas</div>
+                    {% for inf in pedagogico.infracciones %}
+                    <div class="alu-ped__infraccion">
+                        <span class="alu-ped__infraccion-title">
+                            <strong>{{ inf.cantidad }}x</strong> {{ inf.tipo }}
+                        </span>
+                        <span class="alu-ped__infraccion-zona">
+                            <i class="ph ph-map-pin"></i> {{ inf.zona }}
+                        </span>
+                        <span class="alu-ped__infraccion-impacto">
+                            → Esto restó {{ inf.puntos }} puntos de {{ inf.familia }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div style="font-size:13px; color:#16a34a; padding:12px 16px; background:#f0fdf4; border-radius:8px;">
+                    <i class="ph ph-check-circle"></i> Sin incidencias detectadas en este recorrido.
+                </div>
+                {% endif %}
+
+                <div>
+                    <div class="alu-ped__section-title">¿Qué puede mejorar?</div>
+                    {% for sug in pedagogico.sugerencias %}
+                    <div class="alu-ped__sugerencia">
+                        <i class="ph ph-arrow-right"></i>
+                        {{ sug }}
+                    </div>
+                    {% endfor %}
+                </div>
+
+            </div>
+        </div>
+
+        {% if false %}
+        <!-- Banner de confirmación tras solicitar auditoría -->
+        {% if auditoria_solicitada %}
+        <div class="alu-alert alu-alert--success">
+            <i class="ph ph-check-circle"></i>
+            <div>
+                <strong>Solicitud enviada correctamente.</strong>
+                El manager revisará su intento y recibirá una respuesta en este panel.
+            </div>
+        </div>
+        {% endif %}
+        {% endif %}
+
+        <!-- Calidad de datos -->
+        {% if nota_info.data_quality != 'HIGH' %}
+        <div class="alu-alert alu-alert--warning">
+            <i class="ph ph-warning"></i>
+            <div>
+                <strong>Calidad de datos {{ nota_info.data_quality }}.</strong>
+                La nota puede ser menos precisa de lo habitual debido a pérdida de señal GPS o datos del sensor incompletos.
+                {# Comentado: {% if puede_solicitar %}Puede solicitar revisión manual si cree que afectó a su puntuación.{% endif %} #}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if false %}
+        <!-- Estado de auditoría existente -->
+        {% if auditoria %}
+            {% if auditoria.status == 'PENDING' %}
+            <div class="alu-card" style="border-left:4px solid #7c3aed;">
+                <div class="alu-card__body" style="padding:20px; display:flex; align-items:flex-start; gap:16px;">
+                    <i class="ph ph-scales" style="font-size:24px; color:#7c3aed; flex-shrink:0; margin-top:2px;"></i>
+                    <div>
+                        <div style="font-weight:700; color:#1e293b; margin-bottom:4px;">Auditoría pendiente de revisión</div>
+                        <div style="font-size:13px; color:#64748b; margin-bottom:10px;">
+                            Solicitada el {{ auditoria.fecha_solicitud }} a las {{ auditoria.hora_solicitud }}
+                        </div>
+                        <div style="font-size:13px; color:#475569; background:#f8f9fa; border-radius:8px;
+                                    padding:10px 14px; border-left:3px solid #7c3aed; font-style:italic;">
+                            "{{ auditoria.razon }}"
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% elif auditoria.status == 'RESOLVED' %}
+            <div class="alu-card" style="border-left: 4px solid #0d47a1;"> {# Lógica original: #16a34a si CONFIRMED, #dc2626 si REJECTED #}
+                <div class="alu-card__body" style="padding:20px; display:flex; align-items:flex-start; gap:16px;">
+                    <i class="ph {% if auditoria.raw_status == 'CONFIRMED' %}ph-check-circle{% elif auditoria.raw_status == 'REJECTED' %}ph-x-circle{% else %}ph-arrows-clockwise{% endif %}"
+                       style="font-size: 24px; flex-shrink: 0; margin-top: 2px; color: #0d47a1;"> {# Lógica original: #16a34a si CONFIRMED, #dc2626 si REJECTED #}</i>
+                    <div>
+                        <div style="font-weight:700; color:#1e293b; margin-bottom:4px;">
+                            Auditoría resuelta ·
+                            {% if auditoria.raw_status == 'CONFIRMED' %}Nota confirmada
+                            {% elif auditoria.raw_status == 'REJECTED' %}Solicitud rechazada
+                            {% elif auditoria.raw_status == 'REEVALUATED' %}Reevaluación aprobada
+                            {% else %}{{ auditoria.raw_status }}{% endif %}
+                        </div>
+                        {% if auditoria.fecha_resolucion %}
+                        <div style="font-size:12px; color:#94a3b8; margin-bottom:10px;">
+                            Resuelta el {{ auditoria.fecha_resolucion }}
+                        </div>
+                        {% endif %}
+                        {% if auditoria.resolucion %}
+                        <div style="font-size:13px; color:#475569; background:#f8f9fa; border-radius:8px;
+                                    padding:10px 14px; border-left:3px solid #cbd5e1;">
+                            {{ auditoria.resolucion }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        <!-- Botón para solicitar auditoría si no hay ninguna -->
+        {% elif puede_solicitar %}
+        <div class="alu-card">
+            <div class="alu-card__body" style="padding:20px; display:flex; align-items:center;
+                         justify-content:space-between; gap:16px; flex-wrap:wrap;">
+                <div>
+                    <div style="font-weight:600; color:#1e293b; margin-bottom:4px;">
+                        ¿Cree que hay un error en esta nota?
+                    </div>
+                    <div style="font-size:13px; color:#64748b; line-height:1.5;">
+                        Puede solicitar que el manager revise manualmente este intento.
+                        Necesitará aportar una justificación de al menos 30 caracteres.
+                    </div>
+                </div>
+                <a href="{{ url_for('student.solicitar_auditoria', attempt_id=attempt_id) }}"
+                   class="alu-form-btn" style="white-space:nowrap; flex-shrink:0;">
+                    <i class="ph ph-scales"></i> Solicitar auditoría
+                </a>
+            </div>
+        </div>
+        {% endif %}
+        {% endif %}
+
+        <p class="alu-disclaimer">
+            Resultado provisional. No tiene efecto jurídico hasta el cierre oficial de la convocatoria.
+        </p>
+
 {% endblock %}

@@ -32,12 +32,13 @@ def create_database_if_not_exists():
         cur = conn.cursor()
         
         # Verificar si la base existe
-        cur.execute(f"SELECT 1 FROM pg_catalog.pg_database WHERE datname = '{db_name}'")
+        cur.execute("SELECT 1 FROM pg_catalog.pg_database WHERE datname = %s", (db_name,))
         exists = cur.fetchone()
-        
+
         if not exists:
             print(f"🏗️  La base de datos '{db_name}' no existe. Creándola...")
-            cur.execute(f"CREATE DATABASE {db_name}")
+            safe_name = psycopg2.extensions.quote_ident(db_name, conn)
+            cur.execute(f"CREATE DATABASE {safe_name}")
             print(f"✅ Base de datos '{db_name}' creada.")
         else:
             print(f"ℹ️  La base de datos '{db_name}' ya existe.")
