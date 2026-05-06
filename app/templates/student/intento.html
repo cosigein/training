@@ -4,16 +4,20 @@
 
 {% block content %}
 
-        <div>
-            <a href="{{ url_for('student.dashboard') }}" class="alu-ruta-btn" style="margin-bottom:12px; display:inline-flex;">
-                <i class="ph ph-arrow-left"></i> Volver a mis resultados
+        <div class="alu-back-bar">
+            <a href="{{ url_for('student.dashboard') }}" class="alu-back-btn" aria-label="Volver a la página principal">
+                <i class="ph ph-arrow-left" aria-hidden="true"></i> Volver al inicio
             </a>
-            <h1 class="alu-welcome__title" style="margin-top:10px;">
-                {{ ruta.label if ruta else attempt_id }}
-            </h1>
-            <p class="alu-welcome__sub">
-                Intento {{ attempt_id }}
-            </p>
+            <span class="alu-breadcrumb" aria-label="Ubicación actual">
+                <span>Inicio</span>
+                <span class="alu-breadcrumb__sep">›</span>
+                <span>{{ ruta.label if ruta else 'Detalle' }}</span>
+            </span>
+        </div>
+
+        <div>
+            <h1 class="alu-welcome__title">{{ ruta.label if ruta else attempt_id }}</h1>
+            <p class="alu-welcome__sub">Detalle de su recorrido</p>
         </div>
 
         <div class="alu-card">
@@ -91,6 +95,108 @@
 
             </div>
         </div>
+
+        <!-- Banner de confirmación tras solicitar auditoría -->
+        {% if auditoria_solicitada %}
+        <div class="alu-alert alu-alert--success">
+            <i class="ph ph-check-circle"></i>
+            <div>
+                <strong>Solicitud enviada correctamente.</strong>
+                El manager revisará su intento y recibirá una respuesta en este panel.
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Calidad de datos -->
+        {% if nota_info.data_quality != 'HIGH' %}
+        <div class="alu-alert alu-alert--warning">
+            <i class="ph ph-warning"></i>
+            <div>
+                <strong>Calidad de datos {{ nota_info.data_quality }}.</strong>
+                La nota puede ser menos precisa de lo habitual debido a pérdida de señal GPS o datos del sensor incompletos.
+                {% if puede_solicitar %}Puede solicitar revisión manual si cree que afectó a su puntuación.{% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Estado de auditoría existente -->
+        {% if auditoria %}
+            {% if auditoria.status == 'PENDING' %}
+            <div class="alu-card" style="border-left:4px solid #7c3aed;">
+                <div class="alu-card__body" style="padding:20px; display:flex; align-items:flex-start; gap:16px;">
+                    <i class="ph ph-scales" style="font-size:24px; color:#7c3aed; flex-shrink:0; margin-top:2px;"></i>
+                    <div>
+                        <div style="font-weight:700; color:#1e293b; margin-bottom:4px;">Auditoría pendiente de revisión</div>
+                        <div style="font-size:13px; color:#64748b; margin-bottom:10px;">
+                            Solicitada el {{ auditoria.fecha_solicitud }} a las {{ auditoria.hora_solicitud }}
+                        </div>
+                        <div style="font-size:13px; color:#475569; background:#f8f9fa; border-radius:8px;
+                                    padding:10px 14px; border-left:3px solid #7c3aed; font-style:italic;">
+                            "{{ auditoria.razon }}"
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% elif auditoria.status == 'RESOLVED' %}
+            <div class="alu-card" style="border-left:4px solid
+                {% if auditoria.raw_status == 'CONFIRMED' %}#16a34a
+                {% elif auditoria.raw_status == 'REJECTED' %}#dc2626
+                {% else %}#0d47a1{% endif %};">
+                <div class="alu-card__body" style="padding:20px; display:flex; align-items:flex-start; gap:16px;">
+                    <i class="ph
+                        {% if auditoria.raw_status == 'CONFIRMED' %}ph-check-circle
+                        {% elif auditoria.raw_status == 'REJECTED' %}ph-x-circle
+                        {% else %}ph-arrows-clockwise{% endif %}"
+                       style="font-size:24px; flex-shrink:0; margin-top:2px; color:
+                        {% if auditoria.raw_status == 'CONFIRMED' %}#16a34a
+                        {% elif auditoria.raw_status == 'REJECTED' %}#dc2626
+                        {% else %}#0d47a1{% endif %};"></i>
+                    <div>
+                        <div style="font-weight:700; color:#1e293b; margin-bottom:4px;">
+                            Auditoría resuelta ·
+                            {% if auditoria.raw_status == 'CONFIRMED' %}Nota confirmada
+                            {% elif auditoria.raw_status == 'REJECTED' %}Solicitud rechazada
+                            {% elif auditoria.raw_status == 'REEVALUATED' %}Reevaluación aprobada
+                            {% else %}{{ auditoria.raw_status }}{% endif %}
+                        </div>
+                        {% if auditoria.fecha_resolucion %}
+                        <div style="font-size:12px; color:#94a3b8; margin-bottom:10px;">
+                            Resuelta el {{ auditoria.fecha_resolucion }}
+                        </div>
+                        {% endif %}
+                        {% if auditoria.resolucion %}
+                        <div style="font-size:13px; color:#475569; background:#f8f9fa; border-radius:8px;
+                                    padding:10px 14px; border-left:3px solid #cbd5e1;">
+                            {{ auditoria.resolucion }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        <!-- Botón para solicitar auditoría si no hay ninguna -->
+        {% elif puede_solicitar %}
+        <div class="alu-card">
+            <div class="alu-card__body" style="padding:20px; display:flex; align-items:center;
+                         justify-content:space-between; gap:16px; flex-wrap:wrap;">
+                <div>
+                    <div style="font-weight:600; color:#1e293b; margin-bottom:4px;">
+                        ¿Cree que hay un error en esta nota?
+                    </div>
+                    <div style="font-size:13px; color:#64748b; line-height:1.5;">
+                        Puede solicitar que el manager revise manualmente este intento.
+                        Necesitará aportar una justificación de al menos 30 caracteres.
+                    </div>
+                </div>
+                <a href="{{ url_for('student.solicitar_auditoria', attempt_id=attempt_id) }}"
+                   class="alu-form-btn" style="white-space:nowrap; flex-shrink:0;">
+                    <i class="ph ph-scales"></i> Solicitar auditoría
+                </a>
+            </div>
+        </div>
+        {% endif %}
 
         <p class="alu-disclaimer">
             Resultado provisional. No tiene efecto jurídico hasta el cierre oficial de la convocatoria.

@@ -1526,3 +1526,187 @@ a.mgr-kpi--link:hover {
     margin-top: 3px;
 }
 
+/* ── Data Quality badge (matriz) ──────────────────────────────────────────── */
+.mgr-dq {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    border-radius: 3px;
+    padding: 1px 3px;
+    line-height: 1;
+    vertical-align: middle;
+    margin-left: 3px;
+}
+.mgr-dq--high  { color: #166534; background: #dcfce7; }
+.mgr-dq--medium { color: #92400e; background: #fef3c7; }
+.mgr-dq--low   { color: #991b1b; background: #fee2e2; }
+
+/* ── Audit chip button (ranking) ──────────────────────────────────────────── */
+.mgr-audit-chip--btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #92400e;
+    background: #fef3c7;
+    border: 1px solid #fbbf24;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background 150ms, border-color 150ms;
+    white-space: nowrap;
+    font-family: inherit;
+    line-height: 1;
+}
+.mgr-audit-chip--btn:hover {
+    background: #fde68a;
+    border-color: #f59e0b;
+}
+
+/* ── Slide-over Drawer ────────────────────────────────────────────────────── */
+.mgr-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 250ms ease;
+}
+.mgr-drawer-backdrop--visible {
+    opacity: 1;
+}
+
+.mgr-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 400px;
+    max-width: 100vw;
+    background: #fff;
+    border-left: 1px solid #e2e8f0;
+    box-shadow: -8px 0 32px rgba(15, 23, 42, 0.12);
+    z-index: 201;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 280ms cubic-bezier(.4, 0, .2, 1);
+    overflow: hidden;
+}
+.mgr-drawer--open {
+    transform: translateX(0);
+}
+
+.mgr-drawer__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    flex-shrink: 0;
+}
+.mgr-drawer__title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+.mgr-drawer__title i { color: #0d47a1; }
+.mgr-drawer__sub {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 3px;
+}
+.mgr-drawer__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    color: #64748b;
+    flex-shrink: 0;
+    transition: background 150ms, color 150ms;
+    font-size: 16px;
+}
+.mgr-drawer__close:hover { background: #f1f5f9; color: #0f172a; }
+
+.mgr-drawer__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.mgr-drawer__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    color: #475569;
+}
+.mgr-drawer__meta i { color: #0d47a1; margin-right: 4px; }
+.mgr-drawer__section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #94a3b8;
+}
+.mgr-drawer__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 8px;
+}
+
+/* ── Map card (manager/intento M6) ──────────────────────────────────────── */
+.mgr-card--map {
+    padding: 0;
+    overflow: hidden;
+    min-height: 340px;
+    position: relative;
+}
+.mgr-map-container {
+    width: 100%;
+    height: 340px;
+    background: #f1f5f9;
+    position: relative;
+}
+.mgr-map-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #94a3b8;
+    font-size: 13px;
+    pointer-events: none;
+}
+.mgr-map-placeholder i { font-size: 36px; }
+.mgr-card--map .mgr-card__header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(4px);
+    border-bottom: 1px solid rgba(226,232,240,0.8);
+    padding: 10px 16px;
+}
+

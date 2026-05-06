@@ -387,6 +387,109 @@ El ranking se calcula al vuelo en cada request. Hasta que el cron nocturno esté
 
 ---
 
+## 6bis. 🧠 BRAINSTORMING ADICIONAL — Segunda ronda (2026-05-06)
+
+### 6bis.1 UX / Producto
+
+#### 🔥 Alta prioridad
+
+**34. Búsqueda en Ranking**
+La Matriz tiene campo de búsqueda por nombre, el Ranking no. Con 200 candidatos, localizar a un aspirante concreto requiere hacer scroll o usar Ctrl+F del navegador. Un input de búsqueda filtrado en tiempo real resolvería esto en 15 minutos de trabajo.
+
+**35. Columnas ordenables en Ranking**
+El ranking ordena por nota media descendente y no se puede cambiar. Añadir ordenación por columna (click en header "Nota media", "Rutas", "Auditorías") permitiría al manager analizar desde distintos ángulos sin exportar. Especialmente útil para detectar candidatos con muchas rutas pero nota baja.
+
+**36. Badge de auditorías pendientes en el nav**
+Si hay N auditorías sin resolver, el nav del manager no da ninguna señal visual. Un badge rojo `● 3` en el ítem "Auditorías" del sidebar convertiría la navegación en un sistema de bandeja de entrada. El servicio ya devuelve `auditorias_pendientes` en `_conv_to_dict` — el dato ya existe.
+
+**37. Empty states con CTA**
+Cuando no hay convocatorias, cuando un candidato no tiene intentos, o cuando la búsqueda en la Matriz no devuelve resultados, la pantalla queda vacía sin ningún mensaje ni acción sugerida. Un empty state con ícono + texto + botón de acción ("Crear primera convocatoria") hace la app mucho más comprensible para un manager nuevo.
+
+**38. Posición en el ranking visible para el alumno**
+El dashboard del alumno muestra nota media y estado (dentro/fuera del corte), pero no dice en qué posición numérica está. "Estás en posición 47 de 150" con un delta respecto a la última actualización ("▲ 3 posiciones") es la información que más busca un candidato en oposiciones. El ranking_service ya calcula el puesto.
+
+**39. Breadcrumb de navegación**
+En páginas profundas (`Ranking → Alumno → Intento → Auditoría`) no hay ninguna pista de dónde está el usuario ni cómo llegó. Un breadcrumb simple `Ranking / Juan García / Circuito 3 / Auditoría` en el `mgr-page-subtitle` ahorraría clicks de orientación.
+
+**40. Confirmación antes de acciones irreversibles**
+El cierre de convocatoria tiene un flujo de 3 pasos, pero acciones menores como "Invalidar inscripción" o "Forzar cierre de intento" no tienen ningún diálogo de confirmación. Un modal con resumen de consecuencias ("Esto eliminará los intentos de Juan García del ranking") previene errores operativos en demostración y en producción.
+
+**41. Resumen estadístico pre-cierre**
+Justo antes del paso "Confirmar cierre", mostrar un cuadro resumen: candidatos aprobados, nota de corte final, candidatos en el margen ±0.5 puntos del corte (los más sensibles a impugnaciones), y número de auditorías pendientes sin resolver. CMadrid toma la decisión con datos — darles los datos en ese momento reduce llamadas post-cierre.
+
+**42. Notificaciones toast no bloqueantes**
+Los `flash()` de Flask renderizan un banner estático en la parte superior que el usuario tiene que cerrar manualmente. Un sistema de toasts (posición fija esquina inferior derecha, timeout de 4s, dismiss manual, apilables) es más moderno, menos intrusivo, y no desplaza el layout al aparecer.
+
+#### 🟡 Media prioridad
+
+**43. Sticky headers en tablas largas**
+En la Matriz con 50+ candidatos, el header de columnas (nombre de circuitos) desaparece al hacer scroll hacia abajo. `position: sticky; top: 0` en el `<thead>` es una línea de CSS con impacto enorme en usabilidad de tablas largas.
+
+**44. Fecha relativa en auditorías**
+Las fechas de solicitud de auditoría muestran `04/05/2026 14:32`. "Hace 2 días" o "Ayer a las 14:32" es más legible y da contexto inmediato sobre urgencia. JavaScript vanilla puede calcular esto sin librerías.
+
+**45. Indicador de velocidad en el mapa del kiosko**
+El mapa muestra la traza GPS pero no hay ningún indicador de velocidad en los puntos críticos. Colorear el polyline según velocidad (verde → amarillo → rojo) permitiría al conductor identificar visualmente dónde aceleró o frenó. Los datos ya están en `GpsMeasurement.speed`.
+
+**46. Resumen de ruta debajo del mapa (manager/intento)**
+El mapa de `manager/intento.html` muestra el recorrido pero no hay datos de distancia total, duración, ni velocidad media. Una fila de 3 KPIs pequeños debajo del mapa (`12.4 km · 38 min · 42 km/h media`) complementa la visualización.
+
+#### 🟢 Baja prioridad / Fase 2
+
+**47. Comparador de convocatorias**
+Ver el ranking de dos convocatorias en columnas paralelas para comparar la evolución de los candidatos entre oposiciones sucesivas. Útil para CMadrid cuando hay múltiples convocatorias en años consecutivos.
+
+**48. Modo oscuro para el portal Manager**
+El portal manager sigue la paleta azul clara estándar. Un toggle de modo oscuro (variables CSS) reduciría la fatiga visual en sesiones largas de revisión. Implementable 100% con CSS custom properties sin JS complejo.
+
+**49. Onboarding tour para managers nuevos**
+La primera vez que un manager accede al sistema no hay ninguna guía. Un tour de 4-5 pasos (highlight + tooltip) sobre las pantallas principales (Dashboard → Matriz → Ranking → Auditorías) reduce la curva de aprendizaje. Implementable con una librería ligera como Intro.js o con CSS/JS vanilla.
+
+---
+
+### 6bis.2 Técnico / Arquitectura
+
+**50. Progressive Web App (PWA) para el Kiosko**
+El kiosko va montado en un camión de bomberos. La WiFi del parque puede ser inestable. Un `manifest.json` + Service Worker básico convertiría el kiosko en una PWA instalable en la pantalla táctil del vehículo, con caché de los assets estáticos y fallback offline. El IndexedDB ya existe para datos pendientes — falta el SW que sincroniza cuando vuelve la conexión.
+
+**51. Skeleton screens en tablas grandes**
+Al cargar el Ranking o la Matriz, la respuesta del servidor puede tardar 1-2 segundos con datos reales. Un skeleton animado (filas con gradiente gris) es más profesional que una página en blanco o un spinner centrado. Se puede implementar con CSS puro (`@keyframes shimmer`) sin JS.
+
+**52. Preconnect a unpkg.com**
+Phosphor Icons y Leaflet se cargan desde `unpkg.com` pero ningún layout tiene `<link rel="preconnect" href="https://unpkg.com">`. Añadir el preconnect reduce el tiempo de negociación DNS+TLS en ~200ms en la primera carga — especialmente notable en conexiones móviles o VPN institucional.
+
+**53. Versionar los CDN externos**
+`https://unpkg.com/@phosphor-icons/web` carga la última versión sin pin. Si Phosphor publica una versión con breaking changes, todos los iconos dejan de verse. Pinear a una versión concreta (`@2.1.1`) es obligatorio para un sistema de oposición pública donde la estabilidad es crítica.
+
+**54. Separar `main.js` del JS de cada blueprint**
+`js/main.js` tiene 185 bytes. El JS que realmente se usa está todo en `{% block extra_js %}`. A futuro, crear `static/js/manager/` con un archivo por funcionalidad (`filters.js`, `rows.js`, `counters.js`) y cargarlos con `{% block extra_js %}` de forma modular. Cada página carga solo lo que necesita.
+
+---
+
+### 6bis.3 Accesibilidad
+
+**55. Región `aria-live` para resultados de filtro**
+Cuando el usuario filtra en la Matriz o en el Ranking, el número de filas visibles cambia en silencio. Un `<div aria-live="polite">` que anuncie "Mostrando 23 de 150 candidatos" hace el filtrado accesible para usuarios de screen reader.
+
+**56. Tamaño mínimo de tap en el Kiosko (48×48 px)**
+El kiosko se usa con guantes en cabina. Los botones de la barra inferior y los chips de nota en la pantalla de rutas pueden estar por debajo de los 48×48px recomendados por WCAG. Revisar y ajustar los targets táctiles en `kiosko.css`.
+
+---
+
+### 6bis.4 Performance
+
+**57. Subsampling adaptativo del GPS**
+El endpoint `/kiosko/intento/<id>/gps` limita a 500 puntos con un step fijo. Si el recorrido dura 20 minutos a 1Hz son 1200 puntos → step 2 → se pierden eventos de frenada brusca. Un subsampling adaptativo (conservar puntos con cambio de velocidad > umbral) mantendría los puntos críticos independientemente de la duración del recorrido.
+
+**58. Compresión de respuestas JSON del GPS**
+Las trazas GPS son listas de `{lat, lng, speed, confidence}`. Activar `gzip` en Flask (`flask-compress`) reduciría el payload a ~15% de su tamaño original. Para conexiones de kiosko en red 4G institucional, la diferencia es notable.
+
+---
+
+*Segunda ronda de brainstorming — 2026-05-06*
+
+---
+
 ## 7. Resumen Ejecutivo de Gaps Críticos
 
 | Prioridad | Gap | Impacto demo 11/05 |

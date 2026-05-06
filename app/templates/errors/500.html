@@ -1,19 +1,155 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error del servidor — CMadrid Training</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230d47a1'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='system-ui,sans-serif' font-size='13' font-weight='700' fill='white'%3ECM%3C/text%3E%3C/svg%3E">
+    <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .err-header {
+            background: #0d47a1;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .err-header__logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        .err-header__icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: white;
+        }
+        .err-header__text {
+            font-size: 15px;
+            font-weight: 700;
+            color: white;
+            letter-spacing: -0.2px;
+        }
+        .err-header__text span {
+            opacity: 0.75;
+            font-weight: 400;
+        }
+        .err-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 24px;
+            text-align: center;
+        }
+        .err-code {
+            font-size: 7rem;
+            font-weight: 900;
+            color: #dc2626;
+            opacity: 0.07;
+            line-height: 1;
+            margin-bottom: -32px;
+            user-select: none;
+        }
+        .err-icon {
+            font-size: 4rem;
+            color: #dc2626;
+            display: block;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        .err-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 12px;
+        }
+        .err-desc {
+            font-size: 14px;
+            color: #64748b;
+            line-height: 1.6;
+            max-width: 400px;
+            margin-bottom: 32px;
+        }
+        .err-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .err-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #0d47a1;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.15s;
+            border: none;
+            cursor: pointer;
+        }
+        .err-btn:hover { background: #1565c0; }
+        .err-btn--secondary {
+            background: white;
+            color: #0d47a1;
+            border: 1.5px solid #bfdbfe;
+        }
+        .err-btn--secondary:hover { background: #eff6ff; }
+    </style>
+</head>
+<body>
 
-{% block title %}Error del Servidor - CMadrid Training{% endblock %}
+<header class="err-header">
+    <a href="/" class="err-header__logo">
+        <div class="err-header__icon">CM</div>
+        <span class="err-header__text">CMadrid <span>Training</span></span>
+    </a>
+</header>
 
-{% block content %}
-<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center;">
-    <h1 style="font-size: 8rem; opacity: 0.1; position: absolute; z-index: -1;">500</h1>
-    <i class="ph ph-plug-connected" style="font-size: 5rem; color: var(--color-danger); margin-bottom: var(--space-xl);"></i>
-    <h2>Algo explotó...</h2>
-    <p style="color: var(--color-text-400); margin-top: var(--space-md); max-width: 400px;">
-        Hubo un error crítico en el servidor. Nuestro equipo de ingenieros ya está en camino (o tomando café).
+<main class="err-body">
+    <div class="err-code">500</div>
+    <i class="ph ph-warning-circle err-icon" aria-hidden="true"></i>
+    <h1 class="err-title">Error del servidor</h1>
+    <p class="err-desc">
+        No ha sido posible procesar la solicitud.
+        Por favor, inténtelo de nuevo en unos instantes.
     </p>
-    <div style="margin-top: var(--space-2xl);">
-        <a href="/" class="btn btn--secondary">
-            Reintentar
+    <div class="err-actions">
+        <button class="err-btn err-btn--secondary" onclick="window.history.back()">
+            <i class="ph ph-arrow-left" aria-hidden="true"></i>
+            Volver atrás
+        </button>
+        <a href="/" class="err-btn">
+            <i class="ph ph-house" aria-hidden="true"></i>
+            Ir al inicio
         </a>
     </div>
-</div>
-{% endblock %}
+</main>
+
+</body>
+</html>

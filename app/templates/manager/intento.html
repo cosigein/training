@@ -1,6 +1,10 @@
 {% extends "manager/layout.html" %}
 {% block title %}Intento · {{ candidato.nombre }} — CMadrid Training{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
+{% endblock %}
+
 {% block content %}
 
 <a href="{{ url_for('manager.alumno_detalle', candidato_id=candidato.id) }}" class="mgr-action-btn mgr-action-btn--secondary" style="margin-bottom:12px;">
@@ -27,12 +31,18 @@
 <!-- 2 columnas: Mapa + Score Breakdown -->
 <div class="mgr-detail-grid">
 
-    <!-- Telemetría/Mapa: NO HACER DE MOMENTO -->
-    {#
+    <!-- Mapa GPS -->
     <div class="mgr-card mgr-card--map">
-        ...
+        <div class="mgr-card__header">
+            <h3><i class="ph ph-map-pin-line"></i> Recorrido GPS</h3>
+        </div>
+        <div class="mgr-map-container" id="mgr-map">
+            <div class="mgr-map-placeholder" id="mgr-map-placeholder">
+                <i class="ph ph-compass"></i>
+                <span id="mgr-map-msg">Cargando recorrido…</span>
+            </div>
+        </div>
     </div>
-    #}
 
     <!-- Score Breakdown -->
     <div class="mgr-card">
@@ -62,16 +72,9 @@
                 </span>
             </div>
         </div>
-
     </div>
-</div>
 
-<!-- Timeline de eventos: NO HACER DE MOMENTO -->
-{#
-<div class="mgr-card" style="margin-top:16px">
-    ...
 </div>
-#}
 
 <!-- Auditoría (si la hay) -->
 {% if auditoria %}
@@ -95,12 +98,12 @@
 </div>
 {% endif %}
 
-
-
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+// Score breakdown animation
 document.querySelectorAll('[data-anim-width]').forEach(el => {
     const target = el.dataset.animWidth;
     el.style.width = '0';
@@ -109,5 +112,58 @@ document.querySelectorAll('[data-anim-width]').forEach(el => {
         el.style.width = target;
     }));
 });
+
+// GPS Map
+(function () {
+    var GPS_URL = '{{ url_for("kiosko.intento_gps", attempt_id=attempt_id) }}';
+    var placeholder = document.getElementById('mgr-map-placeholder');
+    var mapMsg = document.getElementById('mgr-map-msg');
+
+    var map = L.map('mgr-map', {
+        zoomControl: true,
+        scrollWheelZoom: true,
+        attributionControl: false,
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+    }).addTo(map);
+
+    fetch(GPS_URL)
+        .then(r => r.json())
+        .then(data => {
+            var points = data.points || [];
+            if (points.length === 0) {
+                if (mapMsg) mapMsg.textContent = 'Datos GPS no disponibles para este intento';
+                map.setView([40.4168, -3.7038], 13);
+                return;
+            }
+
+            if (placeholder) placeholder.style.display = 'none';
+
+            var latlngs = points.map(p => [p.lat, p.lng]);
+
+            var polyline = L.polyline(latlngs, {
+                color: '#0d47a1',
+                weight: 4,
+                opacity: 0.85,
+            }).addTo(map);
+
+            L.circleMarker(latlngs[0], {
+                radius: 8, color: '#fff', weight: 2,
+                fillColor: '#16a34a', fillOpacity: 1,
+            }).bindTooltip('Inicio', { permanent: false }).addTo(map);
+
+            L.circleMarker(latlngs[latlngs.length - 1], {
+                radius: 8, color: '#fff', weight: 2,
+                fillColor: '#dc2626', fillOpacity: 1,
+            }).bindTooltip('Fin', { permanent: false }).addTo(map);
+
+            map.fitBounds(polyline.getBounds(), { padding: [24, 24] });
+        })
+        .catch(() => {
+            if (mapMsg) mapMsg.textContent = 'No se pudo cargar el recorrido';
+        });
+}());
 </script>
 {% endblock %}

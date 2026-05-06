@@ -2,13 +2,19 @@
 
 {% block content %}
 
-        <!-- Back link -->
-        <a href="{{ url_for('student.dashboard') }}" class="alu-ruta-btn" style="display:inline-flex;">
-            <i class="ph ph-arrow-left"></i> Volver a mis resultados
-        </a>
+        <div class="alu-back-bar">
+            <a href="{{ url_for('student.dashboard') }}" class="alu-back-btn" aria-label="Volver a la página principal">
+                <i class="ph ph-arrow-left" aria-hidden="true"></i> Volver al inicio
+            </a>
+            <span class="alu-breadcrumb" aria-label="Ubicación actual">
+                <span>Inicio</span>
+                <span class="alu-breadcrumb__sep">›</span>
+                <strong>Mi evolución</strong>
+            </span>
+        </div>
 
         <div>
-            <h1 class="alu-welcome__title">Tu evolución</h1>
+            <h1 class="alu-welcome__title">Su evolución</h1>
             <p class="alu-welcome__sub">
                 {{ convocatoria.nombre }} · nota media general:
                 <strong>{{ "%.2f"|format(nota_media) if nota_media > 0 else "—" }}</strong>

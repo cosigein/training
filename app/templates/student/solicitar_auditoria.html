@@ -4,10 +4,19 @@
 
 {% block content %}
 
-        <a href="{{ url_for('student.intento', attempt_id=attempt_id) }}"
-           class="alu-ruta-btn" style="display:inline-flex;">
-            <i class="ph ph-arrow-left"></i> Volver al intento
-        </a>
+        <div class="alu-back-bar">
+            <a href="{{ url_for('student.intento', attempt_id=attempt_id) }}" class="alu-back-btn"
+               aria-label="Volver al detalle del intento">
+                <i class="ph ph-arrow-left" aria-hidden="true"></i> Volver al intento
+            </a>
+            <span class="alu-breadcrumb" aria-label="Ubicación actual">
+                <a href="{{ url_for('student.dashboard') }}" style="color:inherit; text-decoration:none;">Inicio</a>
+                <span class="alu-breadcrumb__sep">›</span>
+                <span>{{ ruta.label if ruta else 'Intento' }}</span>
+                <span class="alu-breadcrumb__sep">›</span>
+                <strong>Solicitar auditoría</strong>
+            </span>
+        </div>
 
         <div>
             <h1 class="alu-welcome__title">Solicitar auditoría</h1>

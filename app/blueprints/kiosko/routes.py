@@ -19,6 +19,7 @@ from app.blueprints.student.student_service import (
     get_student_dashboard,
     get_student_intento,
 )
+from app.models.session import GpsMeasurement
 
 
 # ── VISTAS (UI pública del kiosko) ──────────────────────────────────────────
@@ -76,6 +77,7 @@ def intento(attempt_id):
         nota_info=ctx["nota_info"],
         attempt_id=attempt_id,
         score_breakdown=ctx["score_breakdown"],
+        pedagogico=ctx["pedagogico"],
         auditoria=ctx["auditoria"],
         convocatoria=ctx["convocatoria"],
     )
@@ -121,3 +123,37 @@ def kiosk_tap():
             } if previous else None
         ),
     }), 201
+
+
+@kiosko_bp.route("/intento/<attempt_id>/gps")
+def intento_gps(attempt_id):
+    """Devuelve la traza GPS del intento como JSON para Leaflet."""
+    resolved = resolve_attempt_view(attempt_id)
+    if not resolved:
+        return jsonify({"points": []}), 200
+
+    attempt, org = resolved
+    points = (
+        GpsMeasurement.query
+        .filter_by(attemptId=attempt_id, organizationId=org.id)
+        .order_by(GpsMeasurement.timestamp.asc())
+        .with_entities(
+            GpsMeasurement.latitude,
+            GpsMeasurement.longitude,
+            GpsMeasurement.speed,
+            GpsMeasurement.confidence,
+        )
+        .all()
+    )
+
+    # Submuestrear si hay muchos puntos (máx 500 para el mapa)
+    step = max(1, len(points) // 500)
+    sampled = points[::step]
+
+    return jsonify({
+        "points": [
+            {"lat": p.latitude, "lng": p.longitude,
+             "speed": p.speed, "confidence": p.confidence}
+            for p in sampled
+        ]
+    })
