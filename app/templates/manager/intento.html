@@ -34,15 +34,22 @@
             Intento {{ attempt_id }} · Versión criteria: <strong>v2.1</strong>
         </p>
     </div>
+    {% if can_score %}
+    <span class="mgr-score-hero" style="background:#fef3c7; color:#92400e;">
+        EN CURSO
+    </span>
+    {% else %}
     <span class="mgr-score-hero
         {% if nota_info.nota >= 5 %}mgr-score-hero--pass{% else %}mgr-score-hero--fail{% endif %}">
         {{ "%.1f"|format(nota_info.nota) }}
     </span>
+    {% endif %}
 </div>
 
 <!-- Layout dividido: Mapa Izquierda | Otros Derecha -->
 <div class="mgr-detail-grid">
 
+<<<<<<< HEAD
     <!-- COLUMNA IZQUIERDA: MAPA -->
     <div class="mgr-left-col">
         <div class="mgr-card mgr-card--map" style="height: 100%;">
@@ -59,6 +66,59 @@
                     <span id="mgr-map-msg">Cargando recorrido…</span>
                 </div>
             </div>
+=======
+    <!-- Telemetría/Mapa: NO HACER DE MOMENTO -->
+    {#
+    <div class="mgr-card mgr-card--map">
+        ...
+    </div>
+    #}
+
+    {% if can_score %}
+    <!-- Intento ABIERTO: panel para cargar TXT del sensor o recalcular score -->
+    <div class="mgr-card">
+        <div class="mgr-card__header">
+            <h3><i class="ph ph-upload-simple"></i> Cargar datos del sensor</h3>
+        </div>
+        <div style="padding:8px 4px 4px;">
+            <p style="color:#475569; font-size:14px; margin:0 0 14px;">
+                Subí el archivo <code>.txt</code> generado por el Doback Elite. Al cargar, se parsean las mediciones,
+                se detectan los eventos y se calcula la nota automáticamente.
+            </p>
+
+            <form method="POST"
+                  action="{{ url_for('manager.upload_sensor_data', attempt_id=attempt_id) }}"
+                  enctype="multipart/form-data"
+                  style="display:flex; flex-direction:column; gap:12px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="file" name="sensor_file" accept=".txt" required
+                       style="padding:10px; border:1px dashed #cbd5e1; border-radius:8px; background:#f8fafc;">
+                <button type="submit" class="mgr-action-btn mgr-action-btn--primary">
+                    <i class="ph ph-upload"></i> Subir TXT y calcular score
+                </button>
+            </form>
+
+            <div style="margin-top:18px; padding-top:14px; border-top:1px solid #e2e8f0;">
+                <p style="color:#64748b; font-size:13px; margin:0 0 10px;">
+                    Si las mediciones ya están cargadas y solo querés volver a correr la detección + scoring:
+                </p>
+                <form method="POST"
+                      action="{{ url_for('manager.score_attempt', attempt_id=attempt_id) }}"
+                      onsubmit="return confirm('¿Recalcular score con las mediciones existentes? El intento quedará cerrado.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="mgr-action-btn mgr-action-btn--secondary">
+                        <i class="ph ph-arrows-clockwise"></i> Solo recalcular score
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Intento CERRADO: mostrar desglose de la nota -->
+    <div class="mgr-card">
+        <div class="mgr-card__header">
+            <h3><i class="ph ph-chart-bar"></i> Desglose de puntuación</h3>
+>>>>>>> 8f05c35 (ya se pueden gestionar los alumnos, asignarles convocatorias, rutas y subir datos a las rutas)
         </div>
     </div>
 
@@ -142,6 +202,7 @@
             </div>
         </div>
 
+<<<<<<< HEAD
         <!-- Información adicional / Auditoría -->
         <div class="mgr-card">
             <div class="mgr-card__header">
@@ -167,6 +228,11 @@
                     <span style="font-size:13px; color:#1e293b"><i class="ph ph-cloud-check" style="color:#10b981"></i> Sí</span>
                 </div>
             </div>
+=======
+    </div>
+    {% endif %}
+</div>
+>>>>>>> 8f05c35 (ya se pueden gestionar los alumnos, asignarles convocatorias, rutas y subir datos a las rutas)
 
             {% if auditoria %}
             <div class="mgr-audit-box" style="margin-top: 16px; margin: 16px; border-width: 1px;">

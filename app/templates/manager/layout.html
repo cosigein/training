@@ -47,6 +47,16 @@
                 <i class="ph ph-grid-nine"></i>
                 <span>Candidatos</span>
             </a>
+            <a href="{{ url_for('manager.alumnos_list') }}"
+               class="mgr-nav__btn {% if active_page == 'alumnos' %}active{% endif %}">
+                <i class="ph ph-user-circle"></i>
+                <span>Alumnos</span>
+            </a>
+            <a href="{{ url_for('manager.rutas_list') }}"
+               class="mgr-nav__btn {% if active_page == 'rutas' %}active{% endif %}">
+                <i class="ph ph-map-trifold"></i>
+                <span>Rutas</span>
+            </a>
             <a href="{{ url_for('manager.ranking') }}"
                class="mgr-nav__btn {% if active_page == 'ranking' %}active{% endif %}">
                 <i class="ph ph-trophy"></i>

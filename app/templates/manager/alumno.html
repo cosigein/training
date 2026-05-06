@@ -3,6 +3,7 @@
 
 {% block content %}
 
+<<<<<<< HEAD
 <div class="mgr-back-bar">
     <a href="javascript:history.back()" class="mgr-btn-back">
         <i class="ph ph-arrow-left"></i> Volver
@@ -16,17 +17,30 @@
         <span>Perfil Aspirante</span>
     </span>
 </div>
+=======
+{% if convocatoria %}
+<a href="{{ url_for('manager.matriz', conv_id=convocatoria.id) }}" class="mgr-action-btn mgr-action-btn--secondary" style="margin-bottom:12px;">
+    <i class="ph ph-arrow-left"></i> Volver a Matriz
+</a>
+{% else %}
+<a href="{{ url_for('manager.alumnos_list') }}" class="mgr-action-btn mgr-action-btn--secondary" style="margin-bottom:12px;">
+    <i class="ph ph-arrow-left"></i> Volver a Alumnos
+</a>
+{% endif %}
+>>>>>>> 8f05c35 (ya se pueden gestionar los alumnos, asignarles convocatorias, rutas y subir datos a las rutas)
 
 <div class="mgr-page-header">
     <div>
         <h1 class="mgr-page-title">Perfil de Aspirante</h1>
         <p class="mgr-page-subtitle">
-            Convocatoria {{ convocatoria.nombre }}
+            {% if convocatoria %}Convocatoria {{ convocatoria.nombre }}{% else %}Sin convocatoria activa{% endif %}
         </p>
     </div>
+    {% if convocatoria %}
     <span class="mgr-estado-badge {% if nota_media >= 5 %}mgr-estado-badge--final{% else %}mgr-estado-badge--provisional{% endif %}">
         {% if nota_media >= 5 %}<i class="ph ph-check-circle"></i> APTO (PROVISIONAL){% else %}<i class="ph ph-x-circle"></i> NO APTO (PROVISIONAL){% endif %}
     </span>
+    {% endif %}
 </div>
 
 <div class="mgr-card mgr-mb-20">
@@ -57,12 +71,98 @@
     </div>
 </div>
 
+<<<<<<< HEAD
 <div style="margin-top: 24px;">
     <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
         <i class="ph ph-map-trifold" style="font-size: 18px; color: #64748b;"></i>
         <h3 style="font-size: 14px; font-weight: 700; color: #1e293b; margin: 0;">
             Desglose por Rutas ({{ candidato.rutas_completadas }} / {{ candidato.rutas_total }})
         </h3>
+=======
+<!-- Acciones del manager: inscribir + abrir intento -->
+<div class="mgr-card mgr-mb-20">
+    <div class="mgr-card__header">
+        <h3><i class="ph ph-plus-circle"></i> Acciones</h3>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; padding:8px;">
+
+        <!-- Inscribir en convocatoria -->
+        <div>
+            <h4 style="margin:0 0 8px; font-size:14px; color:#334155;">
+                <i class="ph ph-clipboard-text"></i> Inscribir en convocatoria
+            </h4>
+            {% if convocatorias_disponibles %}
+            <form method="POST"
+                  action="{{ url_for('manager.inscribir_alumno', student_id=candidato.id) }}"
+                  style="display:flex; flex-direction:column; gap:8px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <select name="conv_id" required
+                        style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+                    <option value="">— elegir convocatoria —</option>
+                    {% for c in convocatorias_disponibles %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+                <small style="color:#64748b; font-size:12px;">
+                    La ruta se elige al abrir cada intento.
+                </small>
+                <button type="submit" class="mgr-action-btn mgr-action-btn--secondary">
+                    <i class="ph ph-check"></i> Inscribir
+                </button>
+            </form>
+            {% else %}
+            <p style="color:#64748b; font-size:13px;">
+                No hay convocatorias OPEN disponibles.
+                <a href="{{ url_for('manager.convocatoria_nueva') }}">Crear una</a>.
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- Abrir nuevo intento -->
+        <div>
+            <h4 style="margin:0 0 8px; font-size:14px; color:#334155;">
+                <i class="ph ph-flag"></i> Abrir nuevo intento
+            </h4>
+            {% if enrollments_activos %}
+            <form method="POST"
+                  action="{{ url_for('manager.abrir_intento', student_id=candidato.id) }}"
+                  style="display:flex; flex-direction:column; gap:8px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <select name="enrollment_id" required
+                        style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+                    <option value="">— elegir inscripción —</option>
+                    {% for e in enrollments_activos %}
+                    <option value="{{ e.id }}">
+                        {{ e.convocatoria.name if e.convocatoria else e.convocatoriaId }}
+                        {% if e.routeId %} · ruta {{ e.routeId }}{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+                <select name="route_id"
+                        style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+                    <option value="">— ruta de la inscripción —</option>
+                    {% for r in rutas_disponibles %}
+                    <option value="{{ r.code }}">{{ r.code }} · {{ r.name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="mgr-action-btn mgr-action-btn--primary">
+                    <i class="ph ph-play"></i> Abrir intento y subir TXT
+                </button>
+            </form>
+            {% else %}
+            <p style="color:#64748b; font-size:13px;">
+                El alumno no tiene inscripciones activas. Inscribilo primero.
+            </p>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+
+<div class="mgr-card">
+    <div class="mgr-card__header">
+        <h3><i class="ph ph-map-trifold"></i> Desglose por Rutas ({{ candidato.rutas_completadas }} / {{ candidato.rutas_total }})</h3>
+>>>>>>> 8f05c35 (ya se pueden gestionar los alumnos, asignarles convocatorias, rutas y subir datos a las rutas)
     </div>
 
     <div class="mgr-routes-grid">

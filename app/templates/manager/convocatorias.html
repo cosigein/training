@@ -3,6 +3,7 @@
 
 {% block content %}
 
+<<<<<<< HEAD
 <div class="mgr-back-bar">
     <a href="{{ url_for('manager.dashboard') }}" class="mgr-btn-back">
         <i class="ph ph-arrow-left"></i> Volver al inicio
@@ -17,6 +18,16 @@
 <div>
     <h1 class="mgr-page-title">Convocatorias</h1>
     <p class="mgr-page-subtitle">Listado de todos los procesos de selección activos y cerrados</p>
+=======
+<div class="mgr-page-header">
+    <div>
+        <h1 class="mgr-page-title">Convocatorias</h1>
+        <p class="mgr-page-subtitle">Listado de todos los procesos de selección activos y cerrados</p>
+    </div>
+    <a href="{{ url_for('manager.convocatoria_nueva') }}" class="mgr-action-btn mgr-action-btn--primary">
+        <i class="ph ph-plus"></i> Nueva convocatoria
+    </a>
+>>>>>>> 8f05c35 (ya se pueden gestionar los alumnos, asignarles convocatorias, rutas y subir datos a las rutas)
 </div>
 
 <!-- Filtros + ordenamiento -->
