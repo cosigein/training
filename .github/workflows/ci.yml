@@ -17,6 +17,16 @@ jobs:
  test:
   runs-on: ubuntu-latest
 
+  env:
+   # TestingConfig (app/config.py) lee DATABASE_URL_TEST. Sin esto los tests caen
+   # al default `postgresql://localhost/doback_test` y revientan con
+   # "fe_sendauth: no password supplied".
+   DATABASE_URL: postgresql://training:training_test@localhost:5432/training_test
+   DATABASE_URL_TEST: postgresql://training:training_test@localhost:5432/training_test
+   REDIS_URL: redis://localhost:6379/0
+   FLASK_ENV: testing
+   FLASK_APP: wsgi.py
+
   services:
    postgres:
     image: postgres:17
@@ -48,9 +58,6 @@ jobs:
 
    - name: Setup database
      run: python setup_db.py && flask db stamp head
-     env:
-      DATABASE_URL: postgresql://training:training_test@localhost:5432/training_test
-      FLASK_ENV: testing
 
    - name: Run unit tests
      run: pytest tests/ -v --ignore=tests/e2e
@@ -60,6 +67,3 @@ jobs:
 
    - name: Run E2E tests
      run: pytest tests/e2e/ -v
-     env:
-      DATABASE_URL: postgresql://training:training_test@localhost:5432/training_test
-      FLASK_ENV: testing
