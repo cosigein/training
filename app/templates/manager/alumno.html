@@ -21,12 +21,14 @@
     <div>
         <h1 class="mgr-page-title">Perfil de Aspirante</h1>
         <p class="mgr-page-subtitle">
-            Convocatoria {{ convocatoria.nombre }}
+            {% if convocatoria %}Convocatoria {{ convocatoria.nombre }}{% else %}Sin convocatoria activa{% endif %}
         </p>
     </div>
+    {% if convocatoria %}
     <span class="mgr-estado-badge {% if nota_media >= 5 %}mgr-estado-badge--final{% else %}mgr-estado-badge--provisional{% endif %}">
         {% if nota_media >= 5 %}<i class="ph ph-check-circle"></i> APTO (PROVISIONAL){% else %}<i class="ph ph-x-circle"></i> NO APTO (PROVISIONAL){% endif %}
     </span>
+    {% endif %}
 </div>
 
 <div class="mgr-card mgr-mb-20">
@@ -54,6 +56,85 @@
                 {{ "%.2f"|format(nota_media) }}
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Acciones del manager: inscribir + abrir intento -->
+<div class="mgr-card mgr-mb-20">
+    <div class="mgr-card__header">
+        <h3><i class="ph ph-plus-circle"></i> Acciones</h3>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; padding:8px;">
+
+        <!-- Inscribir en convocatoria -->
+        <div>
+            <h4 style="margin:0 0 8px; font-size:14px; color:#334155;">
+                <i class="ph ph-clipboard-text"></i> Inscribir en convocatoria
+            </h4>
+            {% if convocatorias_disponibles %}
+            <form method="POST"
+                  action="{{ url_for('manager.inscribir_alumno', student_id=candidato.id) }}"
+                  style="display:flex; flex-direction:column; gap:8px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <select name="conv_id" required
+                        style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+                    <option value="">— elegir convocatoria —</option>
+                    {% for c in convocatorias_disponibles %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+                <small style="color:#64748b; font-size:12px;">
+                    La ruta se elige al abrir cada intento.
+                </small>
+                <button type="submit" class="mgr-action-btn mgr-action-btn--secondary">
+                    <i class="ph ph-check"></i> Inscribir
+                </button>
+            </form>
+            {% else %}
+            <p style="color:#64748b; font-size:13px;">
+                No hay convocatorias OPEN disponibles.
+                <a href="{{ url_for('manager.convocatoria_nueva') }}">Crear una</a>.
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- Abrir nuevo intento -->
+        <div>
+            <h4 style="margin:0 0 8px; font-size:14px; color:#334155;">
+                <i class="ph ph-flag"></i> Abrir nuevo intento
+            </h4>
+            {% if enrollments_activos %}
+            <form method="POST"
+                  action="{{ url_for('manager.abrir_intento', student_id=candidato.id) }}"
+                  style="display:flex; flex-direction:column; gap:8px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <select name="enrollment_id" required
+                        style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+                    <option value="">— elegir inscripción —</option>
+                    {% for e in enrollments_activos %}
+                    <option value="{{ e.id }}">
+                        {{ e.convocatoria.name if e.convocatoria else e.convocatoriaId }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <select name="route_id"
+                        style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+                    <option value="">— ruta principal de la convocatoria —</option>
+                    {% for r in rutas_disponibles %}
+                    <option value="{{ r.code }}">{{ r.code }} · {{ r.name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="mgr-action-btn mgr-action-btn--primary">
+                    <i class="ph ph-play"></i> Abrir intento y subir TXT
+                </button>
+            </form>
+            {% else %}
+            <p style="color:#64748b; font-size:13px;">
+                El alumno no tiene inscripciones activas. Inscribilo primero.
+            </p>
+            {% endif %}
+        </div>
+
     </div>
 </div>
 

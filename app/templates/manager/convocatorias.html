@@ -14,9 +14,14 @@
     </span>
 </div>
 
-<div>
-    <h1 class="mgr-page-title">Convocatorias</h1>
-    <p class="mgr-page-subtitle">Listado de todos los procesos de selección activos y cerrados</p>
+<div class="mgr-page-header">
+    <div>
+        <h1 class="mgr-page-title">Convocatorias</h1>
+        <p class="mgr-page-subtitle">Listado de todos los procesos de selección activos y cerrados</p>
+    </div>
+    <a href="{{ url_for('manager.convocatoria_nueva') }}" class="mgr-action-btn mgr-action-btn--primary">
+        <i class="ph ph-plus"></i> Nueva convocatoria
+    </a>
 </div>
 
 <!-- Filtros + ordenamiento -->

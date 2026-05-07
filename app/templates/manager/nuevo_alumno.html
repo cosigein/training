@@ -1,0 +1,65 @@
+{% extends "manager/layout.html" %}
+{% block title %}Nuevo alumno — CMadrid Training{% endblock %}
+
+{% block content %}
+
+<a href="{{ url_for('manager.alumnos_list') }}" class="mgr-action-btn mgr-action-btn--secondary" style="margin-bottom:12px;">
+    <i class="ph ph-arrow-left"></i> Volver a alumnos
+</a>
+
+<div class="mgr-page-header">
+    <div>
+        <h1 class="mgr-page-title">Nuevo alumno</h1>
+        <p class="mgr-page-subtitle">Alta de aspirante en la organización</p>
+    </div>
+</div>
+
+<div class="mgr-card" style="max-width:640px;">
+    <form method="POST"
+          action="{{ url_for('manager.alumnos_nuevo') }}"
+          style="display:flex; flex-direction:column; gap:14px; padding:8px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div>
+            <label class="mgr-label" for="name">Nombre completo</label>
+            <input id="name" name="name" type="text" required
+                   value="{{ form.name or '' }}"
+                   class="mgr-input" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+        </div>
+
+        <div>
+            <label class="mgr-label" for="email">Email</label>
+            <input id="email" name="email" type="email" required
+                   value="{{ form.email or '' }}"
+                   class="mgr-input" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+        </div>
+
+        <div>
+            <label class="mgr-label" for="password">Contraseña inicial</label>
+            <input id="password" name="password" type="text" minlength="6"
+                   value="{{ form.password or 'alumno123' }}"
+                   class="mgr-input" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+            <small style="color:#64748b;">Mínimo 6 caracteres. El alumno puede cambiarla después.</small>
+        </div>
+
+        <div>
+            <label class="mgr-label" for="rfid_uid">UID de tarjeta RFID (opcional)</label>
+            <input id="rfid_uid" name="rfid_uid" type="text"
+                   placeholder="04:A1:B2:C3"
+                   value="{{ form.rfid_uid or '' }}"
+                   class="mgr-input" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+            <small style="color:#64748b;">Se asocia al alumno para que pueda hacer tap en el kiosko.</small>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:6px;">
+            <button type="submit" class="mgr-action-btn mgr-action-btn--primary">
+                <i class="ph ph-check"></i> Crear alumno
+            </button>
+            <a href="{{ url_for('manager.alumnos_list') }}" class="mgr-action-btn mgr-action-btn--secondary">
+                Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

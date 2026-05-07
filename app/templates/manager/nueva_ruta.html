@@ -1,0 +1,73 @@
+{% extends "manager/layout.html" %}
+{% block title %}Nueva ruta — CMadrid Training{% endblock %}
+
+{% block content %}
+
+<a href="{{ url_for('manager.rutas_list') }}" class="mgr-action-btn mgr-action-btn--secondary" style="margin-bottom:12px;">
+    <i class="ph ph-arrow-left"></i> Volver a rutas
+</a>
+
+<div class="mgr-page-header">
+    <div>
+        <h1 class="mgr-page-title">Nueva ruta</h1>
+        <p class="mgr-page-subtitle">Alta de un recorrido para usar en convocatorias e inscripciones</p>
+    </div>
+</div>
+
+<div class="mgr-card" style="max-width:680px;">
+    <form method="POST"
+          action="{{ url_for('manager.rutas_nueva') }}"
+          style="display:flex; flex-direction:column; gap:14px; padding:8px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div style="display:grid; grid-template-columns:1fr 2fr; gap:14px;">
+            <div>
+                <label class="mgr-label" for="code">Código</label>
+                <input id="code" name="code" type="text" required maxlength="32"
+                       placeholder="RECORRIDO_C"
+                       value="{{ form.code or '' }}"
+                       style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; text-transform:uppercase;">
+                <small style="color:#64748b;">Identificador corto, sin espacios.</small>
+            </div>
+            <div>
+                <label class="mgr-label" for="name">Nombre</label>
+                <input id="name" name="name" type="text" required
+                       placeholder="Recorrido Norte por la M-30"
+                       value="{{ form.name or '' }}"
+                       style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+            </div>
+        </div>
+
+        <div>
+            <label class="mgr-label" for="description">Descripción (opcional)</label>
+            <textarea id="description" name="description" rows="2"
+                      style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">{{ form.description or '' }}</textarea>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div>
+                <label class="mgr-label" for="distanceKm">Distancia (km)</label>
+                <input id="distanceKm" name="distanceKm" type="number" min="0" step="0.1"
+                       value="{{ form.distanceKm or '' }}"
+                       style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+            </div>
+            <div>
+                <label class="mgr-label" for="durationMin">Duración esperada (min)</label>
+                <input id="durationMin" name="durationMin" type="number" min="0"
+                       value="{{ form.durationMin or '' }}"
+                       style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+            </div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:6px;">
+            <button type="submit" class="mgr-action-btn mgr-action-btn--primary">
+                <i class="ph ph-check"></i> Crear ruta
+            </button>
+            <a href="{{ url_for('manager.rutas_list') }}" class="mgr-action-btn mgr-action-btn--secondary">
+                Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

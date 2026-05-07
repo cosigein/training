@@ -25,6 +25,38 @@ class EnrollmentStatus(Enum):
     INVALIDATED = "INVALIDATED"  # Inscripción anulada por error o decisión administrativa
 
 
+class Route(db.Model):
+    """
+    Catálogo de rutas (recorridos) por organización.
+
+    Convocatoria.routePrincipal, Enrollment.routeId y Attempt.routeId siguen
+    almacenando el `code` de la ruta como String — no hay FK formal, la
+    integridad la garantiza la UI mediante selects poblados con rutas activas.
+
+    Soft-delete: nunca DELETE real, solo `active=False`, para evitar dejar
+    referencias huérfanas en convocatorias/inscripciones existentes.
+    """
+    __tablename__ = "Route"
+    __table_args__ = (
+        UniqueConstraint("code", "organizationId", name="uq_route_code_per_org"),
+    )
+
+    id = db.Column(db.String, primary_key=True, server_default=text("gen_random_uuid()"))
+    organizationId = db.Column(db.String, db.ForeignKey("Organization.id", ondelete="CASCADE"), nullable=False)
+
+    code = db.Column(db.String, nullable=False)              # identificador corto (RECORRIDO_A, PRINCIPAL...)
+    name = db.Column(db.String, nullable=False)              # nombre legible
+    description = db.Column(db.Text)
+
+    distanceKm = db.Column(db.Float)                          # opcional
+    durationMin = db.Column(db.Integer)                       # opcional, minutos esperados
+
+    active = db.Column(db.Boolean, default=True, nullable=False)
+
+    createdAt = db.Column(db.DateTime, default=datetime.utcnow)
+    updatedAt = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class Convocatoria(db.Model):
     """
     Una convocatoria es un proceso completo de oposición:

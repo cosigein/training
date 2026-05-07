@@ -12,7 +12,7 @@ from app.extensions import db
 from datetime import datetime
 from app.models.auth import User, Organization, UserRole
 from app.models.vehicle import Vehicle
-from app.models.training import RfidCard
+from app.models.training import RfidCard, Route
 # Import all models to ensure they are registered
 from app.models import session, vehicle, auth, event, training
 
@@ -80,6 +80,24 @@ def get_or_create_rfid_card(uid, student, org_id):
     return card
 
 
+def get_or_create_route(code, name, org_id, description=None):
+    route = Route.query.filter_by(code=code, organizationId=org_id).first()
+    if route:
+        print(f"ℹ️  Ruta '{code}' ya existe.")
+        return route
+    route = Route(
+        code=code,
+        name=name,
+        description=description,
+        organizationId=org_id,
+        active=True,
+    )
+    db.session.add(route)
+    db.session.flush()
+    print(f"✅ Ruta '{code}' creada.")
+    return route
+
+
 def get_or_create_user(email, name, password, role, org_id):
     user = User.query.filter_by(email=email).first()
     if user:
@@ -120,6 +138,12 @@ def setup_database():
         # Tarjetas RFID de prueba (UIDs estilo Mifare 4-bytes)
         get_or_create_rfid_card("04:A1:B2:C3", alumno1, org.id)
         get_or_create_rfid_card("04:D4:E5:F6", alumno2, org.id)
+
+        # Catálogo de rutas inicial (el manager puede agregar más por la UI)
+        get_or_create_route("PRINCIPAL",   "Recorrido principal",   org.id,
+                            description="Ruta principal de evaluación")
+        get_or_create_route("RECORRIDO_A", "Recorrido alternativo A", org.id)
+        get_or_create_route("RECORRIDO_B", "Recorrido alternativo B", org.id)
 
         db.session.commit()
         print("🚀 Seed listo.")

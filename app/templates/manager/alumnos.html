@@ -1,0 +1,40 @@
+{% extends "manager/layout.html" %}
+{% block title %}Alumnos — CMadrid Training{% endblock %}
+
+{% block content %}
+
+<div class="mgr-page-header">
+    <div>
+        <h1 class="mgr-page-title">Alumnos</h1>
+        <p class="mgr-page-subtitle">Listado de aspirantes registrados en la organización</p>
+    </div>
+    <a href="{{ url_for('manager.alumnos_nuevo') }}" class="mgr-action-btn mgr-action-btn--primary">
+        <i class="ph ph-user-plus"></i> Nuevo alumno
+    </a>
+</div>
+
+<div class="mgr-conv-list">
+    {% for a in alumnos %}
+    <div class="mgr-conv-row mgr-conv-row--compact">
+        <div class="mgr-conv-row__main">
+            <div class="mgr-conv-row__title">
+                <strong>{{ a.name }}</strong>
+                <span class="mgr-text-mono-muted">{{ a.email }}</span>
+            </div>
+        </div>
+        <div class="mgr-conv-row__actions">
+            <a href="{{ url_for('manager.alumno_detalle', candidato_id=a.id) }}"
+               class="mgr-action-btn mgr-action-btn--secondary">
+                Ver perfil <i class="ph ph-caret-right"></i>
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <div class="mgr-empty">
+        <i class="ph ph-user-circle"></i>
+        <p>Aún no hay alumnos registrados.</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

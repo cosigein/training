@@ -9,10 +9,26 @@ from app.extensions import db
 from app.models.auth import User
 from app.models.session import Attempt, AttemptStatus
 from app.models.vehicle import Vehicle
+from app.models.auth import UserRole
 from app.models.training import (
-    Enrollment,
-    TrainingAuditLog,
-    AuditAction,
+    Convocatoria, ConvocatoriaStatus,
+    Enrollment, EnrollmentStatus,
+    TrainingAuditLog, AuditAction,
+)
+from app.blueprints.admin.convocatoria_service import (
+    ConvocatoriaService, ConvocatoriaError,
+)
+from .provisioning_service import (
+    ProvisioningError,
+    list_students,
+    create_student,
+    open_attempt,
+    list_active_enrollments_for_student,
+    list_open_convocatorias,
+    list_routes,
+    create_route,
+    toggle_route_active,
+    invalidate_attempt,
 )
 from .ranking_service import (
     get_convocatorias,
@@ -173,12 +189,33 @@ def matriz():
 def alumno_detalle(candidato_id):
     org_id = _get_org_id()
     conv_id = request.args.get("conv_id") or get_alumno_active_conv_id(candidato_id, org_id)
-    if not conv_id:
-        abort(404)
 
-    conv_dict, candidato, intentos, nota_media = get_alumno_detail(candidato_id, conv_id, org_id)
+    conv_dict = None
+    candidato = None
+    intentos = []
+    nota_media = 0.0
+
+    if conv_id:
+        conv_dict, candidato, intentos, nota_media = get_alumno_detail(candidato_id, conv_id, org_id)
+
+    # Si no hay enrollment activo, cargamos el alumno básico para que el manager pueda inscribirlo.
     if not candidato:
-        abort(404)
+        student = User.query.filter_by(id=candidato_id, organizationId=org_id, role=UserRole.STUDENT).first()
+        if not student:
+            abort(404)
+        candidato = {
+            "id": student.id,
+            "nombre": student.name,
+            "email": student.email,
+            "plaza": "—",
+            "categoria": "—",
+            "rutas_completadas": 0,
+            "rutas_total": 0,
+        }
+
+    convocatorias_disponibles = list_open_convocatorias(org_id)
+    enrollments_activos = list_active_enrollments_for_student(org_id, candidato_id)
+    rutas_disponibles = list_routes(org_id, only_active=True)
 
     return render_template(
         "manager/alumno.html",
@@ -188,6 +225,9 @@ def alumno_detalle(candidato_id):
         candidato=candidato,
         intentos=intentos,
         nota_media=nota_media,
+        convocatorias_disponibles=convocatorias_disponibles,
+        enrollments_activos=enrollments_activos,
+        rutas_disponibles=rutas_disponibles,
     )
 
 
@@ -205,6 +245,7 @@ def intento_detalle(attempt_id):
         and attempt.closedAt is None
         and attempt.status in (AttemptStatus.OPEN, AttemptStatus.PROCESSING)
     )
+    is_invalidated = attempt is not None and attempt.status == AttemptStatus.INVALIDATED
 
     return render_template(
         "manager/intento.html",
@@ -219,11 +260,13 @@ def intento_detalle(attempt_id):
         auditoria=detail["auditoria"],
         convocatoria=detail["convocatoria"],
         can_score=can_score,
+        is_invalidated=is_invalidated,
+        invalidated_reason=attempt.invalidatedReason if is_invalidated else None,
     )
 
 
 @manager_bp.route("/intento/<attempt_id>/upload-sensor", methods=["POST"])
-@require_role(["ADMIN"])
+@require_role(["MANAGER", "ADMIN"])
 def upload_sensor_data(attempt_id):
     """Recibe el TXT del Doback Elite, parsea las mediciones y corre el pipeline completo."""
     from app.services.pipeline.sensor_parser import parse_sensor_file
@@ -285,8 +328,30 @@ def upload_sensor_data(attempt_id):
     return redirect(redirect_url)
 
 
+@manager_bp.route("/intento/<attempt_id>/invalidar", methods=["POST"])
+@require_role(["MANAGER", "ADMIN"])
+def invalidar_intento(attempt_id):
+    org_id = _get_org_id()
+    actor_id = get_jwt_identity()
+    reason = request.form.get("reason", "").strip()
+
+    try:
+        invalidate_attempt(
+            org_id=org_id,
+            actor_id=actor_id,
+            attempt_id=attempt_id,
+            reason=reason,
+        )
+    except ProvisioningError as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("manager.intento_detalle", attempt_id=attempt_id))
+
+    flash("Intento invalidado. Ya no aparece en el ranking.", "success")
+    return redirect(url_for("manager.intento_detalle", attempt_id=attempt_id))
+
+
 @manager_bp.route("/intento/<attempt_id>/score", methods=["POST"])
-@require_role(["ADMIN"])
+@require_role(["MANAGER", "ADMIN"])
 def score_attempt(attempt_id):
     """Dispara el pipeline detect → score → cierre para un attempt OPEN."""
     from app.services.pipeline import run_pipeline
@@ -316,7 +381,7 @@ def score_attempt(attempt_id):
 
 
 @manager_bp.route("/alumno/<student_id>/intento/nuevo", methods=["POST"])
-@require_role(["ADMIN"])
+@require_role(["MANAGER", "ADMIN"])
 def registrar_intento(student_id):
     """Registra un intento con nota manual para un alumno (entrada directa sin telemetría)."""
     org_id = _get_org_id()
@@ -462,3 +527,195 @@ def auditoria_create():
     except AuditRequestError as exc:
         return jsonify({"message": str(exc)}), 422
     return jsonify(ar), 201
+
+
+# ── Provisioning del manager: alumnos, convocatorias, enrollments, attempts ──
+
+@manager_bp.route("/alumnos")
+@require_role(["MANAGER", "ADMIN"])
+def alumnos_list():
+    org_id = _get_org_id()
+    students = list_students(org_id)
+    return render_template(
+        "manager/alumnos.html",
+        active_page="alumnos",
+        alumnos=students,
+    )
+
+
+@manager_bp.route("/alumnos/nuevo", methods=["GET", "POST"])
+@require_role(["MANAGER", "ADMIN"])
+def alumnos_nuevo():
+    org_id = _get_org_id()
+    actor_id = get_jwt_identity()
+
+    if request.method == "POST":
+        try:
+            student = create_student(
+                org_id=org_id,
+                actor_id=actor_id,
+                name=request.form.get("name"),
+                email=request.form.get("email"),
+                password=request.form.get("password") or "alumno123",
+                rfid_uid=request.form.get("rfid_uid"),
+            )
+        except ProvisioningError as exc:
+            flash(str(exc), "danger")
+            return render_template(
+                "manager/nuevo_alumno.html",
+                active_page="alumnos",
+                form=request.form,
+            )
+        flash(f"Alumno {student.name} creado correctamente.", "success")
+        return redirect(url_for("manager.alumnos_list"))
+
+    return render_template("manager/nuevo_alumno.html", active_page="alumnos", form={})
+
+
+@manager_bp.route("/convocatorias/nueva", methods=["GET", "POST"])
+@require_role(["MANAGER", "ADMIN"])
+def convocatoria_nueva():
+    org_id = _get_org_id()
+    actor_id = get_jwt_identity()
+
+    rutas_disponibles = list_routes(org_id, only_active=True)
+
+    if request.method == "POST":
+        data = {
+            "name": request.form.get("name", "").strip(),
+            "description": request.form.get("description", "").strip(),
+            "routePrincipal": request.form.get("routePrincipal", "").strip(),
+            "plazas": request.form.get("plazas", "").strip(),
+            "umbralMin": request.form.get("umbralMin", "5.0").strip() or "5.0",
+            "criteriaVersion": request.form.get("criteriaVersion", "v1.0").strip() or "v1.0",
+            "normalizerVersion": request.form.get("normalizerVersion", "v1.0").strip() or "v1.0",
+            "detectorVersion": request.form.get("detectorVersion", "v1.0").strip() or "v1.0",
+        }
+        try:
+            conv = ConvocatoriaService.create_convocatoria(org_id, actor_id, data)
+        except ConvocatoriaError as exc:
+            flash(str(exc), "danger")
+            return render_template(
+                "manager/nueva_convocatoria.html",
+                active_page="convocatorias",
+                form=data,
+                rutas_disponibles=rutas_disponibles,
+            )
+        flash(f"Convocatoria '{conv.name}' creada.", "success")
+        return redirect(url_for("manager.convocatorias"))
+
+    return render_template(
+        "manager/nueva_convocatoria.html",
+        active_page="convocatorias",
+        form={},
+        rutas_disponibles=rutas_disponibles,
+    )
+
+
+@manager_bp.route("/alumno/<student_id>/inscribir", methods=["POST"])
+@require_role(["MANAGER", "ADMIN"])
+def inscribir_alumno(student_id):
+    org_id = _get_org_id()
+    actor_id = get_jwt_identity()
+
+    conv_id = request.form.get("conv_id", "").strip()
+    route_id = request.form.get("route_id", "").strip() or None
+
+    redirect_url = url_for("manager.alumno_detalle", candidato_id=student_id, conv_id=conv_id or None)
+
+    if not conv_id:
+        flash("Debe seleccionar una convocatoria.", "danger")
+        return redirect(redirect_url)
+
+    try:
+        ConvocatoriaService.add_enrollment(conv_id, org_id, actor_id, student_id, route_id)
+    except ConvocatoriaError as exc:
+        flash(str(exc), "danger")
+        return redirect(redirect_url)
+
+    flash("Alumno inscrito en la convocatoria.", "success")
+    return redirect(redirect_url)
+
+
+# ── Catálogo de rutas ─────────────────────────────────────────────────────────
+
+@manager_bp.route("/rutas")
+@require_role(["MANAGER", "ADMIN"])
+def rutas_list():
+    org_id = _get_org_id()
+    rutas = list_routes(org_id)
+    return render_template(
+        "manager/rutas.html",
+        active_page="rutas",
+        rutas=rutas,
+    )
+
+
+@manager_bp.route("/rutas/nueva", methods=["GET", "POST"])
+@require_role(["MANAGER", "ADMIN"])
+def rutas_nueva():
+    org_id = _get_org_id()
+
+    if request.method == "POST":
+        try:
+            route = create_route(
+                org_id=org_id,
+                code=request.form.get("code"),
+                name=request.form.get("name"),
+                description=request.form.get("description"),
+                distance_km=request.form.get("distanceKm"),
+                duration_min=request.form.get("durationMin"),
+            )
+        except ProvisioningError as exc:
+            flash(str(exc), "danger")
+            return render_template(
+                "manager/nueva_ruta.html",
+                active_page="rutas",
+                form=request.form,
+            )
+        flash(f"Ruta '{route.code}' creada.", "success")
+        return redirect(url_for("manager.rutas_list"))
+
+    return render_template("manager/nueva_ruta.html", active_page="rutas", form={})
+
+
+@manager_bp.route("/rutas/<route_id>/toggle", methods=["POST"])
+@require_role(["MANAGER", "ADMIN"])
+def rutas_toggle(route_id):
+    org_id = _get_org_id()
+    try:
+        route = toggle_route_active(org_id, route_id)
+    except ProvisioningError as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("manager.rutas_list"))
+    estado = "activada" if route.active else "desactivada"
+    flash(f"Ruta '{route.code}' {estado}.", "success")
+    return redirect(url_for("manager.rutas_list"))
+
+
+@manager_bp.route("/alumno/<student_id>/intento/abrir", methods=["POST"])
+@require_role(["MANAGER", "ADMIN"])
+def abrir_intento(student_id):
+    org_id = _get_org_id()
+    actor_id = get_jwt_identity()
+
+    enrollment_id = request.form.get("enrollment_id", "").strip()
+    route_id = request.form.get("route_id", "").strip() or None
+
+    if not enrollment_id:
+        flash("Debe seleccionar una inscripción activa.", "danger")
+        return redirect(url_for("manager.alumno_detalle", candidato_id=student_id))
+
+    try:
+        attempt = open_attempt(
+            org_id=org_id,
+            actor_id=actor_id,
+            enrollment_id=enrollment_id,
+            route_id=route_id,
+        )
+    except ProvisioningError as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("manager.alumno_detalle", candidato_id=student_id))
+
+    flash("Intento abierto. Subí ahora el archivo del sensor.", "success")
+    return redirect(url_for("manager.intento_detalle", attempt_id=attempt.id))
