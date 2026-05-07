@@ -83,15 +83,15 @@
     <div class="mgr-right-col" style="display: flex; flex-direction: column; gap: 16px;">
 
         {% if can_score %}
-        <!-- Intento ABIERTO: panel para cargar TXT del sensor o recalcular score -->
+        <!-- Intento ABIERTO: subir los 3 archivos del Doback Elite -->
         <div class="mgr-card">
             <div class="mgr-card__header">
                 <h3><i class="ph ph-upload-simple"></i> Cargar datos del sensor</h3>
             </div>
             <div style="padding:8px 4px 4px;">
                 <p style="color:#475569; font-size:14px; margin:0 0 14px;">
-                    Subí el archivo <code>.txt</code> generado por el Doback Elite. Al cargar, se parsean las mediciones,
-                    se detectan los eventos y se calcula la nota automáticamente.
+                    Sube los tres archivos <code>.txt</code> del Doback Elite (estabilidad, GPS y rotativo).
+                    En el siguiente paso elegirás a qué <strong>sesión</strong> corresponde este intento.
                 </p>
 
                 <form method="POST"
@@ -99,16 +99,39 @@
                       enctype="multipart/form-data"
                       style="display:flex; flex-direction:column; gap:12px;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="file" name="sensor_file" accept=".txt" required
-                           style="padding:10px; border:1px dashed #cbd5e1; border-radius:8px; background:#f8fafc;">
+
+                    <label style="display:flex; flex-direction:column; gap:4px;">
+                        <span style="font-size:13px; font-weight:600; color:#334155;">
+                            <i class="ph ph-activity"></i> Archivo de ESTABILIDAD <span style="color:#dc2626">*</span>
+                        </span>
+                        <input type="file" name="stability_file" accept=".txt" required
+                               style="padding:10px; border:1px dashed #cbd5e1; border-radius:8px; background:#f8fafc;">
+                    </label>
+
+                    <label style="display:flex; flex-direction:column; gap:4px;">
+                        <span style="font-size:13px; font-weight:600; color:#334155;">
+                            <i class="ph ph-map-pin"></i> Archivo de GPS <span style="color:#dc2626">*</span>
+                        </span>
+                        <input type="file" name="gps_file" accept=".txt" required
+                               style="padding:10px; border:1px dashed #cbd5e1; border-radius:8px; background:#f8fafc;">
+                    </label>
+
+                    <label style="display:flex; flex-direction:column; gap:4px;">
+                        <span style="font-size:13px; font-weight:600; color:#334155;">
+                            <i class="ph ph-arrows-clockwise"></i> Archivo de ROTATIVO <span style="color:#dc2626">*</span>
+                        </span>
+                        <input type="file" name="rotativo_file" accept=".txt" required
+                               style="padding:10px; border:1px dashed #cbd5e1; border-radius:8px; background:#f8fafc;">
+                    </label>
+
                     <button type="submit" class="mgr-action-btn mgr-action-btn--primary">
-                        <i class="ph ph-upload"></i> Subir TXT y calcular score
+                        <i class="ph ph-upload"></i> Subir y elegir sesión
                     </button>
                 </form>
 
                 <div style="margin-top:18px; padding-top:14px; border-top:1px solid #e2e8f0;">
                     <p style="color:#64748b; font-size:13px; margin:0 0 10px;">
-                        Si las mediciones ya están cargadas y solo querés volver a correr la detección + scoring:
+                        Si las mediciones ya se cargaron y solo quieres volver a correr la detección y el scoring:
                     </p>
                     <form method="POST"
                           action="{{ url_for('manager.score_attempt', attempt_id=attempt_id) }}"
@@ -241,7 +264,7 @@
             {% if not is_invalidated %}
             <div style="margin: 16px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
                 <p style="color:#64748b; font-size:12px; margin:0 0 8px;">
-                    ¿El intento se cargó con datos erróneos? Podés invalidarlo — quedará registrado pero no contará para el ranking.
+                    ¿El intento se cargó con datos erróneos? Puedes invalidarlo — quedará registrado pero no contará para el ranking.
                 </p>
                 <form method="POST"
                       action="{{ url_for('manager.invalidar_intento', attempt_id=attempt_id) }}"
