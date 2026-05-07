@@ -120,6 +120,25 @@ def get_ranking(conv_id, org_id):
         scores = [a.score for a in scored]
         nota_media = sum(scores) / len(scores) if scores else 0.0
 
+        audit_req = AuditRequest.query.filter(
+            AuditRequest.organizationId == org_id,
+            AuditRequest.requestedBy == enrollment.studentId,
+            AuditRequest.status.in_([AuditStatus.PENDING, AuditStatus.REVIEWING]),
+        ).first()
+
+        audit_data = None
+        if audit_req:
+            att = audit_req.original_attempt
+            audit_data = {
+                "id": audit_req.id,
+                "reason": audit_req.reason,
+                "fecha": audit_req.createdAt.strftime("%d/%m/%Y") if audit_req.createdAt else "—",
+                "hora": audit_req.createdAt.strftime("%H:%M") if audit_req.createdAt else "—",
+                "attempt_id": audit_req.originalAttemptId,
+                "ruta": (_slots_for_enrollment(att.enrollmentId).get(att.id, "—")
+                         if att and att.enrollmentId else "—"),
+            }
+
         entries.append({
             "nota_media": nota_media,
             "rutas_completadas": len(scored),
@@ -140,10 +159,29 @@ def get_ranking(conv_id, org_id):
     return _conv_to_dict(conv, org_id), entries
 
 
-def _slot_code(seq):
-    """Etiqueta visible del intento según su orden cronológico en el enrollment.
-    R01, R02, … Si seq es None devuelve None (intento ignorable)."""
-    return f"R{seq:02d}" if seq else None
+def _slots_for_enrollment(enrollment_id):
+    """Mapa {attempt_id: 'R01'} para los attempts del enrollment, asignando
+    R01, R02, … por orden cronológico de startTime. NO depende del
+    `sequence` guardado (que puede estar contaminado por session_number del
+    Doback). Incluye TODOS los estados (OPEN, CLOSED, INVALIDATED).
+    """
+    atts = (
+        Attempt.query
+        .filter_by(enrollmentId=enrollment_id)
+        .order_by(Attempt.startTime.asc(), Attempt.createdAt.asc())
+        .all()
+    )
+    return {a.id: f"R{i+1:02d}" for i, a in enumerate(atts)}
+
+
+def _continuous_slot_codes(slot_by_attempt):
+    """Dado el mapa de slots, genera la lista R01..R{max} sin huecos.
+    Las columnas de la matriz son continuas: si un alumno hizo 10 intentos,
+    se muestran 10 columnas, los demás alumnos las verán vacías."""
+    if not slot_by_attempt:
+        return []
+    max_n = max(int(s[1:]) for s in slot_by_attempt.values())
+    return [f"R{i:02d}" for i in range(1, max_n + 1)]
 
 
 def get_matrix_data(conv_id, org_id):
@@ -153,13 +191,13 @@ def get_matrix_data(conv_id, org_id):
 
     enrollments = _enrollments_ordered(conv_id, org_id)
 
-    scored_attempts = (
-        Attempt.query
-        .filter_by(convocatoriaId=conv_id, status=AttemptStatus.CLOSED)
-        .filter(Attempt.score.isnot(None))
-        .all()
-    )
-    slot_codes = sorted({_slot_code(a.sequence) for a in scored_attempts if a.sequence})
+    # Pre-computar slots de TODOS los enrollments (incluye TODOS los estados,
+    # así un alumno con 10 intentos abiertos genera columnas hasta R10 aunque
+    # haya cerrado solo unos pocos).
+    slot_by_attempt: dict = {}
+    for enrollment in enrollments:
+        slot_by_attempt.update(_slots_for_enrollment(enrollment.id))
+    slot_codes = _continuous_slot_codes(slot_by_attempt)
     circuitos = [{"id": s, "label": s} for s in slot_codes]
 
     candidatos = []
@@ -168,7 +206,7 @@ def get_matrix_data(conv_id, org_id):
         if not student:
             continue
 
-        # un Attempt por slot del alumno (cada slot R{N} es único por enrollment)
+        # Mapear cada attempt CERRADO del enrollment a su slot
         attempts_by_slot: dict = {}
         for a in (
             Attempt.query
@@ -176,7 +214,7 @@ def get_matrix_data(conv_id, org_id):
             .filter(Attempt.score.isnot(None))
             .all()
         ):
-            slot = _slot_code(a.sequence)
+            slot = slot_by_attempt.get(a.id)
             if slot:
                 attempts_by_slot[slot] = a
 
@@ -226,7 +264,11 @@ def get_all_matrix_data(org_id):
         .all()
     )
 
-    slot_codes = sorted({_slot_code(a.sequence) for a in attempts if a.sequence})
+    # Slots por enrollment de TODOS los alumnos
+    slot_by_attempt: dict = {}
+    for enrollment in enrollments:
+        slot_by_attempt.update(_slots_for_enrollment(enrollment.id))
+    slot_codes = _continuous_slot_codes(slot_by_attempt)
     circuitos = [{"id": s, "label": s} for s in slot_codes]
 
     students = User.query.filter(User.id.in_(student_ids)).all()
@@ -238,11 +280,10 @@ def get_all_matrix_data(org_id):
         if not student:
             continue
 
-        # un Attempt por slot del alumno (cada slot R{N} es único por enrollment)
         attempts_by_slot = {}
         student_attempts = [a for a in attempts if a.studentId == sid]
         for a in student_attempts:
-            slot = _slot_code(a.sequence)
+            slot = slot_by_attempt.get(a.id)
             if slot:
                 attempts_by_slot[slot] = a
 
@@ -328,6 +369,20 @@ def get_alumno_detail(student_id, conv_id, org_id):
         convocatoriaId=conv_id, organizationId=org_id
     ).filter(Attempt.routeId.isnot(None)).distinct().all()
     route_ids = sorted([r[0] for r in all_routes_in_conv])
+    slot_map = _slots_for_enrollment(enrollment.id)
+    intentos = [
+        {
+            "ruta_id": slot_map.get(a.id, "—"),
+            "ruta_label": slot_map.get(a.id, "—"),
+            "route_code": a.routeId or "—",
+            "nota": a.score,
+            "data_quality": _data_quality_label(a.dataQuality),
+            "audit": False,  # TODO Tarea 12
+            "attempt_id": a.id,
+            "fecha": a.endTime.strftime("%d/%m/%Y") if a.endTime else "—",
+        }
+        for a in scored_attempts
+    ]
 
     # Asegurar que la ruta principal esté presente
     if conv and conv.routePrincipal and conv.routePrincipal not in route_ids:
@@ -393,7 +448,8 @@ def get_intento_detail(attempt_id, org_id):
         "data_quality": _data_quality_label(attempt.dataQuality),
         "attempt_id": attempt.id,
     }
-    slot = _slot_code(attempt.sequence) or "—"
+    slot_map = _slots_for_enrollment(attempt.enrollmentId) if attempt.enrollmentId else {}
+    slot = slot_map.get(attempt.id, "—")
     ruta = {
         "id": slot,
         "label": slot,
