@@ -51,9 +51,26 @@ def create_app(config_name=None):
     cors.init_app(app)
     compress.init_app(app)
     cache.init_app(app)
-    # Talisman se suele activar solo en producción por CSP
+    # Talisman se suele activar solo en producción por CSP.
+    # CSP pragmática: permite los CDNs que usa la UI (Google Fonts, Phosphor,
+    # Leaflet, tiles cartocdn) y `unsafe-inline` para los estilos/scripts inline
+    # que aún tienen los templates. Endurecer post-demo migrando inline a archivos.
     if not app.debug and not app.testing:
-        talisman.init_app(app)
+        csp = {
+            "default-src": "'self'",
+            "style-src":   ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://unpkg.com"],
+            "font-src":    ["'self'", "https://fonts.gstatic.com"],
+            "script-src":  ["'self'", "'unsafe-inline'", "https://unpkg.com"],
+            "img-src":     ["'self'", "data:", "https://*.basemaps.cartocdn.com"],
+            "connect-src": ["'self'"],
+            "frame-ancestors": "'none'",
+        }
+        talisman.init_app(
+            app,
+            content_security_policy=csp,
+            force_https=False,
+            strict_transport_security=True,
+        )
     babel.init_app(app)
     init_loguru(app)
 
