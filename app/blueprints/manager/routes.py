@@ -268,9 +268,10 @@ def intento_detalle(attempt_id):
 @manager_bp.route("/intento/<attempt_id>/upload-sensor", methods=["POST"])
 @require_role(["MANAGER", "ADMIN"])
 def upload_sensor_data(attempt_id):
-    """Recibe el TXT del Doback Elite, parsea las mediciones y corre el pipeline completo."""
-    from app.services.pipeline.sensor_parser import parse_sensor_file
-    from app.services.pipeline import run_pipeline
+    """Paso 1 del wizard: recibe los 3 archivos del Doback Elite, los guarda en
+    /tmp y redirige al paso 2 (selección de sesión)."""
+    from app.services.pipeline.sensor_parser import extract_sessions
+    from .upload_storage import create_upload, UploadStorageError
 
     org_id = _get_org_id()
     attempt = Attempt.query.filter_by(id=attempt_id, organizationId=org_id).first()
@@ -283,49 +284,155 @@ def upload_sensor_data(attempt_id):
         flash("Este intento ya está cerrado.", "warning")
         return redirect(redirect_url)
 
-    f = request.files.get("sensor_file")
-    if not f or not f.filename:
-        flash("No se seleccionó ningún archivo.", "danger")
-        return redirect(redirect_url)
+    def _read_file(field_name, label):
+        f = request.files.get(field_name)
+        if not f or not f.filename:
+            return None, f"El archivo de {label} es obligatorio."
+        if not f.filename.lower().endswith(".txt"):
+            return None, f"El archivo de {label} debe ser .txt."
+        return f.read(), None
 
-    if not f.filename.lower().endswith(".txt"):
-        flash("Solo se aceptan archivos .txt del sensor Doback.", "danger")
+    stab, err = _read_file("stability_file", "ESTABILIDAD")
+    if err:
+        flash(err, "danger")
+        return redirect(redirect_url)
+    gps, err = _read_file("gps_file", "GPS")
+    if err:
+        flash(err, "danger")
+        return redirect(redirect_url)
+    rot, err = _read_file("rotativo_file", "ROTATIVO")
+    if err:
+        flash(err, "danger")
         return redirect(redirect_url)
 
     try:
-        content = f.read().decode("utf-8", errors="replace")
-    except Exception as exc:
-        flash(f"Error al leer el archivo: {exc}", "danger")
+        upload_id = create_upload(
+            org_id=org_id,
+            attempt_id=attempt_id,
+            stability_bytes=stab,
+            gps_bytes=gps,
+            rotativo_bytes=rot,
+        )
+    except UploadStorageError as exc:
+        flash(str(exc), "danger")
         return redirect(redirect_url)
 
+    # Validamos que haya al menos una sesión detectable antes de redirigir
+    sessions_preview = extract_sessions(
+        gps_content=gps.decode("utf-8", errors="replace"),
+        stability_content=stab.decode("utf-8", errors="replace"),
+        rotativo_content=rot.decode("utf-8", errors="replace"),
+    )
+    if not sessions_preview:
+        from .upload_storage import delete_upload
+        delete_upload(upload_id)
+        flash("No se detectó ninguna 'Sesión:N' en los archivos. Verificá el formato.", "warning")
+        return redirect(redirect_url)
+
+    return redirect(url_for(
+        "manager.select_session",
+        attempt_id=attempt_id,
+        upload_id=upload_id,
+    ))
+
+
+@manager_bp.route("/intento/<attempt_id>/select-session/<upload_id>", methods=["GET", "POST"])
+@require_role(["MANAGER", "ADMIN"])
+def select_session(attempt_id, upload_id):
+    """Paso 2 del wizard: muestra las sesiones disponibles y al elegir una,
+    dispara parser filtrado + pipeline + cierre."""
+    from app.services.pipeline.sensor_parser import extract_sessions, parse_sensor_files
+    from app.services.pipeline import run_pipeline
+    from .upload_storage import read_upload, delete_upload, UploadStorageError
+
+    org_id = _get_org_id()
     actor_id = get_jwt_identity()
 
-    try:
-        parse_result = parse_sensor_file(content, attempt_id, org_id)
-    except ValueError as exc:
-        flash(str(exc), "warning")
-        return redirect(redirect_url)
-    except Exception as exc:
-        flash(f"Error al parsear el archivo: {exc}", "danger")
-        return redirect(redirect_url)
+    attempt = Attempt.query.filter_by(id=attempt_id, organizationId=org_id).first()
+    if not attempt:
+        abort(404)
 
-    if parse_result.total_rows == 0:
-        flash("El archivo no contenía datos válidos (sin GPS fix ni datos de estabilidad).", "warning")
-        return redirect(redirect_url)
+    detail_url = url_for("manager.intento_detalle", attempt_id=attempt_id)
+    if attempt.closedAt:
+        flash("Este intento ya está cerrado.", "warning")
+        delete_upload(upload_id)
+        return redirect(detail_url)
 
     try:
-        pipeline_result = run_pipeline(attempt_id, actor_id=actor_id)
-        flash(
-            f"Datos cargados: {parse_result.summary()}. "
-            f"Score: {pipeline_result['score']} · {pipeline_result['events_detected']} eventos detectados.",
-            "success",
-        )
-    except ValueError as exc:
-        flash(f"Datos cargados ({parse_result.total_rows} filas) pero error al calcular score: {exc}", "warning")
-    except Exception as exc:
-        flash(f"Datos cargados ({parse_result.total_rows} filas) pero error en el pipeline: {exc}", "danger")
+        files = read_upload(org_id, attempt_id, upload_id)
+    except UploadStorageError as exc:
+        flash(str(exc), "danger")
+        return redirect(detail_url)
 
-    return redirect(redirect_url)
+    sessions = extract_sessions(
+        gps_content=files["gps"],
+        stability_content=files["stability"],
+        rotativo_content=files["rotativo"],
+    )
+
+    if request.method == "POST":
+        try:
+            session_number = int(request.form.get("session_number", "").strip())
+        except (TypeError, ValueError):
+            flash("Debe seleccionar una sesión válida.", "danger")
+            return render_template(
+                "manager/select_session.html",
+                active_page="matriz", is_subpage=True,
+                attempt_id=attempt_id, upload_id=upload_id, sessions=sessions,
+            )
+
+        try:
+            parse_result = parse_sensor_files(
+                attempt_id=attempt_id,
+                org_id=org_id,
+                session_number=session_number,
+                gps_content=files["gps"],
+                stability_content=files["stability"],
+                rotativo_content=files["rotativo"],
+            )
+        except ValueError as exc:
+            flash(str(exc), "warning")
+            return render_template(
+                "manager/select_session.html",
+                active_page="matriz", is_subpage=True,
+                attempt_id=attempt_id, upload_id=upload_id, sessions=sessions,
+            )
+        except Exception as exc:
+            flash(f"Error al parsear los archivos: {exc}", "danger")
+            return redirect(detail_url)
+
+        if parse_result.total_rows == 0:
+            flash("La sesión seleccionada no contiene datos válidos.", "warning")
+            return render_template(
+                "manager/select_session.html",
+                active_page="matriz", is_subpage=True,
+                attempt_id=attempt_id, upload_id=upload_id, sessions=sessions,
+            )
+
+        try:
+            pipeline_result = run_pipeline(attempt_id, actor_id=actor_id)
+            flash(
+                f"Sesión {session_number} cargada: {parse_result.summary()}. "
+                f"Score: {pipeline_result['score']} · {pipeline_result['events_detected']} eventos.",
+                "success",
+            )
+        except ValueError as exc:
+            flash(f"Datos cargados pero error al calcular score: {exc}", "warning")
+        except Exception as exc:
+            flash(f"Datos cargados pero error en el pipeline: {exc}", "danger")
+        finally:
+            delete_upload(upload_id)
+
+        return redirect(detail_url)
+
+    return render_template(
+        "manager/select_session.html",
+        active_page="matriz",
+        is_subpage=True,
+        attempt_id=attempt_id,
+        upload_id=upload_id,
+        sessions=sessions,
+    )
 
 
 @manager_bp.route("/intento/<attempt_id>/invalidar", methods=["POST"])
