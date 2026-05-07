@@ -26,42 +26,29 @@
                 <span>{{ convocatoria.nombre }}</span>
             </div>
         </div>
-        <a href="{{ url_for('kiosko.login') }}" class="ksk-btn ksk-btn--danger" style="height:44px; padding:0 20px; font-size:13px">
+        <a href="{{ url_for('auth.logout') }}" class="ksk-btn ksk-btn--danger" style="height:44px; padding:0 20px; font-size:13px">
             <i class="ph ph-sign-out"></i>
             SALIR
         </a>
-    </header>
-
-    <!-- Stats bar -->
-    <div class="ksk-stats-bar">
-        <div class="ksk-stat">
-            <span class="ksk-stat__val ksk-stat__val--blue">
-                {{ "%.2f"|format(nota_media) if nota_media > 0 else "—" }}
-            </span>
-            <span class="ksk-stat__lbl">Media actual</span>
-        </div>
-        <div class="ksk-stat">
-            <span class="ksk-stat__val ksk-stat__val--green">
-                {{ candidato.rutas_completadas }} / {{ candidato.rutas_total }}
-            </span>
-            <span class="ksk-stat__lbl">Rutas completadas</span>
-        </div>
-        <div class="ksk-stat">
-            <span class="ksk-stat__val ksk-stat__val--amber">{{ candidato.sesiones }}</span>
-            <span class="ksk-stat__lbl">Sesiones</span>
-        </div>
-        <div class="ksk-stat">
-            <span class="ksk-stat__val ksk-stat__val--gray">{{ candidato.ultima }}</span>
-            <span class="ksk-stat__lbl">Última sesión</span>
-        </div>
-    </div>
-
-    <!-- Main body -->
+    </header>    <!-- Main body -->
     <div class="ksk-body">
 
-        <span class="ksk-section-label">
-            Circuitos de conducción · {{ convocatoria.nombre }}
-        </span>
+        <div class="ksk-section-header">
+            <span class="ksk-section-label">
+                Circuitos de conducción · {{ convocatoria.nombre }}
+            </span>
+            <div class="ksk-legend">
+                <div class="ksk-legend-item">
+                    <i class="ph ph-check-circle ksk-color-ok"></i> <span>Aprobado</span>
+                </div>
+                <div class="ksk-legend-item">
+                    <i class="ph ph-x-circle ksk-color-fail"></i> <span>Suspenso</span>
+                </div>
+                <div class="ksk-legend-item">
+                    <i class="ph ph-clock ksk-color-pend"></i> <span>Pendiente</span>
+                </div>
+            </div>
+        </div>
 
         <div class="ksk-rutas-grid">
             {% for ruta in rutas %}
@@ -70,56 +57,96 @@
             {% if info %}
                 {% if info.nota >= 5 %}
                     {% set card_class = 'ksk-ruta-card--completada' %}
-                    {% set score_class = 'ksk-ruta-score--pass' %}
-                    {% set status_class = 'ksk-ruta-status--ok' %}
                     {% set status_icon = 'ph-check-circle' %}
-                    {% set status_text = 'Completada' %}
                 {% else %}
-                    {% set card_class = 'ksk-ruta-card--baja' %}
-                    {% set score_class = 'ksk-ruta-score--fail' %}
-                    {% set status_class = 'ksk-ruta-status--fail' %}
+                    {% set card_class = 'ksk-ruta-card--fallida' %}
                     {% set status_icon = 'ph-x-circle' %}
-                    {% set status_text = 'Por mejorar' %}
                 {% endif %}
 
-                {% if info.data_quality == 'LOW' %}{% set card_class = card_class + ' ksk-ruta-card--baja' %}{% endif %}
-
                 <a href="{{ url_for('kiosko.intento', attempt_id=info.attempt_id) }}"
-                   class="ksk-ruta-card {{ card_class }}">
-
-                    {% if info.audit %}
-                    <span class="ksk-ruta-badge ksk-ruta-badge--audit">
-                        <i class="ph ph-scales"></i> Auditoría
-                    </span>
-                    {% elif info.data_quality == 'LOW' %}
-                    <span class="ksk-ruta-badge ksk-ruta-badge--lq">
-                        <i class="ph ph-warning"></i> LQ
-                    </span>
-                    {% endif %}
-
-                    <span class="ksk-ruta-id">{{ ruta.id }}</span>
+                   class="ksk-ruta-card {{ card_class }}"
+                   data-completada="true"
+                   data-ruta-id="{{ ruta.id }}">
+                    <div class="ksk-ruta-header">
+                        <span class="ksk-ruta-id">{{ ruta.id }}</span>
+                        <i class="ph {{ status_icon }} ksk-ruta-status-icon"></i>
+                    </div>
                     <span class="ksk-ruta-label">{{ ruta.label }}</span>
-                    <span class="ksk-ruta-score {{ score_class }}">{{ "%.1f"|format(info.nota) }}</span>
-                    <span class="ksk-ruta-status {{ status_class }}">
-                        <i class="ph {{ status_icon }}"></i> {{ status_text }}
-                    </span>
+                    <div class="ksk-ruta-nav-hint">
+                        <i class="ph ph-map-trifold"></i> Ver Mapa
+                    </div>
                 </a>
-
             {% else %}
-                <div class="ksk-ruta-card ksk-ruta-card--pendiente">
-                    <span class="ksk-ruta-id">{{ ruta.id }}</span>
+                <a href="{{ url_for('kiosko.ruta_detalle', ruta_id=ruta.id, plaza=candidato.plaza, convocatoria=convocatoria.id) }}"
+                   class="ksk-ruta-card ksk-ruta-card--pendiente">
+                    <div class="ksk-ruta-header">
+                        <span class="ksk-ruta-id">{{ ruta.id }}</span>
+                        <i class="ph ph-clock ksk-ruta-status-icon"></i>
+                    </div>
                     <span class="ksk-ruta-label">{{ ruta.label }}</span>
-                    <span class="ksk-ruta-score" style="color:#1e3a5f; font-size:24px">— / 10</span>
-                    <span class="ksk-ruta-status ksk-ruta-status--pend">
-                        <i class="ph ph-clock"></i> Pendiente
-                    </span>
-                </div>
+                    <div class="ksk-ruta-nav-hint">
+                        <i class="ph ph-map-trifold"></i> Ver Mapa
+                    </div>
+                </a>
             {% endif %}
 
             {% endfor %}
         </div>
-
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.ksk-ruta-card[data-completada="true"]');
+        const modal = document.getElementById('ksk-modal-warn');
+        const btnConfirm = document.getElementById('ksk-modal-confirm');
+        const btnCancel = document.getElementById('ksk-modal-cancel');
+        let pendingUrl = null;
+
+        cards.forEach(card => {
+            card.addEventListener('click', function(e) {
+                e.preventDefault();
+                pendingUrl = this.href;
+                modal.removeAttribute('hidden');
+            });
+        });
+
+        btnConfirm.addEventListener('click', () => {
+            if (pendingUrl) window.location.href = pendingUrl;
+        });
+
+        btnCancel.addEventListener('click', () => {
+            modal.setAttribute('hidden', '');
+            pendingUrl = null;
+        });
+
+        // Cerrar al hacer click fuera del contenido
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.setAttribute('hidden', '');
+                pendingUrl = null;
+            }
+        });
+    });
+    </script>
+
+    <!-- Custom Modal -->
+    <div class="ksk-modal" id="ksk-modal-warn" hidden>
+        <div class="ksk-modal-overlay"></div>
+        <div class="ksk-modal-content">
+            <div class="ksk-modal-icon">
+                <i class="ph ph-warning-circle"></i>
+            </div>
+            <h3 class="ksk-modal-title">Circuito ya realizado</h3>
+            <p class="ksk-modal-text">
+                Este recorrido ya ha sido completado. ¿Deseas volver a entrar para consultar el mapa de navegación?
+            </p>
+            <div class="ksk-modal-actions">
+                <button class="ksk-modal-btn ksk-modal-btn--cancel" id="ksk-modal-cancel">CANCELAR</button>
+                <button class="ksk-modal-btn ksk-modal-btn--confirm" id="ksk-modal-confirm">CONTINUAR</button>
+            </div>
+        </div>
+    </div>
+   </div>
 
     <!-- Persistent status bar -->
     <div class="ksk-statusbar">
@@ -151,7 +178,7 @@
     var idleWarn = document.getElementById('ksk-idle-warn');
     var idleTxt = document.getElementById('ksk-idle-txt');
     var idleSep = document.getElementById('ksk-idle-sep');
-    var LOGOUT_URL = '{{ url_for("kiosko.login") }}';
+    var LOGOUT_URL = '{{ url_for("auth.logout") }}';
     var IDLE_TIMEOUT = 5 * 60 * 1000;   // 5 min → cierre automático
     var WARN_AT = 60 * 1000;            // aviso cuando queda 1 min
 

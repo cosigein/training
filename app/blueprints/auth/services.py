@@ -23,8 +23,9 @@ class AuthService:
         return access_token, refresh_token
 
     @staticmethod
-    def create_access_token(user_id):
-        return create_access_token(identity=user_id)
+    def create_access_token(identity):
+        return create_access_token(identity=identity)
+
 
     @staticmethod
     def register_user(email, password, name, role="VIEWER"):

@@ -20,17 +20,13 @@
 
 <!-- Header fino -->
 <header class="ksk-intento-header">
-    <a href="{{ url_for('kiosko.rutas', plaza=candidato.plaza) }}"
+    <a href="{{ url_for('kiosko.rutas', plaza=candidato.plaza, convocatoria=convocatoria.id) }}"
        class="ksk-intento-back" aria-label="Volver a mis recorridos">
         <i class="ph ph-arrow-left"></i>
     </a>
     <div class="ksk-intento-header__info">
         <span class="ksk-intento-header__ruta">{{ ruta.label if ruta else attempt_id }}</span>
-        <span class="ksk-intento-header__candidato">{{ candidato.nombre }} · Plaza #{{ candidato.plaza }}</span>
-    </div>
-    <div class="ksk-intento-header__score
-        {% if nota_info.nota >= 5 %}ksk-intento-header__score--pass{% else %}ksk-intento-header__score--fail{% endif %}">
-        {{ "%.1f"|format(nota_info.nota) }}
+        <span class="ksk-intento-header__candidato">{{ candidato.nombre }} · Plaza #{{ candidato.plaza }} · {{ convocatoria.nombre }}</span>
     </div>
 </header>
 
@@ -43,78 +39,12 @@
         <span id="ksk-map-msg">Cargando recorrido…</span>
     </div>
 
-    <!-- Overlay: score + badges (esquina superior derecha del mapa) -->
-    <div class="ksk-map-overlay-score">
-        <div class="ksk-map-score-badge
-            {% if nota_info.nota >= 5 %}ksk-map-score-badge--pass{% else %}ksk-map-score-badge--fail{% endif %}">
-            <span class="ksk-map-score-badge__num">{{ "%.1f"|format(nota_info.nota) }}</span>
-            <span class="ksk-map-score-badge__label">/ 10</span>
-        </div>
-        {% if nota_info.data_quality != 'HIGH' %}
-        <div class="ksk-map-badge ksk-map-badge--lq">
-            <i class="ph ph-warning"></i> {{ nota_info.data_quality }}
-        </div>
-        {% endif %}
-        {% if auditoria %}
-        <div class="ksk-map-badge ksk-map-badge--audit">
-            <i class="ph ph-scales"></i> Auditoría
-        </div>
-        {% endif %}
-    </div>
 
-    <!-- Overlay: incidencias (esquina inferior izquierda del mapa) -->
-    {% if pedagogico and pedagogico.infracciones %}
-    <button class="ksk-map-incidents-pill" id="ksk-incidents-toggle" aria-expanded="false">
-        <i class="ph ph-warning-diamond"></i>
-        {{ pedagogico.infracciones|length }} incidencia{{ 's' if pedagogico.infracciones|length != 1 }}
-        <i class="ph ph-caret-up" id="ksk-incidents-caret"></i>
-    </button>
-    {% else %}
-    <div class="ksk-map-incidents-pill ksk-map-incidents-pill--ok">
-        <i class="ph ph-check-circle"></i> Sin incidencias
-    </div>
-    {% endif %}
 
 </div>
 
-<!-- Panel inferior compacto: desglose + incidencias expandibles -->
-<div class="ksk-intento-panel" id="ksk-panel">
-
-    <!-- Score breakdown: una línea por familia -->
-    <div class="ksk-panel-breakdown">
-        {% for item in score_breakdown %}
-        {% set pct = (item.obtenido / item.maximo * 100)|int %}
-        <div class="ksk-panel-breakdown__item">
-            <span class="ksk-panel-breakdown__familia">{{ item.familia }}</span>
-            <div class="ksk-panel-breakdown__bar">
-                <div class="ksk-panel-breakdown__fill" {{ {'style': 'width:' ~ pct ~ '%;'} | xmlattr }}></div>
-            </div>
-            <span class="ksk-panel-breakdown__val">{{ item.obtenido }}/{{ item.maximo }}</span>
-        </div>
-        {% endfor %}
-    </div>
-
-    <!-- Incidencias expandibles (ocultas por defecto) -->
-    {% if pedagogico and pedagogico.infracciones %}
-    <div class="ksk-panel-incidents" id="ksk-incidents-panel" hidden>
-        {% for inf in pedagogico.infracciones %}
-        <div class="ksk-panel-incident">
-            <span class="ksk-panel-incident__count">{{ inf.cantidad }}×</span>
-            <span class="ksk-panel-incident__tipo">{{ inf.tipo }}</span>
-            <span class="ksk-panel-incident__zona">
-                <i class="ph ph-map-pin"></i>{{ inf.zona }}
-            </span>
-            <span class="ksk-panel-incident__pts">−{{ inf.puntos }} pts</span>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    <!-- Botón volver grande (touch-friendly) -->
-    <a href="{{ url_for('kiosko.rutas', plaza=candidato.plaza) }}"
-       class="ksk-intento-volver">
-        <i class="ph ph-arrow-left"></i> Volver a mis recorridos
-    </a>
+<!-- Panel inferior oculto (sólo visor) -->
+<div class="ksk-intento-panel ksk-intento-panel--hidden" style="display:none">
 
 </div>
 
@@ -134,7 +64,7 @@
 
 <script>
 (function () {
-    var GPS_URL = '{{ url_for("kiosko.intento_gps", attempt_id=attempt_id) }}';
+    var GPS_URL = '{% if attempt_id %}{{ url_for("kiosko.intento_gps", attempt_id=attempt_id) }}{% endif %}';
 
     // ── Clock ─────────────────────────────────────────────────────────
     var clockEl = document.getElementById('ksk-clock');
@@ -222,18 +152,23 @@
             maxZoom: 19,
         }).addTo(map);
 
+        if (!GPS_URL) {
+            if (placeholder) placeholder.style.display = 'none';
+            map.setView([40.4168, -3.7038], 13);
+            return;
+        }
+
         fetch(GPS_URL)
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 var points = data.points || [];
 
+                if (placeholder) placeholder.style.display = 'none';
+
                 if (points.length === 0) {
-                    if (mapMsg) mapMsg.textContent = 'Datos GPS no disponibles — hardware pendiente de sincronización';
                     map.setView([40.4168, -3.7038], 13);
                     return;
                 }
-
-                if (placeholder) placeholder.style.display = 'none';
 
                 var latlngs = points.map(function (p) { return [p.lat, p.lng]; });
 

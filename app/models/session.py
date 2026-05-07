@@ -93,6 +93,10 @@ class Attempt(db.Model):
     createdAt = db.Column(db.DateTime, default=datetime.utcnow)
     updatedAt = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    def __init__(self, **kwargs):
+        super(Attempt, self).__init__(**kwargs)
+
+
     @property
     def distance(self):
         return self.matcheddistance or 0.0

@@ -25,8 +25,9 @@ from app.models.session import GpsMeasurement
 # ── VISTAS (UI pública del kiosko) ──────────────────────────────────────────
 
 @kiosko_bp.route("/")
-def login():
-    return render_template("kiosko/login.html")
+def index():
+    """El kiosko ya no tiene login propio; redirige al login principal."""
+    return redirect(url_for("auth.login"))
 
 
 @kiosko_bp.route("/entrar", methods=["POST"])
@@ -38,14 +39,15 @@ def entrar():
 @kiosko_bp.route("/rutas")
 def rutas():
     plaza = (request.args.get("plaza") or "").strip()
-    resolved = resolve_enrollment_by_plaza(plaza)
+    conv_id = request.args.get("convocatoria")
+    resolved = resolve_enrollment_by_plaza(plaza, conv_id=conv_id)
     if not resolved:
-        return redirect(url_for("kiosko.login"))
+        return redirect(url_for("auth.login"))
 
     enrollment, conv, org = resolved
     ctx = get_student_dashboard(enrollment.studentId, org.id, conv.id)
     if not ctx:
-        return redirect(url_for("kiosko.login"))
+        return redirect(url_for("auth.login"))
 
     return render_template(
         "kiosko/rutas.html",
@@ -60,11 +62,11 @@ def rutas():
 def intento(attempt_id):
     resolved = resolve_attempt_view(attempt_id)
     if not resolved:
-        return redirect(url_for("kiosko.login"))
+        return redirect(url_for("auth.login"))
 
     attempt, org = resolved
     if not attempt.studentId:
-        return redirect(url_for("kiosko.login"))
+        return redirect(url_for("auth.login"))
 
     ctx = get_student_intento(attempt_id, attempt.studentId, org.id)
     if not ctx:
@@ -81,6 +83,30 @@ def intento(attempt_id):
         auditoria=ctx["auditoria"],
         convocatoria=ctx["convocatoria"],
     )
+
+
+@kiosko_bp.route("/ruta/<ruta_id>")
+def ruta_detalle(ruta_id):
+    """Vista de una ruta sin intento asociado (o info general)."""
+    plaza = (request.args.get("plaza") or "").strip()
+    conv_id = request.args.get("convocatoria")
+    resolved = resolve_enrollment_by_plaza(plaza, conv_id=conv_id)
+    if not resolved:
+        return redirect(url_for("auth.login"))
+
+    enrollment, conv, org = resolved
+    # Aquí podríamos buscar una ruta 'ideal' o simplemente mostrar que está pendiente
+    # Por ahora, simulamos un contexto mínimo para no romper el layout
+    ctx = {
+        "candidato": {"nombre": enrollment.student.name, "plaza": plaza},
+        "convocatoria": {"id": conv.id, "nombre": conv.name},
+        "ruta": {"id": ruta_id, "label": ruta_id},
+        "nota_info": {"nota": 0.0, "data_quality": "N/A", "fecha": "Pendiente", "hora": ""},
+        "score_breakdown": [],
+        "pedagogico": None,
+        "auditoria": None,
+    }
+    return render_template("kiosko/intento.html", **ctx, attempt_id=None)
 
 
 # ── API (TELEMETRÍA HARDWARE) ───────────────────────────────────────────────

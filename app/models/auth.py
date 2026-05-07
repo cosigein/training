@@ -33,6 +33,9 @@ class Organization(db.Model):
     createdAt = db.Column(db.DateTime, default=datetime.utcnow)
     updatedAt = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    def __init__(self, **kwargs):
+        super(Organization, self).__init__(**kwargs)
+    
     # Relationships
     config = db.relationship("OrganizationConfig", back_populates="organization", uselist=False)
     users = db.relationship("User", back_populates="organization")
@@ -59,6 +62,9 @@ class OrganizationConfig(db.Model):
     createdAt = db.Column(db.DateTime, default=datetime.utcnow)
     updatedAt = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    def __init__(self, **kwargs):
+        super(OrganizationConfig, self).__init__(**kwargs)
+    
     organization = db.relationship("Organization", back_populates="config")
 
 class User(db.Model, UserMixin):
@@ -84,6 +90,9 @@ class User(db.Model, UserMixin):
     createdAt = db.Column(db.DateTime, default=datetime.utcnow)
     updatedAt = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    def __init__(self, **kwargs):
+        super(User, self).__init__(**kwargs)
+    
     organization = db.relationship("Organization", back_populates="users")
     config = db.relationship("UserConfig", back_populates="user", uselist=False)
     instructed_drivers = db.relationship("Driver", back_populates="instructor")
@@ -104,6 +113,9 @@ class UserConfig(db.Model):
     timezone = db.Column(db.String, default="UTC")
     createdAt = db.Column(db.DateTime, default=datetime.utcnow)
     updatedAt = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __init__(self, **kwargs):
+        super(UserConfig, self).__init__(**kwargs)
     
     user = db.relationship("User", back_populates="config")
 
@@ -148,6 +160,9 @@ class Driver(db.Model):
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __init__(self, **kwargs):
+        super(Driver, self).__init__(**kwargs)
     
     organization = db.relationship("Organization", back_populates="drivers")
     instructor = db.relationship("User", back_populates="instructed_drivers")

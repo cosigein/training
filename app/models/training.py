@@ -331,6 +331,9 @@ class TrainingAuditLog(db.Model):
 
     createdAt = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
+    def __init__(self, **kwargs):
+        super(TrainingAuditLog, self).__init__(**kwargs)
+
     __table_args__ = (
         db.Index("ix_traininglog_actor", "actorId"),
         db.Index("ix_traininglog_action_ts", "action", "createdAt"),
@@ -363,6 +366,10 @@ class RfidCard(db.Model):
 
     createdAt = db.Column(db.DateTime, default=datetime.utcnow)
     updatedAt = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __init__(self, **kwargs):
+        super(RfidCard, self).__init__(**kwargs)
+
 
     __table_args__ = (
         db.Index(

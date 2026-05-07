@@ -158,7 +158,7 @@
         .login-form-sub {
             font-size: 13px;
             color: #64748b;
-            margin: 0 0 28px;
+            margin: 0 0 20px;
         }
 
         /* ── FLASH MESSAGES ──────────────────────────────────── */
@@ -183,7 +183,7 @@
         .flash-item i { font-size: 18px; }
 
         /* ── FORM ────────────────────────────────────────────── */
-        .form-group { margin-bottom: 18px; }
+        .form-group { margin-bottom: 14px; }
 
         .form-label {
             display: block;
@@ -281,7 +281,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            margin: 20px 0;
+            margin: 14px 0;
             color: #cbd5e1;
             font-size: 12px;
             font-weight: 600;
@@ -294,33 +294,84 @@
             background: #e2e8f0;
         }
 
-        /* ── RFID BUTTON ─────────────────────────────────────── */
-        .btn-rfid {
+        /* ── RFID ZONE ───────────────────────────────────────── */
+        .rfid-zone {
+            background: #fff;
+            border: 2px solid #e2e8f0;
+            width: 100%;
+            padding: 24px 20px;
+            border-radius: 16px;
+            text-align: center;
+            transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .rfid-zone:hover {
+            border-color: #0d47a1;
+            background: #f8fafc;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px -5px rgba(13, 71, 161, 0.1);
+        }
+
+        .rfid-zone:active {
+            transform: translateY(0);
+        }
+
+        .rfid-icon-wrap {
+            position: relative;
+            width: 52px;
+            height: 52px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            width: 100%;
-            padding: 12px;
-            background: #f8fafc;
-            color: #64748b;
-            border: 1.5px dashed #cbd5e1;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: not-allowed;
-            opacity: 0.6;
-            font-family: var(--font-body);
+            background: #f1f5f9;
+            border-radius: 50%;
+            color: #0d47a1;
+            font-size: 32px;
+            transition: all 300ms ease;
         }
-        .btn-rfid i { font-size: 20px; color: #94a3b8; }
+
+        .rfid-zone:hover .rfid-icon-wrap {
+            background: #0d47a1;
+            color: #fff;
+            transform: scale(1.1);
+        }
+
+        .rfid-title {
+            font-family: var(--font-heading);
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        .rfid-sub {
+            font-size: 12px;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .rfid-zone--loading {
+            pointer-events: none;
+            opacity: 0.8;
+            border-color: #0d47a1;
+            background: #f8fafc;
+        }
 
         /* ── FOOTER ──────────────────────────────────────────── */
         .login-footer {
-            margin-top: 24px;
+            margin-top: 16px;
             font-size: 11px;
             color: #94a3b8;
             text-align: center;
-            line-height: 1.6;
+            line-height: 1.4;
         }
 
         /* ── ANIMATED TRUCK ──────────────────────────────────── */
@@ -336,6 +387,11 @@
             from { opacity: 0.4; }
             to { opacity: 1; }
         }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spin { animation: spin 1s linear infinite; display: inline-block; }
 
         .truck-svg {
             width: 100%;
@@ -484,11 +540,42 @@
 
             <div class="login-divider">O</div>
 
-            <button type="button" class="btn-rfid" disabled title="Próximamente">
-                <i class="ph ph-identification-card"></i>
-                Acercar tarjeta RFID
-                <span style="font-size:11px; opacity:.6;">(próximamente)</span>
-            </button>
+            <form id="rfid-form" action="{{ url_for('auth.login_rfid') }}" method="POST" style="display:none;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="rfid_uid" id="rfid-uid-input">
+            </form>
+
+            <div class="rfid-zone" id="btn-rfid" onclick="simulateRfid('RFID_DEMO_CARD')">
+                <div class="rfid-icon-wrap">
+                    <i class="ph ph-identification-card"></i>
+                </div>
+                <p class="rfid-title">Acercar tarjeta RFID</p>
+                <p class="rfid-sub">Apoye su tarjeta física sobre el lector</p>
+            </div>
+
+            <!-- Zona DEBUG -->
+            <div style="margin-top: 16px; padding: 12px; border: 1.5px dashed #f59e0b; background: #fffbeb; border-radius: 10px; text-align: center;">
+                <p style="font-size: 10px; font-weight: 800; color: #b45309; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 1px;">
+                    <i class="ph ph-bug"></i> Modo DEBUG
+                </p>
+                {% if debug_students %}
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <select id="debug-student-selector" style="width: 100%; font-size: 11px; padding: 7px; border: 1.2px solid #f59e0b; border-radius: 6px; background: #fff; outline: none; font-family: var(--font-body); color: #92400e;">
+                        <option value="">Seleccionar Alumno (Kiosko)...</option>
+                        {% for s in debug_students %}
+                        <option value="{{ s.rfid_uid }}">{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" onclick="const uid = document.getElementById('debug-student-selector').value; if(uid) simulateRfid(uid); else alert('Por favor, selecciona un alumno primero');" 
+                            style="width: 100%; font-size: 11px; padding: 8px; background: #f59e0b; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; transition: all 150ms ease; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="ph ph-fingerprint"></i> Simular Tap Seleccionado
+                    </button>
+                </div>
+                {% else %}
+                <p style="font-size: 10px; color: #b45309;">No hay alumnos con RFID activos.</p>
+                {% endif %}
+            </div>
+
 
             <p class="login-footer">
                 Acceso restringido a personal autorizado de CMadrid.<br>
@@ -518,6 +605,27 @@
         btn.innerHTML = '<span style="opacity:.85">Verificando...</span>';
         btn.classList.add('btn-loading');
     });
+
+    // RFID simulation
+    function simulateRfid(uid) {
+        const zone = document.getElementById('btn-rfid');
+        const icon = zone.querySelector('.rfid-icon-wrap i');
+        const title = zone.querySelector('.rfid-title');
+        const sub = zone.querySelector('.rfid-sub');
+        const pulse = zone.querySelector('.rfid-pulse');
+        
+        document.getElementById('rfid-uid-input').value = uid;
+        
+        zone.classList.add('rfid-zone--loading');
+        icon.className = 'ph ph-arrows-clockwise spin';
+        title.textContent = 'Leyendo tarjeta...';
+        sub.textContent = 'Por favor, no retire su tarjeta';
+        
+        // Simular tiempo de lectura
+        setTimeout(() => {
+            document.getElementById('rfid-form').submit();
+        }, 800);
+    }
 </script>
 
 </body>
