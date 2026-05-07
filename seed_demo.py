@@ -12,7 +12,6 @@ Crea (en orden):
 - ~30-35 Attempts CLOSED actuales con score 3.0-9.6 y dataQuality HIGH/MEDIUM/LOW
 - 5 Attempts "anteriores" para 5 alumnos (alimenta evolución/historial con tendencias)
 - AttemptEvents correlacionados con la nota de cada attempt (frenadas, exceso vel., etc.)
-- 5 AuditRequests (3 PENDING/REVIEWING + 1 CONFIRMED + 1 REJECTED)
 - 2 Ranking snapshots PROVISIONAL para 2026-A (hoy + hace 3 días)
 - TrainingAuditLog entries por cada acción (convocatoria, enrollment, attempt, score, ranking)
 
@@ -42,8 +41,6 @@ from app.models.training import (
     RankingStatus,
     TrainingAuditLog,
     AuditAction,
-    AuditRequest,
-    AuditStatus,
     RfidCard,
 )
 from setup_db import get_or_create_user
@@ -476,89 +473,6 @@ def seed_previous_attempts(org, vehicle):
     return n_attempts, n_events
 
 
-def seed_audit_requests(org, conv):
-    """Crea 5 AuditRequests demo con mix de estados (idempotente)."""
-    attempts = (
-        Attempt.query
-        .filter_by(convocatoriaId=conv.id, organizationId=org.id)
-        .filter(Attempt.score.isnot(None), Attempt.studentId.isnot(None))
-        .order_by(Attempt.endTime)
-        .limit(5)
-        .all()
-    )
-    if len(attempts) < 5:
-        attempts = attempts + attempts  # fallback si faltan; el for corta antes
-    if not attempts:
-        return 0
-
-    manager = User.query.filter_by(email="manager@cmadrid.com").first()
-    now = datetime.utcnow()
-
-    scenarios = [
-        # PENDING — alumno acaba de pedir revisión
-        {
-            "reason": "El sistema registró una frenada brusca que no ocurrió. Solicito revisión de los datos del sensor durante el tramo final del recorrido.",
-            "status": AuditStatus.PENDING,
-            "resolution": None,
-            "reviewed_at": None,
-            "reviewed_by": None,
-        },
-        # REVIEWING — manager está revisando
-        {
-            "reason": "El vehículo presentó una falla mecánica en el tramo de curva pronunciada que afectó mi puntuación. Adjunto informe del técnico.",
-            "status": AuditStatus.REVIEWING,
-            "resolution": None,
-            "reviewed_at": now - timedelta(hours=8),
-            "reviewed_by": manager.id if manager else None,
-        },
-        # PENDING — segunda solicitud
-        {
-            "reason": "La nota no refleja mi desempeño real. El GPS perdió señal en el tramo interior y eso penalizó mi velocidad incorrectamente.",
-            "status": AuditStatus.PENDING,
-            "resolution": None,
-            "reviewed_at": None,
-            "reviewed_by": None,
-        },
-        # CONFIRMED — el manager confirmó la nota original (rechazó la auditoría argumentando)
-        {
-            "reason": "Considero que la frenada detectada fue producto de un peatón que cruzó inesperadamente. Solicito revisión.",
-            "status": AuditStatus.CONFIRMED,
-            "resolution": "Revisados los datos del Doback Elite: la frenada se detectó 8s antes del cruce del peatón. La nota original es correcta.",
-            "reviewed_at": now - timedelta(days=2),
-            "reviewed_by": manager.id if manager else None,
-        },
-        # REJECTED — auditoría sin mérito
-        {
-            "reason": "La nota es muy baja, no estoy de acuerdo y solicito que la revisen porque creo que hay un error en el sistema.",
-            "status": AuditStatus.REJECTED,
-            "resolution": "La justificación no aporta indicios de error de medición. Datos del sensor consistentes con la nota.",
-            "reviewed_at": now - timedelta(days=1, hours=4),
-            "reviewed_by": manager.id if manager else None,
-        },
-    ]
-
-    count = 0
-    for attempt, scenario in zip(attempts, scenarios):
-        existing = AuditRequest.query.filter_by(
-            originalAttemptId=attempt.id,
-            organizationId=org.id,
-        ).first()
-        if existing:
-            continue
-        ar = AuditRequest(
-            organizationId=org.id,
-            originalAttemptId=attempt.id,
-            enrollmentId=attempt.enrollmentId,
-            requestedBy=attempt.studentId,
-            reason=scenario["reason"],
-            status=scenario["status"],
-            reviewedBy=scenario["reviewed_by"],
-            reviewedAt=scenario["reviewed_at"],
-            resolution=scenario["resolution"],
-        )
-        db.session.add(ar)
-        count += 1
-    return count
 
 
 def seed_ranking_snapshots(org, conv):
@@ -758,10 +672,6 @@ def seed_demo_data():
         print(f"   → {n_prev} attempts anteriores, {ev_prev} eventos.")
         db.session.commit()
 
-        print("📝 Sembrando auditorías demo...")
-        n_audit = seed_audit_requests(org, conv_a)
-        print(f"   → {n_audit} auditorías creadas (o ya existían).")
-        db.session.commit()
 
         print("📊 Sembrando ranking snapshots PROVISIONAL...")
         n_rank = seed_ranking_snapshots(org, conv_a)
@@ -779,7 +689,6 @@ def seed_demo_data():
         print()
         print("🎉 Seed demo listo:")
         print(f"   · {total_attempts} attempts (con {total_events} eventos)")
-        print(f"   · {n_audit} auditorías (mix PENDING/REVIEWING/CONFIRMED/REJECTED)")
         print(f"   · {n_rank} filas de ranking")
         print(f"   · {n_log} entradas de audit log")
         print(f"   · {n_rfid_a + n_rfid_b} tarjetas RFID")

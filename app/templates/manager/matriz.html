@@ -96,9 +96,6 @@
     <span class="mgr-legend__item">
         <span class="mgr-matrix-badge mgr-matrix-badge--fail">3.2</span> Suspenso
     </span>
-    <!-- <span class="mgr-legend__item">
-        <span class="mgr-matrix-badge mgr-matrix-badge--audit">6.5 <i class="ph ph-scales" style="font-size:9px"></i></span> Auditoría pendiente
-    </span> -->
     <span class="mgr-legend__item">
         <span class="mgr-matrix-badge mgr-matrix-badge--pending">—</span> Pendiente
     </span>
@@ -150,9 +147,7 @@
             {% set info = c.notas.get(circ.id) %}
             <td title="{{ circ.label }}: {% if info %}{{ '%.1f'|format(info.nota) }}{% else %}Pendiente{% endif %}">
                 {% if info %}
-                    {% if false and info.audit %}
-                        {% set badge_class = 'mgr-matrix-badge--audit' %}
-                    {% elif info.nota < 5 %}
+                    {% if info.nota < 5 %}
                         {% set badge_class = 'mgr-matrix-badge--fail' %}
                     {% else %}
                         {% set badge_class = 'mgr-matrix-badge--high' %}
@@ -160,7 +155,6 @@
                     <a href="{{ url_for('manager.intento_detalle', attempt_id=info.attempt_id) }}"
                        class="mgr-matrix-badge {{ badge_class }}">
                         {{ "%.1f"|format(info.nota) }}
-                        <!-- {% if info.audit %}<i class="ph ph-scales" style="font-size:9px; margin-left:2px;"></i>{% endif %} -->
                     </a>
                 {% else %}
                     <span class="mgr-matrix-badge mgr-matrix-badge--pending">—</span>

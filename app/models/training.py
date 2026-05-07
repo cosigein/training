@@ -305,9 +305,6 @@ class TrainingAuditLog(db.Model):
     """
     Audit trail inmutable de acciones críticas del dominio Training.
 
-    NO confundir con el modelo legacy `AuditLog` (`app/models/audit.py`), que
-    tiene un dominio distinto (decisiones de calidad de datos).
-
     Invariantes (PDF §8.5):
     - Insert-only — sin UPDATE ni DELETE.
     - Si el INSERT falla, la acción que se quería auditar también debe fallar
@@ -384,59 +381,7 @@ class RfidCard(db.Model):
     student = db.relationship("User", foreign_keys=[assignedTo])
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# AuditRequest — solicitud formal de auditoría de un intento (PDF §8, T12)
-# ─────────────────────────────────────────────────────────────────────────────
 
-class AuditStatus(Enum):
-    PENDING = "PENDING"           # Recibida, sin revisar
-    REVIEWING = "REVIEWING"       # Manager la está revisando
-    CONFIRMED = "CONFIRMED"       # Auditoría confirma el resultado original
-    REEVALUATED = "REEVALUATED"   # Se generó un nuevo attempt
-    REJECTED = "REJECTED"         # Solicitud sin mérito
-
-
-class AuditRequest(db.Model):
-    """
-    Solicitud formal de revisión de un Attempt. La genera el alumno (o el admin)
-    cuando considera que el score calculado tiene un error.
-
-    Invariantes:
-    - `reason` debe tener al menos 30 caracteres.
-    - Insert-only en cuanto a `originalAttemptId` y `enrollmentId`.
-    - `resolution` se rellena al pasar a CONFIRMED / REEVALUATED / REJECTED.
-    """
-    __tablename__ = "AuditRequest"
-
-    id = db.Column(db.String, primary_key=True, server_default=text("gen_random_uuid()"))
-    organizationId = db.Column(db.String, db.ForeignKey("Organization.id", ondelete="CASCADE"), nullable=False)
-
-    originalAttemptId = db.Column(db.String, db.ForeignKey("Attempt.id", ondelete="SET NULL"))
-    enrollmentId = db.Column(db.String, db.ForeignKey("Enrollment.id", ondelete="SET NULL"))
-    requestedBy = db.Column(db.String, db.ForeignKey("User.id", ondelete="SET NULL"))  # alumno o admin
-
-    reason = db.Column(db.Text, nullable=False)              # ≥30 chars
-    status = db.Column(db.Enum(AuditStatus), default=AuditStatus.PENDING, nullable=False)
-
-    reviewedBy = db.Column(db.String, db.ForeignKey("User.id", ondelete="SET NULL"))
-    reviewedAt = db.Column(db.DateTime)
-    resolution = db.Column(db.Text)
-
-    filedAfterClose = db.Column(db.Boolean, default=False)   # si se presentó tras cierre de conv
-
-    createdAt = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updatedAt = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    __table_args__ = (
-        db.Index("ix_auditrequest_org_status", "organizationId", "status"),
-        db.Index("ix_auditrequest_attempt", "originalAttemptId"),
-        db.Index("ix_auditrequest_enrollment", "enrollmentId"),
-    )
-
-    original_attempt = db.relationship("Attempt", foreign_keys=[originalAttemptId])
-    enrollment = db.relationship("Enrollment", foreign_keys=[enrollmentId])
-    requester = db.relationship("User", foreign_keys=[requestedBy])
-    reviewer = db.relationship("User", foreign_keys=[reviewedBy])
 
 
 # ─────────────────────────────────────────────────────────────────────────────

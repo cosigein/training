@@ -16,7 +16,7 @@
 {# ── KPI cards ─────────────────────────────────────────────────────────────── #}
 {% set active_count = convocatorias | selectattr('status', 'in', ['OPEN', 'CLOSING']) | list | length %}
 
-<div class="adm-grid-4">
+<div class="adm-grid-3">
     <div class="adm-kpi-card">
         <div class="adm-kpi-card__label">Convocatorias Activas</div>
         <div class="adm-kpi-card__value">{{ active_count }}</div>
@@ -24,10 +24,6 @@
     <div class="adm-kpi-card" style="border-left-color: #64748b;">
         <div class="adm-kpi-card__label">Candidatos Totales</div>
         <div class="adm-kpi-card__value">{{ stats.candidatos_total }}</div>
-    </div>
-    <div class="adm-kpi-card {% if stats.auditorias_pendientes > 0 %}adm-kpi-card--danger{% else %}adm-kpi-card--amber{% endif %}">
-        <div class="adm-kpi-card__label">Auditorías Pendientes</div>
-        <div class="adm-kpi-card__value">{{ stats.auditorias_pendientes }}</div>
     </div>
     <div class="adm-kpi-card adm-kpi-card--success">
         <div class="adm-kpi-card__label">Kioskos Online</div>
@@ -55,9 +51,6 @@
                         </div>
                         <div class="adm-conv-row__meta">
                             {{ conv.plazas }} plazas · {{ conv.candidatos }} candidatos · {{ conv.cierre }}
-                            {% if conv.auditoria_pendientes > 0 %}
-                            · <span style="color: #dc2626; font-weight: 600;">{{ conv.auditoria_pendientes }} auditorías</span>
-                            {% endif %}
                         </div>
                     </div>
                     <div class="adm-conv-row__actions">
@@ -114,16 +107,6 @@
 
 </div>
 
-{# ── Auditorías pendientes alert ───────────────────────────────────────────── #}
-{% if stats.auditorias_pendientes > 0 %}
-<div class="adm-alert adm-alert--danger">
-    <i class="ph ph-warning" style="font-size: 1.2rem;"></i>
-    <div>
-        Hay <strong>{{ stats.auditorias_pendientes }}</strong> solicitudes de auditoría pendientes de revisión.
-        <a href="{{ url_for('manager.auditoria_list') }}" style="color: inherit; font-weight: 700; margin-left: 8px;">Revisar →</a>
-    </div>
-</div>
-{% endif %}
 
 {% endblock %}
 

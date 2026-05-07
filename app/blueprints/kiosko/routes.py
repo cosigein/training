@@ -80,7 +80,6 @@ def intento(attempt_id):
         attempt_id=attempt_id,
         score_breakdown=ctx["score_breakdown"],
         pedagogico=ctx["pedagogico"],
-        auditoria=ctx["auditoria"],
         convocatoria=ctx["convocatoria"],
     )
 
@@ -104,7 +103,6 @@ def ruta_detalle(ruta_id):
         "nota_info": {"nota": 0.0, "data_quality": "N/A", "fecha": "Pendiente", "hora": ""},
         "score_breakdown": [],
         "pedagogico": None,
-        "auditoria": None,
     }
     return render_template("kiosko/intento.html", **ctx, attempt_id=None)
 

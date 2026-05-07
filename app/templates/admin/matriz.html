@@ -116,7 +116,7 @@
             { pos: 6,  convId: "conv-a-2026", convName: "CM-2026-A", nombre: "Elena Jiménez Torres",          nota: 7.43, estado: "fail",    rutas: ["pass","pass","pass","pass","fail","fail"] },
             { pos: 7,  convId: "conv-a-2026", convName: "CM-2026-A", nombre: "Francisco Morales Vega",        nota: 6.91, estado: "fail",    rutas: ["pass","pass","pass","empty","pass","pass"] },
             { pos: 8,  convId: "conv-a-2026", convName: "CM-2026-A", nombre: "Carmen López Blanco",           nota: 6.77, estado: "pending", rutas: ["pass","pass","pending","pass","pass","empty"] },
-            { pos: 9,  convId: "conv-a-2026", convName: "CM-2026-A", nombre: "Javier Herrero Ortega",         nota: 6.54, estado: "pending", rutas: ["pass","audit","pass","pass","empty","empty"] },
+            { pos: 9,  convId: "conv-a-2026", convName: "CM-2026-A", nombre: "Javier Herrero Ortega",         nota: 6.54, estado: "pending", rutas: ["pass","pass","pass","pass","empty","empty"] },
             { pos: 3,  convId: "conv-b-2026", convName: "CM-2026-B", nombre: "Miguel Ángel Ruiz",             nota: 6.20, estado: "pending", rutas: ["pass","pending","empty","empty","empty","empty"] },
             { pos: 10, convId: "conv-a-2026", convName: "CM-2026-A", nombre: "Isabel Navarro Cid",            nota: 0,    estado: "empty",   rutas: ["empty","empty","empty","empty","empty","empty"] },
         ]
@@ -128,7 +128,6 @@
             fail:    '<td class="adm-mat-cell adm-mat-cell--fail" title="No apto"><i class="ph ph-x-circle"></i></td>',
             pending: '<td class="adm-mat-cell adm-mat-cell--pending" title="En progreso"><i class="ph ph-clock"></i></td>',
             empty:   '<td class="adm-mat-cell adm-mat-cell--empty" title="Sin intentos">—</td>',
-            audit:   '<td class="adm-mat-cell adm-mat-cell--audit" title="Auditoría pendiente"><i class="ph ph-magnifying-glass"></i></td>',
         };
         return map[estado] || map.empty;
     }
@@ -232,7 +231,6 @@
 .adm-mat-cell--fail    { color: var(--adm-danger);  background: #fef2f2; }
 .adm-mat-cell--pending { color: #d97706;             background: #fffbeb; }
 .adm-mat-cell--empty   { color: var(--adm-text-muted); background: #f8fafc; font-size: 0.8rem; }
-.adm-mat-cell--audit   { color: #6366f1;             background: #eef2ff; }
 
 .adm-mat-legend {
     display: inline-flex;
@@ -247,6 +245,5 @@
 .adm-mat-legend--fail    { background: #fef2f2; color: var(--adm-danger);  border: 1px solid #fecaca; }
 .adm-mat-legend--pending { background: #fffbeb; color: #d97706;             border: 1px solid #fde68a; }
 .adm-mat-legend--empty   { background: #f8fafc; color: var(--adm-text-muted); border: 1px solid var(--adm-border); }
-.adm-mat-legend--audit   { background: #eef2ff; color: #6366f1;             border: 1px solid #c7d2fe; }
 </style>
 {% endblock %}

@@ -8,8 +8,6 @@ from .student_service import (
     get_student_intento,
     get_student_historial,
     get_student_evolucion,
-    get_solicitar_auditoria_ctx,
-    submit_audit_request,
     get_active_enrollments_summary,
 )
 from . import student_bp
@@ -77,47 +75,9 @@ def intento(attempt_id):
     ctx = get_student_intento(attempt_id, user.id, user.organizationId)
     if not ctx:
         abort(404)
-    auditoria_solicitada = request.args.get("auditoria") == "solicitada"
     return render_template(
         "student/intento.html",
         active_page="dashboard",
         is_subpage=True,
-        auditoria_solicitada=auditoria_solicitada,
         **ctx,
-    )
-
-
-@student_bp.route("/intento/<string:attempt_id>/auditoria", methods=["GET", "POST"])
-@require_role(["STUDENT"])
-def solicitar_auditoria(attempt_id):
-    user = _current_user()
-    ctx = get_solicitar_auditoria_ctx(attempt_id, user.id, user.organizationId)
-    if not ctx:
-        abort(404)
-    if ctx.get("existing"):
-        return redirect(url_for("student.intento", attempt_id=attempt_id))
-
-    razon = ""
-    if request.method == "POST":
-        razon = (request.form.get("razon") or "").strip()
-    else:
-        razon = (request.args.get("razon") or "").strip()
-    error = None
-
-    if razon:
-        try:
-            submit_audit_request(attempt_id, user.id, user.organizationId, razon)
-            return redirect(
-                url_for("student.intento", attempt_id=attempt_id, auditoria="solicitada")
-            )
-        except ValueError as exc:
-            error = str(exc)
-
-    return render_template(
-        "student/solicitar_auditoria.html",
-        active_page="dashboard",
-        is_subpage=True,
-        razon_previa=razon,
-        error=error,
-        **{k: v for k, v in ctx.items() if k != "existing"},
     )

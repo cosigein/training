@@ -38,7 +38,6 @@
                     data-candidatos="{{ conv.candidatos }}"
                     data-completados="{{ conv.completados }}"
                     data-pendientes="{{ conv.pendientes }}"
-                    data-auditoria="{{ conv.auditoria_pendientes }}"
                     data-cierre="{{ conv.cierre }}"
                     {% if conv.iniciado_por is defined %}data-iniciado-por="{{ conv.iniciado_por }}"{% endif %}
                     {% if conv.iniciado_hace is defined %}data-iniciado-hace="{{ conv.iniciado_hace }}"{% endif %}
@@ -106,10 +105,6 @@
                         <span class="adm-status-row__value" id="preview-pendientes" style="color: var(--adm-danger);">—</span>
                     </div>
                     <div class="adm-status-row">
-                        <span class="adm-status-row__label">Auditorías pendientes</span>
-                        <span class="adm-status-row__value" id="preview-auditoria">—</span>
-                    </div>
-                    <div class="adm-status-row">
                         <span class="adm-status-row__label">Fecha de cierre prevista</span>
                         <span class="adm-status-row__value" id="preview-cierre">—</span>
                     </div>
@@ -172,14 +167,6 @@
 
         </div>
 
-        <div id="step1-audit-warning" style="display: none; margin-bottom: 16px;">
-            <div class="adm-alert adm-alert--danger">
-                <i class="ph ph-warning" style="font-size: 1.2rem; flex-shrink: 0;"></i>
-                <div>
-                    <strong>Hay auditorías pendientes.</strong> Se recomienda resolverlas antes de iniciar el cierre para garantizar la integridad del ranking provisional.
-                </div>
-            </div>
-        </div>
 
         <div style="display: flex; gap: 12px;">
             <button class="adm-btn" onclick="goToStep(2)">
@@ -433,7 +420,6 @@
             candidatos: opt.dataset.candidatos,
             completados: opt.dataset.completados,
             pendientes: opt.dataset.pendientes,
-            auditoria: opt.dataset.auditoria,
             cierre: opt.dataset.cierre,
             iniciadoPor: opt.dataset.iniciadoPor || null,
             iniciadoHace: opt.dataset.iniciadoHace || null,
@@ -446,11 +432,7 @@
         document.getElementById('preview-candidatos').textContent = currentConv.candidatos;
         document.getElementById('preview-completados').textContent = currentConv.completados;
         document.getElementById('preview-pendientes').textContent = currentConv.pendientes;
-        document.getElementById('preview-auditoria').textContent = currentConv.auditoria;
         document.getElementById('preview-cierre').textContent = currentConv.cierre;
-
-        const auditWarn = document.getElementById('step1-audit-warning');
-        auditWarn.style.display = parseInt(currentConv.auditoria) > 0 ? 'block' : 'none';
 
         // Hints de texto de confirmación
         document.getElementById('confirm-text-hint').textContent = 'INICIAR CIERRE ' + currentConv.name;

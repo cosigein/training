@@ -1,6 +1,6 @@
 """Manager portal — vistas para MANAGER y ADMIN.
 
-Lee de la BD real (queries SQLAlchemy) vía `ranking_service` y `audit_service`.
+Lee de la BD real (queries SQLAlchemy) vía `ranking_service`.
 """
 from datetime import datetime
 from flask import render_template, request, abort, redirect, url_for, flash, jsonify
@@ -40,14 +40,6 @@ from .ranking_service import (
     get_intento_detail,
     get_all_matrix_data,
 )
-from .audit_service import (
-    list_audit_requests,
-    get_audit_request,
-    update_audit_request,
-    create_audit_request,
-    count_pending,
-    AuditRequestError,
-)
 from flask_jwt_extended import get_jwt_identity
 from app.utils.decorators import require_role
 from . import manager_bp
@@ -69,48 +61,16 @@ def _load_convocatorias_dicts():
     return get_convocatorias(_get_org_id())
 
 
-def _load_auditorias_pendientes():
-    raw = list_audit_requests(_get_org_id(), status="PENDING")
-    result = []
-    for ar in raw:
-        fecha_hora = ar.get("createdAt", "")
-        parts = fecha_hora.split(" ")
-        attempt = ar.get("attempt") or {}
-        result.append({
-            "id": ar["id"],
-            "attempt_id": attempt.get("id", ""),
-            "candidato": ar.get("requester", "—"),
-            "ruta": attempt.get("routeId", "—"),
-            "nota": attempt.get("score") or 0,
-            "fecha_solicitud": parts[0] if parts else "—",
-            "hora_solicitud": parts[1] if len(parts) > 1 else "—",
-            "status": ar.get("status", "PENDING"),
-        })
-    return result
-
-
-# ── CONTEXT PROCESSOR ──────────────────────────────────────────────────────
-
-@manager_bp.context_processor
-def inject_auditorias_count():
-    org_id = _get_org_id()
-    count = count_pending(org_id) if org_id else 0
-    return {"auditorias_count": count}
-
-
 # ── RUTAS ──────────────────────────────────────────────────────────────────
 
 @manager_bp.route("/")
 @require_role(["MANAGER", "ADMIN"])
 def dashboard():
     convocatorias = _load_convocatorias_dicts()
-    auditorias = _load_auditorias_pendientes()
     return render_template(
         "manager/dashboard.html",
         active_page="dashboard",
         convocatorias=convocatorias,
-        auditorias=auditorias,
-        pendientes_total=len(auditorias),
     )
 
 
@@ -257,7 +217,6 @@ def intento_detalle(attempt_id):
         attempt_id=detail["attempt_id"],
         score_breakdown=detail["score_breakdown"],
         eventos=detail["eventos"],
-        auditoria=detail["auditoria"],
         convocatoria=detail["convocatoria"],
         can_score=can_score,
         is_invalidated=is_invalidated,
@@ -574,66 +533,6 @@ def registrar_intento(student_id):
 
     flash(f"Nota {score:.1f} registrada para la ruta {route_id}.", "success")
     return redirect(redirect_url)
-
-
-@manager_bp.route("/auditoria/<audit_id>")
-@require_role(["MANAGER", "ADMIN"])
-def auditoria_detalle(audit_id):
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    ar = get_audit_request(audit_id, user.organizationId)
-    if not ar:
-        abort(404)
-    return render_template("manager/auditoria_detalle.html", auditoria=ar, active_page="auditorias")
-
-
-@manager_bp.route("/auditoria", methods=["GET"])
-@require_role(["MANAGER", "ADMIN"])
-def auditoria_list():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    status_filter = request.args.get("status")
-    auditorias = list_audit_requests(user.organizationId, status=status_filter)
-    return render_template(
-        "manager/auditorias.html",
-        auditorias=auditorias,
-        active_page="auditorias",
-        pendientes_total=count_pending(user.organizationId),
-    )
-
-
-@manager_bp.route("/auditoria/<audit_id>", methods=["PATCH"])
-@require_role(["MANAGER", "ADMIN"])
-def auditoria_update(audit_id):
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    data = request.get_json() or {}
-    new_status = data.get("status", "")
-    resolution = data.get("resolution", "")
-    try:
-        ar = update_audit_request(audit_id, user.organizationId, user_id, new_status, resolution)
-    except AuditRequestError as exc:
-        return jsonify({"message": str(exc)}), 422
-    return jsonify(ar), 200
-
-
-@manager_bp.route("/auditoria", methods=["POST"])
-@require_role(["MANAGER", "ADMIN"])
-def auditoria_create():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    data = request.get_json() or {}
-    try:
-        ar = create_audit_request(
-            org_id=user.organizationId,
-            actor_id=user_id,
-            attempt_id=data.get("attemptId", ""),
-            enrollment_id=data.get("enrollmentId", ""),
-            reason=data.get("reason", ""),
-        )
-    except AuditRequestError as exc:
-        return jsonify({"message": str(exc)}), 422
-    return jsonify(ar), 201
 
 
 # ── Provisioning del manager: alumnos, convocatorias, enrollments, attempts ──

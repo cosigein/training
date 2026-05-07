@@ -19,18 +19,18 @@ class MockUser:
 MOCK_CONVOCATORIAS = [
     {
         "id": "conv-a-2026", "name": "CM-2026-A", "status": "OPEN",
-        "plazas": 50, "candidatos": 198, "auditoria_pendientes": 3,
+        "plazas": 50, "candidatos": 198,
         "cierre": "15/06/2026", "completados": 156, "pendientes": 42,
     },
     {
         "id": "conv-b-2026", "name": "CM-2026-B", "status": "CLOSING",
-        "plazas": 30, "candidatos": 147, "auditoria_pendientes": 0,
+        "plazas": 30, "candidatos": 147,
         "cierre": "20/05/2026", "completados": 147, "pendientes": 0,
         "iniciado_por": "María García", "iniciado_hace": "12 minutos",
     },
     {
         "id": "conv-z-2025", "name": "CM-2025-Z", "status": "LOCKED",
-        "plazas": 25, "candidatos": 112, "auditoria_pendientes": 0,
+        "plazas": 25, "candidatos": 112,
         "cierre": "30/11/2025", "completados": 112, "pendientes": 0,
     },
 ]
@@ -41,7 +41,6 @@ MOCK_SYSTEM_STATUS = {
     "kioskos_online": 4, "kioskos_total": 6,
     "candidatos_total": 457,
     "intentos_hoy": 12,
-    "auditorias_pendientes": 3,
 }
 
 MOCK_GDPR_REQUESTS = [

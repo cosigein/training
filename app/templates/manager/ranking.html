@@ -65,7 +65,6 @@
     <span data-filter-rank="all" class="mgr-pill active">Todos</span>
     <span data-filter-rank="dentro" class="mgr-pill">Dentro del corte</span>
     <span data-filter-rank="fuera" class="mgr-pill">Fuera del corte</span>
-    <!-- <span data-filter-rank="auditoria" class="mgr-pill">Con auditoría</span> -->
 </div>
 
 <!-- Tabla ranking -->
@@ -76,7 +75,6 @@
                 <th style="width:64px">#</th>
                 <th>Candidato</th>
                 <th style="width:110px; text-align:center">Rutas</th>
-                <!-- <th style="width:120px; text-align:center">Auditorías</th> -->
                 <th style="width:80px; text-align:center">Corte</th>
                 <th class="align-right" style="width:120px">Nota media</th>
             </tr>
@@ -88,7 +86,6 @@
             {% if pos <= plazas %}mgr-rank--pass{% endif %}
             {% if pos == plazas + 1 %}mgr-cut-row{% endif %}"
             data-rank="{{ 'dentro' if entry.dentro_del_corte else 'fuera' }}"
-            data-audit="{{ 'auditoria' if entry.tiene_auditoria else '' }}"
             data-href="{{ url_for('manager.alumno_detalle', candidato_id=entry.candidato.id) }}">
 
             <td>
@@ -124,26 +121,6 @@
                 </span>
             </td>
 
-            <!-- <td style="text-align:center">
-                {% if entry.tiene_auditoria and entry.audit_data %}
-                <button class="mgr-audit-chip mgr-audit-chip--btn"
-                        data-audit-id="{{ entry.audit_data.id }}"
-                        data-audit-nombre="{{ entry.candidato.nombre }}"
-                        data-audit-plaza="{{ entry.candidato.plaza }}"
-                        data-candidato-id="{{ entry.candidato.id }}"
-                        data-audit-ruta="{{ entry.audit_data.ruta }}"
-                        data-audit-reason="{{ entry.audit_data.reason }}"
-                        data-audit-fecha="{{ entry.audit_data.fecha }}"
-                        data-audit-hora="{{ entry.audit_data.hora }}"
-                        data-audit-attempt="{{ entry.audit_data.attempt_id }}"
-                        onclick="abrirAuditDrawer(this); event.stopPropagation();"
-                        aria-label="Ver solicitud de auditoría de {{ entry.candidato.nombre }}">
-                    <i class="ph ph-scales"></i> Pendiente
-                </button>
-                {% else %}
-                <span style="color:#94a3b8; font-size:12px">—</span>
-                {% endif %}
-            </td> -->
 
             <td style="text-align:center">
                 {% if entry.dentro_del_corte %}
@@ -178,44 +155,6 @@
     El resultado definitivo se emite al cierre de la convocatoria.
 </p>
 
-<!-- Audit Drawer -->
-{% if false %}
-<div class="mgr-drawer-backdrop" id="auditBackdrop" onclick="cerrarAuditDrawer()" hidden></div>
-<aside class="mgr-drawer" id="auditDrawer" aria-label="Detalle de auditoría" hidden>
-    <div class="mgr-drawer__header">
-        <div>
-            <div class="mgr-drawer__title">
-                <i class="ph ph-scales"></i> Solicitud de auditoría
-            </div>
-            <div class="mgr-drawer__sub" id="drawerSub">—</div>
-        </div>
-        <button class="mgr-drawer__close" onclick="cerrarAuditDrawer()" aria-label="Cerrar">
-            <i class="ph ph-x"></i>
-        </button>
-    </div>
-
-    <div class="mgr-drawer__body">
-        <div class="mgr-drawer__meta">
-            <span><i class="ph ph-map-pin"></i> Ruta: <strong id="drawerRuta">—</strong></span>
-            <span><i class="ph ph-calendar"></i> <span id="drawerFecha">—</span></span>
-        </div>
-
-        <div class="mgr-drawer__section-label">Motivo del candidato</div>
-        <blockquote class="mgr-quote" id="drawerReason">—</blockquote>
-
-        <div class="mgr-drawer__actions">
-            <a id="drawerReviewBtn" href="#"
-               class="mgr-action-btn mgr-action-btn--primary">
-                <i class="ph ph-arrow-square-out"></i> Revisar y responder
-            </a>
-            <a id="drawerProfileBtn" href="#"
-               class="mgr-action-btn mgr-action-btn--secondary">
-                <i class="ph ph-user"></i> Ver perfil del candidato
-            </a>
-        </div>
-    </div>
-</aside>
-{% endif %}
 
 {% endblock %}
 
@@ -230,8 +169,6 @@ document.querySelectorAll('[data-filter-rank]').forEach(pill => {
         document.querySelectorAll('.mgr-rank-row').forEach(row => {
             if (filter === 'all') {
                 row.style.display = '';
-        /* } else if (filter === 'auditoria') {
-            row.style.display = row.dataset.audit === 'auditoria' ? '' : 'none'; */
             } else {
                 row.style.display = row.dataset.rank === filter ? '' : 'none';
             }
@@ -247,41 +184,5 @@ document.querySelectorAll('.mgr-clickable-row').forEach(row => {
     });
 });
 
-// Audit drawer
-const drawer = document.getElementById('auditDrawer');
-const backdrop = document.getElementById('auditBackdrop');
-
-function abrirAuditDrawer(btn) {
-    document.getElementById('drawerSub').textContent =
-        btn.dataset.auditNombre + ' · Plaza #' + btn.dataset.auditPlaza;
-    document.getElementById('drawerRuta').textContent = btn.dataset.auditRuta;
-    document.getElementById('drawerFecha').textContent =
-        btn.dataset.auditFecha + ' a las ' + btn.dataset.auditHora;
-    document.getElementById('drawerReason').textContent = btn.dataset.auditReason;
-    document.getElementById('drawerReviewBtn').href =
-        '{{ url_for("manager.auditoria_detalle", audit_id="AUDIT_ID") }}'.replace('AUDIT_ID', btn.dataset.auditId);
-    document.getElementById('drawerProfileBtn').href =
-        '{{ url_for("manager.alumno_detalle", candidato_id="CAND_ID") }}'.replace('CAND_ID', btn.dataset.auditNombre);
-
-    drawer.hidden = false;
-    backdrop.hidden = false;
-    requestAnimationFrame(() => {
-        drawer.classList.add('mgr-drawer--open');
-        backdrop.classList.add('mgr-drawer-backdrop--visible');
-    });
-}
-
-function cerrarAuditDrawer() {
-    drawer.classList.remove('mgr-drawer--open');
-    backdrop.classList.remove('mgr-drawer-backdrop--visible');
-    drawer.addEventListener('transitionend', () => {
-        drawer.hidden = true;
-        backdrop.hidden = true;
-    }, { once: true });
-}
-
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') cerrarAuditDrawer();
-});
 </script>
 {% endblock %}

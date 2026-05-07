@@ -92,12 +92,6 @@
                 <span class="mgr-conv-stat__val" style="font-size:12px">{{ conv.fecha_cierre }}</span>
                 <span class="mgr-conv-stat__lbl">Cierre</span>
             </div>
-            {% if conv.auditorias_pendientes > 0 %}
-            <div class="mgr-conv-stat">
-                <span class="mgr-conv-stat__val" style="color:#dc2626">{{ conv.auditorias_pendientes }}</span>
-                <span class="mgr-conv-stat__lbl" style="color:#dc2626">Auditorías</span>
-            </div>
-            {% endif %}
         </div>
 
         <div class="mgr-conv-row__actions">

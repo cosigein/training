@@ -114,8 +114,7 @@ def can_user_view_attempt(user, attempt):
 def remap_ranking_entry(entry_dict):
     """Convierte un entry de manager.ranking_service.get_ranking → camelCase V1.
 
-    NO incluye `withinCutoff` (decisión D-API-001, GDPR art. 22) ni `tieneAuditoria`
-    (fuera de scope V1, depende de Tarea 12).
+    NO incluye `withinCutoff` (decisión D-API-001, GDPR art. 22).
     """
     cand = entry_dict.get("candidato") or {}
     return {
@@ -134,7 +133,7 @@ def remap_ranking_entry(entry_dict):
 def remap_matrix_row(candidato_dict, circuit_ids):
     """Convierte una row de manager.ranking_service.get_matrix_data → MatrixRow camelCase.
 
-    `notas` del manager es un dict {routeId: {nota, data_quality, audit, attempt_id}}
+    `notas` del manager es un dict {routeId: {nota, data_quality, attempt_id}}
     que se aplana a una lista [{circuitId, score}] siguiendo el orden de circuit_ids.
     """
     notas = candidato_dict.get("notas") or {}
