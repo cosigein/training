@@ -59,10 +59,10 @@ def create_app(config_name=None):
         csp = {
             "default-src": "'self'",
             "style-src":   ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://unpkg.com"],
-            "font-src":    ["'self'", "https://fonts.gstatic.com"],
+            "font-src":    ["'self'", "https://fonts.gstatic.com", "https://unpkg.com"],
             "script-src":  ["'self'", "'unsafe-inline'", "https://unpkg.com"],
-            "img-src":     ["'self'", "data:", "https://*.basemaps.cartocdn.com"],
-            "connect-src": ["'self'"],
+            "img-src":     ["'self'", "data:", "https://*.basemaps.cartocdn.com", "https://unpkg.com"],
+            "connect-src": ["'self'", "https://unpkg.com"],
             "frame-ancestors": "'none'",
         }
         talisman.init_app(
