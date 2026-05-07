@@ -27,6 +27,7 @@ Conversiones al persistir:
     gx, gy, gz : grados/s (sin cambio)
     speed GPS  : km/h (sin cambio — el event_detector usa km/h directamente)
 """
+import math
 import re
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -46,6 +47,25 @@ _MG_TO_MS2 = 0.00981
 _STAB_ROW_MS = 100
 _KNOWN_SECTIONS = {"GPS", "ESTABILIDAD", "ROTATIVO", "CAN"}
 _SESSION_RE = re.compile(r"Sesi[oó]n\s*:\s*(\d+)", re.IGNORECASE)
+
+# ── GPS validation ──────────────────────────────────────────────────────────
+# Bounding box que cubre España peninsular + Baleares + Canarias.
+_GPS_LAT_MIN, _GPS_LAT_MAX = 27.5, 44.0
+_GPS_LON_MIN, _GPS_LON_MAX = -18.5, 4.5
+# HDOP mayor a esto = GPS muy contaminado, descartar.
+_GPS_HDOP_MAX = 5.0
+# Velocidad implícita máxima entre dos puntos consecutivos válidos. Si supera
+# esto, asumimos que el segundo punto es un salto erróneo y lo descartamos.
+_GPS_MAX_IMPLICIT_KMH = 180.0
+
+
+def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    r = 6371.0
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = (math.sin(dlat / 2) ** 2
+         + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2)
+    return 2 * r * math.asin(math.sqrt(a))
 
 
 # ── Resultado ─────────────────────────────────────────────────────────────────
@@ -236,8 +256,22 @@ def _parse_gps(header: str, lines: List[str], attempt_id: str, org_id: str, r: P
     """
     Columnas: Timestamp;FechaGPS;HoraGPS;Latitud;Longitud;Altitud;HDOP;Fix;NumSats;Velocidad(km/h)
     Variantes: separador puede ser ',' o ';'. Filas sin fix se descartan.
-    Latitudes fuera de rango (corruptas) se descartan.
+
+    Validaciones de outlier (en orden):
+      1. Lat/lon dentro del bounding box de España.
+      2. HDOP <= 5 (filtra puntos con GPS muy contaminado).
+      3. Velocidad implícita respecto al último punto válido <= 180 km/h.
+    Las filas descartadas se cuentan en `gps_skipped_no_fix` y la razón concreta
+    se anota en `errors[]` (limitado a las 20 primeras para no inundar).
     """
+    last_valid_ts: Optional[datetime] = None
+    last_valid_lat: Optional[float] = None
+    last_valid_lon: Optional[float] = None
+
+    def _note(reason: str):
+        if len(r.errors) < 20:
+            r.errors.append(reason)
+
     for line in lines:
         if _is_intermediate_timestamp(line):
             continue
@@ -258,9 +292,15 @@ def _parse_gps(header: str, lines: List[str], attempt_id: str, org_id: str, r: P
         if lat is None or lon is None or lat == 0.0 or lon == 0.0:
             r.gps_skipped_no_fix += 1
             continue
-        # Filtrar valores corruptos (lat válida ∈ [-90, 90])
+        # Filtrar valores corruptos por rango global
         if not (-90.0 <= lat <= 90.0) or not (-180.0 <= lon <= 180.0):
             r.gps_skipped_no_fix += 1
+            _note(f"GPS: lat/lon fuera de rango global ({lat}, {lon})")
+            continue
+        # Bounding box España
+        if not (_GPS_LAT_MIN <= lat <= _GPS_LAT_MAX) or not (_GPS_LON_MIN <= lon <= _GPS_LON_MAX):
+            r.gps_skipped_no_fix += 1
+            _note(f"GPS: punto fuera de España ({lat:.4f}, {lon:.4f})")
             continue
 
         # Timestamp: en formato CSV nuevo viene como "HH:MM:SS" (col 0) + fecha "DD/MM/YYYY" (col 1)
@@ -283,6 +323,25 @@ def _parse_gps(header: str, lines: List[str], attempt_id: str, org_id: str, r: P
         sats = int(_float(parts[8]) or 0) if len(parts) > 8 else 0
         speed = _float(parts[9]) if len(parts) > 9 else 0.0  # ya en km/h
 
+        # Filtro de calidad: HDOP alto = GPS contaminado
+        if hdop is not None and hdop > _GPS_HDOP_MAX:
+            r.gps_skipped_no_fix += 1
+            _note(f"GPS: HDOP {hdop} > {_GPS_HDOP_MAX} a las {ts.strftime('%H:%M:%S')}")
+            continue
+
+        # Filtro de velocidad implícita respecto al último punto válido
+        if last_valid_ts is not None:
+            dt_s = (ts - last_valid_ts).total_seconds()
+            if dt_s > 0:
+                dist_km = _haversine_km(last_valid_lat, last_valid_lon, lat, lon)
+                implicit_kmh = (dist_km / dt_s) * 3600.0
+                if implicit_kmh > _GPS_MAX_IMPLICIT_KMH:
+                    r.gps_skipped_no_fix += 1
+                    _note(
+                        f"GPS: salto imposible {implicit_kmh:.0f} km/h a las {ts.strftime('%H:%M:%S')}"
+                    )
+                    continue
+
         db.session.add(GpsMeasurement(
             attemptId=attempt_id,
             organizationId=org_id,
@@ -300,6 +359,9 @@ def _parse_gps(header: str, lines: List[str], attempt_id: str, org_id: str, r: P
             confidence=None,
         ))
         r.gps_rows += 1
+        last_valid_ts = ts
+        last_valid_lat = lat
+        last_valid_lon = lon
 
 
 def _parse_stability(header: str, lines: List[str], attempt_id: str, org_id: str, r: ParseResult):

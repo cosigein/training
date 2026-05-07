@@ -22,12 +22,23 @@ from app.models.training import (
 _BRAKE_THRESHOLD = -2.5    # ax por debajo de esto = frenada brusca
 _ACCEL_THRESHOLD = 3.0     # ax por encima = aceleración brusca
 _LATERAL_THRESHOLD = 2.5   # |ay| por encima = g lateral excesivo
+# Inestabilidad combinada: |accmag - gravedad| por encima = maniobra brusca
+# en cualquier eje (capta combinaciones lat+long que aisladas no cruzan umbral).
+_ACCMAG_DELTA_THRESHOLD = 2.5
+_GRAVITY = 9.81            # m/s² nominal de la gravedad
 
 # Velocidad máxima permitida (km/h) — sin límite de ruta específico
 _DEFAULT_SPEED_LIMIT_KMH = 90.0
 
-# Debounce: ignorar eventos del mismo tipo dentro de esta ventana (segundos)
-_DEBOUNCE_S = 3
+# Persistencia mínima: muestras consecutivas (gap ≤ MAX_GAP_MS) sobre el umbral
+# antes de aceptar un evento como real (filtra picos espurios del sensor).
+_MIN_PERSISTENCE = 2
+# Dos muestras de StabilityMeasurement están a ~100 ms; tolerar hasta 200 ms.
+_MAX_GAP_MS = 200
+
+# Debounce entre eventos consecutivos del mismo tipo (segundos): luego de
+# emitir uno, ignorar otros nuevos del mismo tipo dentro de esta ventana.
+_DEBOUNCE_S = 1
 
 # Penalización base por severidad (puntos a restar del score de la familia)
 _PENALTY = {
@@ -80,18 +91,65 @@ def _sev_from_speed_excess(excess_kmh):
     return EventSeverity.LOW
 
 
-def _debounce(events):
-    """Filtra eventos repetidos dentro de la ventana de debounce por tipo."""
+_SEV_RANK = {
+    EventSeverity.LOW: 0,
+    EventSeverity.MEDIUM: 1,
+    EventSeverity.HIGH: 2,
+    EventSeverity.CRITICAL: 3,
+}
+
+
+def _filter_runs(events):
+    """
+    Filtra y agrupa los eventos crudos en eventos finales:
+
+    1. Agrupa por tipo.
+    2. Detecta "runs" (corridas) de muestras consecutivas del mismo tipo cuyo
+       gap entre muestras es ≤ _MAX_GAP_MS — eso significa "una misma maniobra".
+    3. Solo emite runs con tamaño ≥ _MIN_PERSISTENCE (descarta picos aislados
+       que son ruido del sensor).
+    4. Para cada run válido emite UN evento con la severidad más alta del run
+       y timestamp del peak.
+    5. Aplica debounce de _DEBOUNCE_S entre eventos del mismo tipo (evita que
+       dos runs separados por menos de 1 s se cuenten como dos eventos cuando
+       son la misma maniobra continuada).
+    """
+    if not events:
+        return []
+
+    by_type = {}
+    for ev in events:
+        by_type.setdefault(ev["type"], []).append(ev)
+
     result = []
-    last_ts = {}
-    for ev in sorted(events, key=lambda e: e["timestamp"]):
-        t = ev["type"]
-        ts = ev["timestamp"]
-        if t in last_ts and (ts - last_ts[t]).total_seconds() < _DEBOUNCE_S:
-            continue
-        last_ts[t] = ts
-        result.append(ev)
-    return result
+    for _, evs in by_type.items():
+        evs_sorted = sorted(evs, key=lambda e: e["timestamp"])
+
+        # Formar clusters por proximidad temporal
+        clusters = []
+        current = [evs_sorted[0]]
+        for ev in evs_sorted[1:]:
+            gap_ms = (ev["timestamp"] - current[-1]["timestamp"]).total_seconds() * 1000.0
+            if gap_ms <= _MAX_GAP_MS:
+                current.append(ev)
+            else:
+                clusters.append(current)
+                current = [ev]
+        clusters.append(current)
+
+        # Emitir un evento por cluster válido, aplicando debounce
+        last_emit_ts = None
+        for cluster in clusters:
+            if len(cluster) < _MIN_PERSISTENCE:
+                continue
+            peak = max(cluster, key=lambda e: _SEV_RANK[e["severity"]])
+            if last_emit_ts is not None:
+                if (peak["timestamp"] - last_emit_ts).total_seconds() < _DEBOUNCE_S:
+                    continue
+            last_emit_ts = peak["timestamp"]
+            result.append(peak)
+
+    return sorted(result, key=lambda e: e["timestamp"])
 
 
 def detect_events(attempt_id):
@@ -159,7 +217,24 @@ def detect_events(attempt_id):
                 "penaltyPoints": _PENALTY[sev],
                 "payload": {"ay": round(s.ay, 3)},
             })
-        elif any([s.isDRSHigh, s.isLTRCritical, s.isLateralGForceHigh]):
+
+        # Inestabilidad combinada: el módulo de aceleración total se aparta
+        # significativamente de la gravedad → maniobra brusca en cualquier eje.
+        if s.accmag is not None:
+            delta_g = abs(s.accmag - _GRAVITY)
+            if delta_g > _ACCMAG_DELTA_THRESHOLD:
+                sev = _sev_from_lateral(delta_g)
+                raw_events.append({
+                    "type": AttemptEventType.ACCELERATION_LATERAL,
+                    "severity": sev,
+                    "source": EventSource.DOBACK_ELITE,
+                    "confidence": conf,
+                    "timestamp": s.timestamp,
+                    "penaltyPoints": _PENALTY[sev],
+                    "payload": {"accmag": round(s.accmag, 3), "delta_g": round(delta_g, 3)},
+                })
+
+        if any([s.isDRSHigh, s.isLTRCritical, s.isLateralGForceHigh]):
             sev = EventSeverity.CRITICAL if s.isDRSHigh else EventSeverity.HIGH
             raw_events.append({
                 "type": AttemptEventType.ACCELERATION_LATERAL,
@@ -225,8 +300,8 @@ def detect_events(attempt_id):
             },
         })
 
-    # ── Debounce y persistencia ──────────────────────────────────────────────
-    filtered = _debounce(raw_events)
+    # ── Persistencia + clustering + debounce ────────────────────────────────
+    filtered = _filter_runs(raw_events)
 
     for ev in filtered:
         db.session.add(AttemptEvent(
