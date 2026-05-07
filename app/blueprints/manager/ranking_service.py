@@ -146,7 +146,7 @@ def get_ranking(conv_id, org_id):
                 "fecha": audit_req.createdAt.strftime("%d/%m/%Y") if audit_req.createdAt else "—",
                 "hora": audit_req.createdAt.strftime("%H:%M") if audit_req.createdAt else "—",
                 "attempt_id": audit_req.originalAttemptId,
-                "ruta": att.routeId if att else "—",
+                "ruta": (_slot_code(att.sequence) or "—") if att else "—",
             }
 
         entries.append({
@@ -171,6 +171,12 @@ def get_ranking(conv_id, org_id):
     return _conv_to_dict(conv, org_id), entries
 
 
+def _slot_code(seq):
+    """Etiqueta visible del intento según su orden cronológico en el enrollment.
+    R01, R02, … Si seq es None devuelve None (intento ignorable)."""
+    return f"R{seq:02d}" if seq else None
+
+
 def get_matrix_data(conv_id, org_id):
     conv = Convocatoria.query.filter_by(id=conv_id, organizationId=org_id).first()
     if not conv:
@@ -181,11 +187,11 @@ def get_matrix_data(conv_id, org_id):
     scored_attempts = (
         Attempt.query
         .filter_by(convocatoriaId=conv_id, status=AttemptStatus.CLOSED)
-        .filter(Attempt.score.isnot(None), Attempt.routeId.isnot(None))
+        .filter(Attempt.score.isnot(None))
         .all()
     )
-    route_ids = sorted({a.routeId for a in scored_attempts})
-    circuitos = [{"id": r, "label": r} for r in route_ids]
+    slot_codes = sorted({_slot_code(a.sequence) for a in scored_attempts if a.sequence})
+    circuitos = [{"id": s, "label": s} for s in slot_codes]
 
     candidatos = []
     for idx, enrollment in enumerate(enrollments):
@@ -193,34 +199,34 @@ def get_matrix_data(conv_id, org_id):
         if not student:
             continue
 
-        # mejor scored attempt por ruta (mayor score)
-        best_by_route: dict = {}
+        # un Attempt por slot del alumno (cada slot R{N} es único por enrollment)
+        attempts_by_slot: dict = {}
         for a in (
             Attempt.query
             .filter_by(enrollmentId=enrollment.id, status=AttemptStatus.CLOSED)
             .filter(Attempt.score.isnot(None))
             .all()
         ):
-            if a.routeId:
-                prev = best_by_route.get(a.routeId)
-                if prev is None or (a.score or 0) > (prev.score or 0):
-                    best_by_route[a.routeId] = a
+            slot = _slot_code(a.sequence)
+            if slot:
+                attempts_by_slot[slot] = a
 
         notas = {}
-        for route_id in route_ids:
-            att = best_by_route.get(route_id)
+        for slot in slot_codes:
+            att = attempts_by_slot.get(slot)
             if att is None:
-                notas[route_id] = None
+                notas[slot] = None
             else:
                 has_audit = AuditRequest.query.filter(
                     AuditRequest.originalAttemptId == att.id,
                     AuditRequest.status.in_([AuditStatus.PENDING, AuditStatus.REVIEWING]),
                 ).first() is not None
-                notas[route_id] = {
+                notas[slot] = {
                     "nota": att.score,
                     "data_quality": _data_quality_label(att.dataQuality),
                     "audit": has_audit,
                     "attempt_id": att.id,
+                    "route_code": att.routeId or "—",
                 }
 
         total = Attempt.query.filter_by(enrollmentId=enrollment.id).count()
@@ -230,7 +236,7 @@ def get_matrix_data(conv_id, org_id):
             "plaza": str(idx + 1).zfill(3),
             "categoria": "C",
             "notas": notas,
-            "rutas_completadas": len(best_by_route),
+            "rutas_completadas": len(attempts_by_slot),
             "rutas_total": total,
         })
 
@@ -252,12 +258,12 @@ def get_all_matrix_data(org_id):
         Attempt.query
         .filter(Attempt.studentId.in_(student_ids))
         .filter_by(organizationId=org_id, status=AttemptStatus.CLOSED)
-        .filter(Attempt.score.isnot(None), Attempt.routeId.isnot(None))
+        .filter(Attempt.score.isnot(None))
         .all()
     )
 
-    route_ids = sorted({a.routeId for a in attempts})
-    circuitos = [{"id": r, "label": r} for r in route_ids]
+    slot_codes = sorted({_slot_code(a.sequence) for a in attempts if a.sequence})
+    circuitos = [{"id": s, "label": s} for s in slot_codes]
 
     students = User.query.filter(User.id.in_(student_ids)).all()
     student_map = {s.id: s for s in students}
@@ -268,30 +274,30 @@ def get_all_matrix_data(org_id):
         if not student:
             continue
 
-        # Mejor intento por ruta en TODAS sus participaciones
-        best_by_route = {}
+        # un Attempt por slot del alumno (cada slot R{N} es único por enrollment)
+        attempts_by_slot = {}
         student_attempts = [a for a in attempts if a.studentId == sid]
         for a in student_attempts:
-            if a.routeId:
-                prev = best_by_route.get(a.routeId)
-                if prev is None or (a.score or 0) > (prev.score or 0):
-                    best_by_route[a.routeId] = a
+            slot = _slot_code(a.sequence)
+            if slot:
+                attempts_by_slot[slot] = a
 
         notas = {}
-        for route_id in route_ids:
-            att = best_by_route.get(route_id)
+        for slot in slot_codes:
+            att = attempts_by_slot.get(slot)
             if att is None:
-                notas[route_id] = None
+                notas[slot] = None
             else:
                 has_audit = AuditRequest.query.filter(
                     AuditRequest.originalAttemptId == att.id,
                     AuditRequest.status.in_([AuditStatus.PENDING, AuditStatus.REVIEWING]),
                 ).first() is not None
-                notas[route_id] = {
+                notas[slot] = {
                     "nota": att.score,
                     "data_quality": _data_quality_label(att.dataQuality),
                     "audit": has_audit,
                     "attempt_id": att.id,
+                    "route_code": att.routeId or "—",
                 }
 
         candidatos.append({
@@ -300,7 +306,7 @@ def get_all_matrix_data(org_id):
             "plaza": "—",
             "categoria": "G", # Global
             "notas": notas,
-            "rutas_completadas": len(best_by_route),
+            "rutas_completadas": len(attempts_by_slot),
             "rutas_total": len(student_attempts),
         })
 
@@ -361,8 +367,9 @@ def get_alumno_detail(student_id, conv_id, org_id):
 
     intentos = [
         {
-            "ruta_id": a.routeId or "—",
-            "ruta_label": a.routeId or "—",
+            "ruta_id": _slot_code(a.sequence) or "—",
+            "ruta_label": _slot_code(a.sequence) or "—",
+            "route_code": a.routeId or "—",
             "nota": a.score,
             "data_quality": _data_quality_label(a.dataQuality),
             "audit": False,  # TODO Tarea 12
@@ -418,7 +425,12 @@ def get_intento_detail(attempt_id, org_id):
         "data_quality": _data_quality_label(attempt.dataQuality),
         "attempt_id": attempt.id,
     }
-    ruta = {"id": attempt.routeId or "—", "label": attempt.routeId or "—"}
+    slot = _slot_code(attempt.sequence) or "—"
+    ruta = {
+        "id": slot,
+        "label": slot,
+        "route_code": attempt.routeId or "—",
+    }
 
     return {
         "attempt_id": attempt.id,
