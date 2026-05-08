@@ -44,6 +44,44 @@ def _resolve_active_conv(org_id):
     )
 
 
+def resolve_enrollment_by_rfid(rfid_code):
+    """Mapea un código RFID (uid de tarjeta) al Enrollment activo del alumno.
+    Devuelve (enrollment, convocatoria, organization) o None si no se resuelve."""
+    if not rfid_code:
+        return None
+    org = _resolve_org()
+    if not org:
+        return None
+
+    card = (
+        RfidCard.query
+        .filter_by(uid=rfid_code.strip(), organizationId=org.id, active=True)
+        .filter(RfidCard.revokedAt.is_(None))
+        .first()
+    )
+    if not card or not card.assignedTo:
+        return None
+
+    conv = _resolve_active_conv(org.id)
+    if not conv:
+        return None
+
+    enrollment = (
+        Enrollment.query
+        .filter_by(
+            studentId=card.assignedTo,
+            convocatoriaId=conv.id,
+            organizationId=org.id,
+        )
+        .filter(Enrollment.status != EnrollmentStatus.INVALIDATED)
+        .first()
+    )
+    if not enrollment:
+        return None
+
+    return enrollment, conv, org
+
+
 def resolve_enrollment_by_plaza(plaza_str, conv_id=None):
     """Mapea un nº de plaza tipeado al Enrollment correspondiente.
     El nº de plaza es el orden de inscripción dentro de la convocatoria activa.

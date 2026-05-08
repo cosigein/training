@@ -13,6 +13,7 @@ from .services import (
     kiosko_service,
     KioskoError,
     resolve_enrollment_by_plaza,
+    resolve_enrollment_by_rfid,
     resolve_attempt_view,
 )
 from app.blueprints.student.student_service import (
@@ -34,6 +35,29 @@ def index():
 def entrar():
     plaza = (request.form.get("plaza") or "").strip()
     return redirect(url_for("kiosko.rutas", plaza=plaza))
+
+
+@kiosko_bp.route("/rfid")
+def rfid_login():
+    """Entrada por tarjeta RFID (HID Bluetooth). El ESP32 tipea el uid de la
+    tarjeta + Enter; el JS del login redirige aquí con ?code=<uid>."""
+    code = (request.args.get("code") or "").strip()
+    resolved = resolve_enrollment_by_rfid(code)
+    if not resolved:
+        return redirect(url_for("kiosko.login", error="rfid"))
+
+    enrollment, conv, org = resolved
+    ctx = get_student_dashboard(enrollment.studentId, org.id, conv.id)
+    if not ctx:
+        return redirect(url_for("kiosko.login", error="rfid"))
+
+    return render_template(
+        "kiosko/rutas.html",
+        candidato=ctx["candidato"],
+        convocatoria=ctx["convocatoria"],
+        rutas=ctx["rutas"],
+        nota_media=ctx["nota_media"],
+    )
 
 
 @kiosko_bp.route("/rutas")

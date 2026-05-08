@@ -1,0 +1,154 @@
+{% extends "admin/layout.html" %}
+{% block title %}Tarjetas RFID — CMadrid Admin{% endblock %}
+
+{% block content %}
+
+<div class="adm-page-header">
+    <div>
+        <h1 class="adm-page-title"><i class="ph ph-identification-card"></i> Tarjetas RFID</h1>
+        <p class="adm-page-subtitle">{{ cards|length }} tarjetas registradas · Asignación de tarjetas a alumnos</p>
+    </div>
+</div>
+
+<!-- Registrar nueva tarjeta -->
+<div class="adm-card" style="margin-bottom:20px;">
+    <div class="adm-card__header">
+        <h3><i class="ph ph-plus-circle"></i> Registrar tarjeta</h3>
+    </div>
+    <form method="POST" action="{{ url_for('admin.rfid_create') }}" style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; padding:16px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div style="display:flex; flex-direction:column; gap:6px; flex:1; min-width:200px;">
+            <label style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#475569;">
+                Código de tarjeta
+            </label>
+            <input type="text" name="uid" id="uid-input"
+                   class="adm-input" placeholder="Pasa la tarjeta o escribe el código"
+                   autocomplete="off" required
+                   style="font-family:monospace;">
+            <span style="font-size:11px; color:#94a3b8;">
+                Haz clic en el campo y pasa la tarjeta con el lector — se rellenará automáticamente.
+            </span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px; flex:1; min-width:200px;">
+            <label style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#475569;">
+                Asignar a alumno (opcional)
+            </label>
+            <select name="student_id" class="adm-input">
+                <option value="">— Sin asignar —</option>
+                {% for s in students %}
+                <option value="{{ s.id }}">{{ s.name }} · {{ s.email }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="adm-btn adm-btn--primary" style="white-space:nowrap;">
+            <i class="ph ph-floppy-disk"></i> Guardar tarjeta
+        </button>
+    </form>
+</div>
+
+<!-- Tabla de tarjetas -->
+<div class="adm-card">
+    <div class="adm-card__header">
+        <h3><i class="ph ph-list"></i> Tarjetas registradas</h3>
+    </div>
+    {% if cards %}
+    <table class="adm-table" style="margin:0;">
+        <thead>
+            <tr>
+                <th>Código (uid)</th>
+                <th>Alumno asignado</th>
+                <th>Asignada el</th>
+                <th>Estado</th>
+                <th style="width:200px;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for card in cards %}
+        <tr>
+            <td><code style="font-size:13px; background:#f1f5f9; padding:2px 6px; border-radius:4px;">{{ card.uid }}</code></td>
+            <td>
+                {% if card.studentName %}
+                <strong>{{ card.studentName }}</strong>
+                <div style="font-size:11px; color:#94a3b8;">{{ card.studentEmail }}</div>
+                {% else %}
+                <span style="color:#94a3b8; font-size:12px;">Sin asignar</span>
+                {% endif %}
+            </td>
+            <td style="font-size:12px; color:#64748b;">{{ card.assignedAt or '—' }}</td>
+            <td>
+                {% if card.active %}
+                <span class="adm-badge adm-badge--green"><i class="ph ph-check-circle"></i> Activa</span>
+                {% else %}
+                <span class="adm-badge adm-badge--red"><i class="ph ph-x-circle"></i> Revocada · {{ card.revokedAt }}</span>
+                {% endif %}
+            </td>
+            <td style="display:flex; gap:8px; flex-wrap:wrap;">
+                {% if card.active %}
+                <!-- Reasignar -->
+                <form method="POST" action="{{ url_for('admin.rfid_assign', card_id=card.id) }}"
+                      style="display:flex; gap:6px; align-items:center;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <select name="student_id" class="adm-input" style="font-size:11px; padding:4px 6px; height:28px;">
+                        <option value="">— Sin asignar —</option>
+                        {% for s in students %}
+                        <option value="{{ s.id }}" {% if s.id == card.assignedTo %}selected{% endif %}>
+                            {{ s.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="adm-btn adm-btn--secondary adm-btn--sm" title="Guardar asignación">
+                        <i class="ph ph-floppy-disk"></i>
+                    </button>
+                </form>
+                <!-- Revocar -->
+                <form method="POST" action="{{ url_for('admin.rfid_revoke', card_id=card.id) }}"
+                      onsubmit="return confirm('¿Revocar la tarjeta «{{ card.uid }}»? El alumno perderá el acceso por RFID.')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="adm-btn adm-btn--danger adm-btn--sm" title="Revocar tarjeta">
+                        <i class="ph ph-trash"></i>
+                    </button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="padding:40px; text-align:center; color:#94a3b8;">
+        <i class="ph ph-identification-card" style="font-size:40px; display:block; margin-bottom:12px;"></i>
+        No hay tarjetas registradas. Registra la primera usando el formulario de arriba.
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Modo escaneo: el campo uid-input captura el RFID igual que el login del kiosko
+(function () {
+    var input = document.getElementById('uid-input');
+    if (!input) return;
+
+    var rfidBuffer = '';
+    var rfidTimer  = null;
+
+    document.addEventListener('keydown', function (e) {
+        if (document.activeElement !== input) return;
+        if (rfidTimer) { clearTimeout(rfidTimer); rfidTimer = null; }
+
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            var val = rfidBuffer.trim();
+            rfidBuffer = '';
+            if (val.length > 0) { input.value = val; }
+            return;
+        }
+
+        if (e.key.length === 1) { rfidBuffer += e.key; }
+        rfidTimer = setTimeout(function () { rfidBuffer = ''; }, 500);
+    });
+}());
+</script>
+{% endblock %}

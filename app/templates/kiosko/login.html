@@ -37,9 +37,15 @@
                 </button>
             </form>
 
+            {% if request.args.get('error') == 'rfid' %}
+            <div class="ksk-login-footer" style="color:#f87171; margin-bottom:8px;">
+                <i class="ph ph-warning-circle"></i>
+                Tarjeta no reconocida. Introduce tu plaza manualmente.
+            </div>
+            {% endif %}
             <div class="ksk-login-footer">
                 Convocatoria 2026 · Bomberos CMadrid<br>
-                Introduce tu número de plaza para continuar
+                Pasa tu tarjeta o introduce tu número de plaza
             </div>
 
         </div>
@@ -207,7 +213,7 @@
         });
     };
 
-    // Form debounce — evita doble submit por RFID
+    // Form debounce — evita doble submit
     var lastSubmit = 0;
     var form = document.querySelector('.ksk-login-form');
     if (form) {
@@ -217,6 +223,38 @@
             lastSubmit = now;
         });
     }
+
+    // ── Lector RFID (ESP32 HID Bluetooth) ─────────────────────────────────
+    // El ESP32 teclea el código de la tarjeta en milisegundos y termina con Enter.
+    // El buffer se resetea si pasan >500ms sin pulsación, lo que descarta
+    // teclas humanas accidentales (demasiado lentas para ser RFID).
+    var rfidBuffer = '';
+    var rfidTimer  = null;
+
+    document.addEventListener('keydown', function (e) {
+        if (rfidTimer) { clearTimeout(rfidTimer); rfidTimer = null; }
+
+        if (e.key === 'Enter') {
+            var raw = rfidBuffer.trim();
+            rfidBuffer = '';
+            if (raw.length > 0) {
+                e.preventDefault();
+                rfidScanRecibido(raw);
+            }
+            return;
+        }
+
+        if (e.key.length === 1) { rfidBuffer += e.key; }
+
+        rfidTimer = setTimeout(function () { rfidBuffer = ''; }, 500);
+    });
+
+    function rfidScanRecibido(raw) {
+        var btn = document.querySelector('.ksk-btn.ksk-btn--primary');
+        if (btn) { btn.textContent = 'Leyendo tarjeta…'; }
+        window.location.href = '/kiosko/rfid?code=' + encodeURIComponent(raw);
+    }
+    // ──────────────────────────────────────────────────────────────────────
 
     setInterval(updateBadge, 5000);
 }());

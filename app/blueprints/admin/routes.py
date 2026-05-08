@@ -1,9 +1,12 @@
+from datetime import datetime
 from flask import jsonify, request, render_template, redirect, url_for, flash, current_app
 from . import admin_bp
 from .services import admin_service
 from .convocatoria_service import convocatoria_service, ConvocatoriaError
 from app.utils.decorators import jwt_required, get_jwt_identity, require_role
-from app.models.auth import User
+from app.models.auth import User, UserRole
+from app.models.training import RfidCard, Enrollment, EnrollmentStatus
+from app.extensions import db
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MOCK PARA PRUEBAS UI (Eliminar en producción)
@@ -597,3 +600,109 @@ def _enrollment_to_dict(e):
         "attemptsCount": e.attemptsCount,
         "enrolledAt": e.enrolledAt.isoformat() if e.enrolledAt else None,
     }
+
+
+# ── Gestión de tarjetas RFID ───────────────────────────────────────────────────
+
+@admin_bp.route("/rfid")
+@require_role(["ADMIN"])
+def rfid_cards():
+    org_id = get_jwt_identity()
+    user = User.query.get(org_id)
+    org_id = user.organizationId if user else None
+
+    cards = (
+        RfidCard.query
+        .filter_by(organizationId=org_id)
+        .order_by(RfidCard.createdAt.desc())
+        .all()
+    )
+    students = (
+        User.query
+        .filter_by(organizationId=org_id, role=UserRole.STUDENT)
+        .order_by(User.name)
+        .all()
+    )
+    cards_data = []
+    for c in cards:
+        student = User.query.get(c.assignedTo) if c.assignedTo else None
+        cards_data.append({
+            "id": c.id,
+            "uid": c.uid,
+            "active": c.active,
+            "assignedTo": c.assignedTo,
+            "studentName": student.name if student else None,
+            "studentEmail": student.email if student else None,
+            "assignedAt": c.assignedAt.strftime("%d/%m/%Y") if c.assignedAt else None,
+            "revokedAt": c.revokedAt.strftime("%d/%m/%Y") if c.revokedAt else None,
+        })
+
+    return render_template(
+        "admin/rfid.html",
+        cards=cards_data,
+        students=students,
+        active_page="rfid",
+    )
+
+
+@admin_bp.route("/rfid", methods=["POST"])
+@require_role(["ADMIN"])
+def rfid_create():
+    org_id = get_jwt_identity()
+    user = User.query.get(org_id)
+    org_id = user.organizationId if user else None
+
+    uid = (request.form.get("uid") or "").strip()
+    student_id = (request.form.get("student_id") or "").strip()
+
+    if not uid:
+        flash("El código de tarjeta no puede estar vacío.", "danger")
+        return redirect(url_for("admin.rfid_cards"))
+
+    existing = RfidCard.query.filter_by(uid=uid, organizationId=org_id, active=True).first()
+    if existing:
+        flash(f"Ya existe una tarjeta activa con el código «{uid}».", "danger")
+        return redirect(url_for("admin.rfid_cards"))
+
+    card = RfidCard(
+        uid=uid,
+        organizationId=org_id,
+        assignedTo=student_id or None,
+        assignedAt=datetime.utcnow() if student_id else None,
+        active=True,
+    )
+    db.session.add(card)
+    db.session.commit()
+    flash(f"Tarjeta «{uid}» registrada correctamente.", "success")
+    return redirect(url_for("admin.rfid_cards"))
+
+
+@admin_bp.route("/rfid/<string:card_id>/assign", methods=["POST"])
+@require_role(["ADMIN"])
+def rfid_assign(card_id):
+    org_id = get_jwt_identity()
+    user = User.query.get(org_id)
+    org_id = user.organizationId if user else None
+
+    card = RfidCard.query.filter_by(id=card_id, organizationId=org_id).first_or_404()
+    student_id = (request.form.get("student_id") or "").strip()
+    card.assignedTo = student_id or None
+    card.assignedAt = datetime.utcnow() if student_id else None
+    db.session.commit()
+    flash("Asignación actualizada.", "success")
+    return redirect(url_for("admin.rfid_cards"))
+
+
+@admin_bp.route("/rfid/<string:card_id>/revoke", methods=["POST"])
+@require_role(["ADMIN"])
+def rfid_revoke(card_id):
+    org_id = get_jwt_identity()
+    user = User.query.get(org_id)
+    org_id = user.organizationId if user else None
+
+    card = RfidCard.query.filter_by(id=card_id, organizationId=org_id).first_or_404()
+    card.active = False
+    card.revokedAt = datetime.utcnow()
+    db.session.commit()
+    flash(f"Tarjeta «{card.uid}» revocada.", "warning")
+    return redirect(url_for("admin.rfid_cards"))
