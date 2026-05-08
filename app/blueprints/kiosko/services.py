@@ -45,8 +45,8 @@ def _resolve_active_conv(org_id):
 
 
 def resolve_enrollment_by_rfid(rfid_code):
-    """Mapea un código RFID (uid de tarjeta) al Enrollment activo del alumno.
-    Devuelve (enrollment, convocatoria, organization) o None si no se resuelve."""
+    """Mapea un código RFID al Enrollment activo del alumno en cualquier
+    convocatoria OPEN. Devuelve (enrollment, convocatoria, organization) o None."""
     if not rfid_code:
         return None
     org = _resolve_org()
@@ -62,24 +62,22 @@ def resolve_enrollment_by_rfid(rfid_code):
     if not card or not card.assignedTo:
         return None
 
-    conv = _resolve_active_conv(org.id)
-    if not conv:
-        return None
-
     enrollment = (
         Enrollment.query
-        .filter_by(
-            studentId=card.assignedTo,
-            convocatoriaId=conv.id,
-            organizationId=org.id,
+        .join(Convocatoria, Enrollment.convocatoriaId == Convocatoria.id)
+        .filter(
+            Enrollment.studentId == card.assignedTo,
+            Enrollment.organizationId == org.id,
+            Enrollment.status != EnrollmentStatus.INVALIDATED,
+            Convocatoria.status == ConvocatoriaStatus.OPEN,
         )
-        .filter(Enrollment.status != EnrollmentStatus.INVALIDATED)
+        .order_by(Convocatoria.openedAt.desc())
         .first()
     )
     if not enrollment:
         return None
 
-    return enrollment, conv, org
+    return enrollment, enrollment.convocatoria, org
 
 
 def resolve_enrollment_by_plaza(plaza_str, conv_id=None):
