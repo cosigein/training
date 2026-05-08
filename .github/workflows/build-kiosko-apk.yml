@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'kiosko-apk/**'
+      - '.github/workflows/build-kiosko-apk.yml'
   workflow_dispatch:
 
 jobs:
