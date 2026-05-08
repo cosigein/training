@@ -16,12 +16,56 @@ from typing import Optional
 from loguru import logger
 
 from app.extensions import db
-from app.models.session import Attempt, GpsMeasurement
+from app.models.session import Attempt, GpsMeasurement, StabilityMeasurement, RotativoMeasurement
 from app.models.training import TrainingAuditLog, AuditAction
 from app.models.vehicle import Vehicle
 
-from .client import show_tracks, WebfleetError
+from .client import show_tracks, show_digital_events, WebfleetError
 from .normalizer import normalize_show_tracks
+
+
+def get_attempt_data_status(attempt_id: str) -> dict:
+    """
+    Comprueba qué fuentes de datos tiene el Attempt.
+
+    Returns:
+        {
+          has_stability: bool,  # datos del Doback Elite subidos por el manager
+          has_gps:       bool,  # GPS sincronizado desde Webfleet
+          has_rotativo:  bool,  # rotativo sincronizado desde Webfleet
+          is_complete:   bool,  # los tres presentes → listo para pipeline
+        }
+    """
+    has_stability = StabilityMeasurement.query.filter_by(attemptId=attempt_id).first() is not None
+    has_gps = GpsMeasurement.query.filter_by(attemptId=attempt_id, quality="WEBFLEET").first() is not None
+    has_rotativo = RotativoMeasurement.query.filter_by(attemptId=attempt_id).first() is not None
+    return {
+        "has_stability": has_stability,
+        "has_gps": has_gps,
+        "has_rotativo": has_rotativo,
+        "is_complete": has_stability and has_gps and has_rotativo,
+    }
+
+
+def check_and_autoclose(attempt_id: str, actor_id: Optional[str] = None) -> bool:
+    """
+    Si el Attempt tiene los tres tipos de datos, dispara el pipeline y lo cierra.
+
+    Returns:
+        True si se cerró en esta llamada, False si falta algún dato o ya estaba cerrado.
+    """
+    attempt = Attempt.query.get(attempt_id)
+    if not attempt or attempt.closedAt:
+        return False
+
+    status = get_attempt_data_status(attempt_id)
+    if not status["is_complete"]:
+        return False
+
+    from app.services.pipeline.pipeline import run_pipeline
+    run_pipeline(attempt_id, actor_id=actor_id)
+    logger.info("Auto-close attempt=%s (todos los datos presentes)", attempt_id)
+    return True
 
 
 class WebfleetSyncError(Exception):
@@ -135,6 +179,84 @@ def sync_attempt_gps(
         "rows_inserted": len(rows),
         "range_from": range_from,
         "range_to": range_to,
+        "was_mock": was_mock,
+    }
+
+
+def sync_attempt_rotativo(
+    attempt_id: str,
+    actor_id: Optional[str] = None,
+    source: str = "manual",
+) -> dict:
+    """
+    Sincroniza los RotativoMeasurement del attempt desde Webfleet (showIOActivities).
+
+    Mismo contrato que `sync_attempt_gps`: idempotente, usa circuit breaker y
+    rate limiter, funciona en modo mock sin credenciales.
+    """
+    attempt = Attempt.query.get(attempt_id)
+    if not attempt:
+        raise WebfleetSyncError(f"Attempt {attempt_id} no encontrado")
+
+    if not attempt.startTime:
+        raise WebfleetSyncError("El Attempt no tiene startTime — no se puede acotar el rango")
+
+    vehicle = Vehicle.query.get(attempt.vehicleId) if attempt.vehicleId else None
+    if not vehicle:
+        raise WebfleetSyncError("El Attempt no tiene Vehicle asociado")
+    if not vehicle.webfleetObjectNo:
+        raise WebfleetSyncError(
+            f"El vehículo {vehicle.name} no tiene mapeado un objectno de Webfleet. "
+            "Configurá `Vehicle.webfleetObjectNo` antes de sincronizar."
+        )
+
+    range_from = attempt.startTime - timedelta(seconds=30)
+    range_to = attempt.endTime or (datetime.utcnow() + timedelta(minutes=5))
+    range_to = range_to + timedelta(seconds=30)
+
+    try:
+        raw_rows = show_digital_events(vehicle.webfleetObjectNo, range_from, range_to)
+    except WebfleetError as exc:
+        raise WebfleetSyncError(str(exc)) from exc
+
+    was_mock = bool(raw_rows and raw_rows[0].get("_mock"))
+
+    RotativoMeasurement.query.filter_by(attemptId=attempt_id).delete()
+
+    inserted = 0
+    for r in raw_rows:
+        raw_ts = r.get("msg_time") or r.get("pos_time", "")
+        ts = None
+        for fmt in ("%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"):
+            try:
+                ts = datetime.strptime(raw_ts.strip(), fmt)
+                break
+            except (ValueError, AttributeError):
+                continue
+        if ts is None:
+            continue
+
+        input_val = str(r.get("input_value", "0"))
+        state = "1" if input_val in ("1", "true", "on", "ON") else "0"
+        db.session.add(RotativoMeasurement(
+            attemptId=attempt_id,
+            organizationId=attempt.organizationId,
+            timestamp=ts,
+            state=state,
+            key=int(r.get("input_no", 1)),
+        ))
+        inserted += 1
+
+    db.session.commit()
+
+    logger.info(
+        "Webfleet rotativo sync attempt=%s rows=%s mock=%s source=%s",
+        attempt_id, inserted, was_mock, source,
+    )
+
+    return {
+        "attempt_id": attempt_id,
+        "rows_inserted": inserted,
         "was_mock": was_mock,
     }
 

@@ -207,6 +207,9 @@ def intento_detalle(attempt_id):
     )
     is_invalidated = attempt is not None and attempt.status == AttemptStatus.INVALIDATED
 
+    from app.services.webfleet import get_attempt_data_status
+    data_status = get_attempt_data_status(attempt_id)
+
     return render_template(
         "manager/intento.html",
         active_page="matriz",
@@ -223,6 +226,7 @@ def intento_detalle(attempt_id):
         invalidated_reason=attempt.invalidatedReason if is_invalidated else None,
         webfleet_synced_at=attempt.webfleetSyncedAt if attempt else None,
         webfleet_sync_source=attempt.webfleetSyncSource if attempt else None,
+        data_status=data_status,
     )
 
 
@@ -357,19 +361,34 @@ def select_session(attempt_id, upload_id):
                 attempt_id=attempt_id, upload_id=upload_id, sessions=sessions,
             )
 
+        delete_upload(upload_id)
+
+        # Intentar auto-cierre si ya hay GPS y rotativo de Webfleet.
+        # Si no, el worker periódico lo completará cuando lleguen.
         try:
-            pipeline_result = run_pipeline(attempt_id, actor_id=actor_id)
-            flash(
-                f"Sesión {session_number} cargada: {parse_result.summary()}. "
-                f"Score: {pipeline_result['score']} · {pipeline_result['events_detected']} eventos.",
-                "success",
-            )
-        except ValueError as exc:
-            flash(f"Datos cargados pero error al calcular score: {exc}", "warning")
+            from app.services.webfleet import check_and_autoclose, get_attempt_data_status
+            closed = check_and_autoclose(attempt_id, actor_id=actor_id)
+            if closed:
+                flash(
+                    f"Sesión {session_number} cargada y puntuada automáticamente. "
+                    f"Estabilidad: {parse_result.stability_rows} muestras.",
+                    "success",
+                )
+            else:
+                status = get_attempt_data_status(attempt_id)
+                missing = []
+                if not status["has_gps"]:
+                    missing.append("GPS")
+                if not status["has_rotativo"]:
+                    missing.append("Rotativo")
+                flash(
+                    f"Datos de estabilidad cargados ({parse_result.stability_rows} muestras). "
+                    f"Pendiente de Webfleet: {', '.join(missing)}. "
+                    "El intento se cerrará automáticamente cuando lleguen.",
+                    "info",
+                )
         except Exception as exc:
-            flash(f"Datos cargados pero error en el pipeline: {exc}", "danger")
-        finally:
-            delete_upload(upload_id)
+            flash(f"Estabilidad cargada, pero error al verificar completitud: {exc}", "warning")
 
         return redirect(detail_url)
 
@@ -408,8 +427,8 @@ def invalidar_intento(attempt_id):
 @manager_bp.route("/intento/<attempt_id>/import-webfleet", methods=["POST"])
 @require_role(["MANAGER", "ADMIN"])
 def import_webfleet(attempt_id):
-    """Sincroniza los GpsMeasurement del intento desde Webfleet (manual)."""
-    from app.services.webfleet import sync_attempt_gps, WebfleetSyncError
+    """Sincroniza GPS del intento desde Webfleet (manual)."""
+    from app.services.webfleet import sync_attempt_gps, check_and_autoclose, WebfleetSyncError
 
     org_id = _get_org_id()
     actor_id = get_jwt_identity()
@@ -422,11 +441,43 @@ def import_webfleet(attempt_id):
         result = sync_attempt_gps(attempt_id, actor_id=actor_id, source="manual")
         suffix = " (modo demo)" if result["was_mock"] else ""
         flash(
-            f"Webfleet: {result['rows_inserted']} puntos GPS importados{suffix}.",
+            f"Webfleet GPS: {result['rows_inserted']} puntos importados{suffix}.",
             "success",
         )
+        closed = check_and_autoclose(attempt_id, actor_id=actor_id)
+        if closed:
+            flash("Datos completos — intento cerrado y puntuado automáticamente.", "success")
     except WebfleetSyncError as exc:
-        flash(f"Error al sincronizar con Webfleet: {exc}", "danger")
+        flash(f"Error al sincronizar GPS con Webfleet: {exc}", "danger")
+
+    return redirect(url_for("manager.intento_detalle", attempt_id=attempt_id))
+
+
+@manager_bp.route("/intento/<attempt_id>/import-webfleet-rotativo", methods=["POST"])
+@require_role(["MANAGER", "ADMIN"])
+def import_webfleet_rotativo(attempt_id):
+    """Sincroniza el rotativo del intento desde Webfleet (manual)."""
+    from app.services.webfleet import sync_attempt_rotativo, check_and_autoclose, WebfleetSyncError
+
+    org_id = _get_org_id()
+    actor_id = get_jwt_identity()
+
+    attempt = Attempt.query.filter_by(id=attempt_id, organizationId=org_id).first()
+    if not attempt:
+        abort(404)
+
+    try:
+        result = sync_attempt_rotativo(attempt_id, actor_id=actor_id, source="manual")
+        suffix = " (modo demo)" if result["was_mock"] else ""
+        flash(
+            f"Webfleet Rotativo: {result['rows_inserted']} eventos importados{suffix}.",
+            "success",
+        )
+        closed = check_and_autoclose(attempt_id, actor_id=actor_id)
+        if closed:
+            flash("Datos completos — intento cerrado y puntuado automáticamente.", "success")
+    except WebfleetSyncError as exc:
+        flash(f"Error al sincronizar rotativo con Webfleet: {exc}", "danger")
 
     return redirect(url_for("manager.intento_detalle", attempt_id=attempt_id))
 
@@ -740,3 +791,49 @@ def abrir_intento(student_id):
 
     flash("Intento abierto. Subí ahora el archivo del sensor.", "success")
     return redirect(url_for("manager.intento_detalle", attempt_id=attempt.id))
+
+
+# ── Vehículos y mapeo Webfleet ────────────────────────────────────────────────
+
+@manager_bp.route("/vehiculos")
+@require_role(["MANAGER", "ADMIN"])
+def vehiculos_list():
+    """Lista los vehículos de la organización con opción de mapear Webfleet objectno."""
+    org_id = _get_org_id()
+    vehicles = Vehicle.query.filter_by(organizationId=org_id).order_by(Vehicle.name.asc()).all()
+    return render_template(
+        "manager/vehiculos.html",
+        active_page="vehiculos",
+        vehicles=vehicles,
+    )
+
+
+@manager_bp.route("/vehiculos/<vehicle_id>/set-webfleet", methods=["POST"])
+@require_role(["MANAGER", "ADMIN"])
+def vehicle_set_webfleet(vehicle_id):
+    """Asigna el objectno de Webfleet a un vehículo de la organización."""
+    org_id = _get_org_id()
+    vehicle = Vehicle.query.filter_by(id=vehicle_id, organizationId=org_id).first()
+    if not vehicle:
+        abort(404)
+
+    objectno = (request.form.get("webfleet_objectno") or "").strip() or None
+
+    if objectno:
+        existing = Vehicle.query.filter(
+            Vehicle.webfleetObjectNo == objectno,
+            Vehicle.id != vehicle_id,
+        ).first()
+        if existing:
+            flash(f"El objectno '{objectno}' ya está asignado al vehículo {existing.name}.", "danger")
+            return redirect(url_for("manager.vehiculos_list"))
+
+    vehicle.webfleetObjectNo = objectno
+    db.session.commit()
+
+    if objectno:
+        flash(f"Vehículo '{vehicle.name}' mapeado a Webfleet objectno '{objectno}'.", "success")
+    else:
+        flash(f"Mapeado de Webfleet eliminado para '{vehicle.name}'.", "info")
+
+    return redirect(url_for("manager.vehiculos_list"))

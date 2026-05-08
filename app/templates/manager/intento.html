@@ -238,33 +238,93 @@
             </div>
 
 
+            <!-- Estado de datos del intento -->
             <div style="margin: 16px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
-                <h4 style="margin:0 0 8px; font-size:13px; color:#334155;">
-                    <i class="ph ph-cloud-arrow-down"></i> Datos GPS desde Webfleet
+                <h4 style="margin:0 0 10px; font-size:13px; color:#334155;">
+                    <i class="ph ph-database"></i> Estado de datos
                 </h4>
-                {% if webfleet_synced_at %}
-                <p style="color:#475569; font-size:12px; margin:0 0 8px;">
-                    Última sincronización: {{ webfleet_synced_at.strftime('%d/%m/%Y %H:%M') }}
-                    {% if webfleet_sync_source == 'mock' %}
-                    <span style="color:#92400e; background:#fef3c7; padding:1px 6px; border-radius:4px; font-size:11px;">
-                        modo demo
-                    </span>
-                    {% endif %}
-                </p>
-                {% else %}
-                <p style="color:#64748b; font-size:12px; margin:0 0 8px;">
-                    Aún no se han importado los datos GPS del recorrido desde Webfleet.
+                <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
+
+                    <!-- Estabilidad -->
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:6px; background:{% if data_status.has_stability %}#f0fdf4{% else %}#fef2f2{% endif %}; border:1px solid {% if data_status.has_stability %}#86efac{% else %}#fecaca{% endif %};">
+                        <span style="font-size:13px; font-weight:600; color:#334155;">
+                            <i class="ph ph-activity" style="color:{% if data_status.has_stability %}#16a34a{% else %}#dc2626{% endif %};"></i>
+                            Estabilidad (Doback)
+                        </span>
+                        {% if data_status.has_stability %}
+                        <span style="font-size:12px; color:#16a34a; font-weight:700;"><i class="ph ph-check-circle"></i> Listo</span>
+                        {% else %}
+                        <span style="font-size:12px; color:#dc2626; font-weight:700;"><i class="ph ph-x-circle"></i> Pendiente</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- GPS Webfleet -->
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:6px; background:{% if data_status.has_gps %}#f0fdf4{% else %}#fef2f2{% endif %}; border:1px solid {% if data_status.has_gps %}#86efac{% else %}#fecaca{% endif %};">
+                        <span style="font-size:13px; font-weight:600; color:#334155;">
+                            <i class="ph ph-map-pin" style="color:{% if data_status.has_gps %}#16a34a{% else %}#dc2626{% endif %};"></i>
+                            GPS (Webfleet)
+                        </span>
+                        {% if data_status.has_gps %}
+                        <span style="font-size:12px; color:#16a34a; font-weight:700;"><i class="ph ph-check-circle"></i> Listo</span>
+                        {% else %}
+                        <span style="font-size:12px; color:#dc2626; font-weight:700;"><i class="ph ph-x-circle"></i> Pendiente</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Rotativo Webfleet -->
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:6px; background:{% if data_status.has_rotativo %}#f0fdf4{% else %}#fef2f2{% endif %}; border:1px solid {% if data_status.has_rotativo %}#86efac{% else %}#fecaca{% endif %};">
+                        <span style="font-size:13px; font-weight:600; color:#334155;">
+                            <i class="ph ph-lightbulb" style="color:{% if data_status.has_rotativo %}#16a34a{% else %}#dc2626{% endif %};"></i>
+                            Rotativo (Webfleet)
+                        </span>
+                        {% if data_status.has_rotativo %}
+                        <span style="font-size:12px; color:#16a34a; font-weight:700;"><i class="ph ph-check-circle"></i> Listo</span>
+                        {% else %}
+                        <span style="font-size:12px; color:#dc2626; font-weight:700;"><i class="ph ph-x-circle"></i> Pendiente</span>
+                        {% endif %}
+                    </div>
+
+                </div>
+
+                {% if not data_status.is_complete and not data_status.has_gps %}
+                <p style="color:#64748b; font-size:11px; margin:0 0 10px;">
+                    El worker sincroniza automáticamente cada 10 minutos.
+                    También puedes importar manualmente:
                 </p>
                 {% endif %}
-                <form method="POST"
-                      action="{{ url_for('manager.import_webfleet', attempt_id=attempt_id) }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit"
-                            style="width:100%; padding:8px; border:1px solid #cbd5e1; background:#fff; color:#0d47a1; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">
-                        <i class="ph ph-cloud-arrow-down"></i>
-                        {% if webfleet_synced_at %}Volver a sincronizar{% else %}Importar GPS desde Webfleet{% endif %}
-                    </button>
-                </form>
+
+                <!-- Botones de sync manual -->
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    {% if not data_status.has_gps or webfleet_synced_at %}
+                    <form method="POST" action="{{ url_for('manager.import_webfleet', attempt_id=attempt_id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit"
+                                style="width:100%; padding:8px; border:1px solid #bfdbfe; background:#eff6ff; color:#1d4ed8; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">
+                            <i class="ph ph-cloud-arrow-down"></i>
+                            {% if data_status.has_gps %}Re-sincronizar GPS{% else %}Importar GPS desde Webfleet{% endif %}
+                            {% if webfleet_sync_source == 'mock' %}<span style="font-size:10px; opacity:.7;">(demo)</span>{% endif %}
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    {% if not data_status.has_rotativo or data_status.has_gps %}
+                    <form method="POST" action="{{ url_for('manager.import_webfleet_rotativo', attempt_id=attempt_id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit"
+                                style="width:100%; padding:8px; border:1px solid #d8b4fe; background:#faf5ff; color:#7c3aed; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">
+                            <i class="ph ph-lightbulb"></i>
+                            {% if data_status.has_rotativo %}Re-sincronizar Rotativo{% else %}Importar Rotativo desde Webfleet{% endif %}
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+
+                {% if webfleet_synced_at %}
+                <p style="color:#94a3b8; font-size:11px; margin:10px 0 0;">
+                    Último sync GPS: {{ webfleet_synced_at.strftime('%d/%m/%Y %H:%M') }}
+                    {% if webfleet_sync_source == 'mock' %}<span style="color:#92400e;">(modo demo)</span>{% endif %}
+                </p>
+                {% endif %}
             </div>
 
             {% if not is_invalidated %}

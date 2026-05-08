@@ -494,10 +494,16 @@ def parse_sensor_files(
 
     result = ParseResult(attempt_id=attempt_id)
 
-    # Idempotente: borrar mediciones previas
-    GpsMeasurement.query.filter_by(attemptId=attempt_id).delete()
-    StabilityMeasurement.query.filter_by(attemptId=attempt_id).delete()
-    RotativoMeasurement.query.filter_by(attemptId=attempt_id).delete()
+    # Idempotente: borrar solo los tipos de medición que vamos a reinsertar.
+    # Si solo llega estabilidad (flujo Webfleet), NO tocar GPS ni rotativo que
+    # ya pudo haber llegado de la API. Cada tipo se borra solo si su contenido
+    # está presente en esta llamada.
+    if stability_content:
+        StabilityMeasurement.query.filter_by(attemptId=attempt_id).delete()
+    if gps_content:
+        GpsMeasurement.query.filter_by(attemptId=attempt_id).delete()
+    if rotativo_content:
+        RotativoMeasurement.query.filter_by(attemptId=attempt_id).delete()
     CanMeasurement.query.filter_by(attemptId=attempt_id).delete()
 
     matched_any = False

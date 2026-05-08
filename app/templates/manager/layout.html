@@ -62,6 +62,11 @@
                 <i class="ph ph-trophy"></i>
                 <span>Ranking</span>
             </a>
+            <a href="{{ url_for('manager.vehiculos_list') }}"
+               class="mgr-nav__btn {% if active_page == 'vehiculos' %}active{% endif %}">
+                <i class="ph ph-truck"></i>
+                <span>Vehículos</span>
+            </a>
         </nav>
 
         <div class="mgr-header__right">

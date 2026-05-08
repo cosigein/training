@@ -66,3 +66,40 @@ def show_tracks(object_no: str, range_from: datetime, range_to: datetime) -> lis
             "_mock": True,
         })
     return rows
+
+
+def show_digital_events(
+    object_no: str,
+    range_from: datetime,
+    range_to: datetime,
+) -> list[dict]:
+    """
+    Genera eventos de entrada digital sintéticos (rotativo ON/OFF) para demo.
+
+    Imita la estructura de una respuesta de Webfleet showIOActivities:
+        msg_time   ISO timestamp del cambio de estado
+        input_no   número de canal digital (1 = rotativo)
+        input_value "1" (ON) | "0" (OFF)
+    """
+    duration_s = max(0, int((range_to - range_from).total_seconds()))
+    if duration_s == 0:
+        return []
+
+    seed = sum(ord(c) for c in (object_no or "MOCK"))
+    n_events = 3 + (seed % 5)
+    step = max(1, duration_s // (n_events + 1))
+
+    rows: list[dict] = []
+    state = True  # arranca en ON
+    for i in range(n_events):
+        offset = step * (i + 1) + (seed * (i + 1)) % max(1, step // 4)
+        ts = range_from + timedelta(seconds=min(offset, duration_s - 1))
+        rows.append({
+            "msg_time": ts.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "input_no": 1,
+            "input_value": "1" if state else "0",
+            "objectno": object_no,
+            "_mock": True,
+        })
+        state = not state
+    return rows

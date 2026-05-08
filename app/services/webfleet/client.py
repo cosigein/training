@@ -159,3 +159,84 @@ def show_tracks(
         return []
 
     return data
+
+
+def show_digital_events(
+    object_no: str,
+    range_from: datetime,
+    range_to: datetime,
+    input_no: int = 1,
+    timeout_s: float = 15.0,
+) -> list[dict]:
+    """
+    Pide activaciones de entradas digitales del vehículo (ej: rotativo de emergencia).
+
+    En modo real llama a `showIOActivities` de Webfleet.connect.
+    En mock genera eventos sintéticos ON/OFF.
+
+    Args:
+        object_no:  identificador del vehículo en Webfleet.
+        range_from: inicio del rango (UTC).
+        range_to:   fin del rango (UTC).
+        input_no:   número de canal digital (1 = rotativo por convención CMadrid).
+        timeout_s:  timeout HTTP.
+
+    Returns:
+        Lista de dicts con: msg_time, input_no, input_value, objectno.
+    """
+    if not _is_real_mode():
+        logger.info("Webfleet client en modo MOCK para showIOActivities")
+        return mock.show_digital_events(object_no, range_from, range_to)
+
+    if not _circuit_breaker.allow_request():
+        raise WebfleetError("Webfleet circuit breaker OPEN", code="circuit_open")
+
+    if not _rate_limiter.try_acquire():
+        raise WebfleetError("Cuota diaria de Webfleet agotada", code="rate_limit")
+
+    cfg = current_app.config
+    base_url = cfg["WEBFLEET_BASE_URL"]
+    params = _build_auth_params()
+    params["action"] = "showIOActivities"
+    params["objectno"] = object_no
+    params["range_pattern"] = "ud"
+    params["rangefrom_string"] = range_from.strftime("%Y-%m-%d %H:%M:%S")
+    params["rangeto_string"] = range_to.strftime("%Y-%m-%d %H:%M:%S")
+    params["inputno"] = str(input_no)
+
+    try:
+        with httpx.Client(timeout=timeout_s) as client:
+            resp = client.get(base_url, params=params)
+    except httpx.RequestError as exc:
+        _circuit_breaker.record_failure()
+        raise WebfleetError(f"Webfleet network error: {exc}", code="network") from exc
+
+    if resp.status_code >= 500:
+        _circuit_breaker.record_failure()
+        raise WebfleetError(f"Webfleet server error {resp.status_code}", http_status=resp.status_code, code="server_error")
+
+    if resp.status_code == 401:
+        _circuit_breaker.record_failure()
+        raise WebfleetError("Webfleet 401 — verificar credenciales", http_status=401, code="auth_failed")
+
+    if resp.status_code == 404 or resp.status_code == 400:
+        # showIOActivities puede no estar disponible en todas las cuentas — degradar a mock.
+        logger.warning("Webfleet showIOActivities no disponible (%s) — fallback a mock", resp.status_code)
+        return mock.show_digital_events(object_no, range_from, range_to)
+
+    if resp.status_code >= 400:
+        raise WebfleetError(f"Webfleet client error {resp.status_code}: {resp.text[:200]}", http_status=resp.status_code, code="client_error")
+
+    _circuit_breaker.record_success()
+
+    try:
+        data = resp.json()
+    except ValueError as exc:
+        raise WebfleetError("Webfleet response no es JSON válido", code="bad_response") from exc
+
+    if isinstance(data, dict):
+        data = data.get("data", data.get("rows", []))
+    if not isinstance(data, list):
+        return []
+
+    return data

@@ -11,6 +11,18 @@ Capas:
 
 Punto de entrada típico: `from app.services.webfleet.sync import sync_attempt_gps`.
 """
-from .sync import sync_attempt_gps, WebfleetSyncError
+from .sync import (
+    sync_attempt_gps,
+    sync_attempt_rotativo,
+    get_attempt_data_status,
+    check_and_autoclose,
+    WebfleetSyncError,
+)
 
-__all__ = ["sync_attempt_gps", "WebfleetSyncError"]
+__all__ = [
+    "sync_attempt_gps",
+    "sync_attempt_rotativo",
+    "get_attempt_data_status",
+    "check_and_autoclose",
+    "WebfleetSyncError",
+]
