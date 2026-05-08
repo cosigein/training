@@ -458,10 +458,87 @@
             .login-brand__sub, .login-brand__badge { display: none; }
             .login-right { padding: 32px 20px; }
         }
+
+        /* ── MODO KIOSKO ─────────────────────────────────────── */
+        .kiosko-mode .login-left   { display: none; }
+        .kiosko-mode .login-right  {
+            background: #060d1a;
+            align-items: center;
+            justify-content: center;
+        }
+        .kiosko-mode .login-form-wrap { max-width: 520px; }
+        .kiosko-mode .login-form-title { color: #f1f5f9; font-size: 28px; text-align: center; }
+        .kiosko-mode .login-form-sub   { color: #64748b; text-align: center; margin-bottom: 32px; }
+        .kiosko-mode .rfid-zone {
+            background: #0d1527;
+            border-color: rgba(13,71,161,.5);
+            padding: 40px;
+            gap: 16px;
+        }
+        .kiosko-mode .rfid-icon-wrap {
+            width: 80px; height: 80px;
+            background: rgba(13,71,161,.2);
+            border-radius: 50%;
+            font-size: 44px;
+            color: #93c5fd;
+        }
+        .kiosko-mode .rfid-title { color: #f1f5f9; font-size: 20px; }
+        .kiosko-mode .rfid-sub   { color: #64748b; font-size: 14px; }
+        .kiosko-mode .rfid-zone:hover .rfid-icon-wrap { background: #1a56db; color: #fff; }
+        .kiosko-mode .login-divider { color: #334155; }
+        .kiosko-mode .login-divider::before,
+        .kiosko-mode .login-divider::after { background: #1e293b; }
+        .kiosko-mode .kiosko-plaza-input {
+            width: 100%;
+            height: 64px;
+            padding: 0 20px;
+            background: #0a0f1a;
+            border: 2px solid rgba(255,255,255,.1);
+            border-radius: 10px;
+            color: #f1f5f9;
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 4px;
+            outline: none;
+            font-family: monospace;
+            transition: border-color 150ms;
+        }
+        .kiosko-mode .kiosko-plaza-input:focus { border-color: #1a56db; }
+        .kiosko-mode .kiosko-plaza-input::placeholder { color: #334155; letter-spacing: 2px; font-size: 18px; font-weight: 400; }
+        .kiosko-mode .kiosko-plaza-btn {
+            width: 100%;
+            height: 56px;
+            background: #1a56db;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            transition: background 150ms;
+        }
+        .kiosko-mode .kiosko-plaza-btn:hover { background: #1d4ed8; }
+        .kiosko-mode .login-footer { color: #1e293b; }
+        .kiosko-mode .rfid-error {
+            padding: 14px 16px;
+            background: rgba(220,38,38,.12);
+            border: 1.5px solid rgba(220,38,38,.3);
+            border-radius: 10px;
+            color: #fca5a5;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .kiosko-mode .rfid-error i { font-size: 18px; flex-shrink: 0; }
     </style>
 </head>
 
-<body>
+<body{% if request.args.get('kiosko') %} class="kiosko-mode"{% endif %}>
 <div class="login-root">
 
     <!-- Panel izquierdo — Branding -->
@@ -553,6 +630,42 @@
     <div class="login-right">
         <div class="login-form-wrap">
 
+            {% if request.args.get('kiosko') %}
+
+            {# ── MODO KIOSKO: solo RFID + plaza manual ── #}
+            {% if request.args.get('error') == 'rfid' %}
+            <div class="rfid-error">
+                <i class="ph ph-warning-circle"></i>
+                Tarjeta no reconocida. Introducí tu número de plaza manualmente.
+            </div>
+            {% endif %}
+
+            <h1 class="login-form-title">CMadrid Training</h1>
+            <p class="login-form-sub">Pasá tu tarjeta sobre el lector</p>
+
+            <div class="rfid-zone" id="btn-rfid">
+                <div class="rfid-icon-wrap">
+                    <i class="ph ph-identification-card"></i>
+                </div>
+                <p class="rfid-title">Acercar tarjeta RFID</p>
+                <p class="rfid-sub">El lector registrará tu entrada automáticamente</p>
+            </div>
+
+            <div class="login-divider">O introducí tu plaza</div>
+
+            <form method="GET" action="{{ url_for('kiosko.rutas') }}" style="display:flex; flex-direction:column; gap:12px;">
+                <input type="text" name="plaza" class="kiosko-plaza-input"
+                       placeholder="Nº plaza" maxlength="6" autocomplete="off">
+                <button type="submit" class="kiosko-plaza-btn">
+                    <i class="ph ph-arrow-right-bold"></i> Acceder
+                </button>
+            </form>
+
+            <p class="login-footer">Convocatoria 2026 · Bomberos CMadrid</p>
+
+            {% else %}
+
+            {# ── MODO NORMAL: email + contraseña ── #}
             {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
             <ul class="flash-list">
@@ -601,11 +714,6 @@
 
             <div class="login-divider">O</div>
 
-            <form id="rfid-form" action="{{ url_for('auth.login_rfid') }}" method="POST" style="display:none;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="rfid_uid" id="rfid-uid-input">
-            </form>
-
             <div class="rfid-zone" id="btn-rfid">
                 <div class="rfid-icon-wrap">
                     <i class="ph ph-identification-card"></i>
@@ -614,11 +722,12 @@
                 <p class="rfid-sub">Apoye su tarjeta física sobre el lector</p>
             </div>
 
-
             <p class="login-footer">
                 Acceso restringido a personal autorizado de CMadrid.<br>
                 Tus datos están protegidos conforme al RGPD.
             </p>
+
+            {% endif %}
 
         </div>
     </div>
@@ -626,23 +735,27 @@
 </div>
 
 <script>
-    // Password toggle
-    document.getElementById('pw-toggle').addEventListener('click', function() {
-        const input = document.getElementById('password');
-        const icon  = document.getElementById('pw-icon');
-        const show  = input.type === 'password';
-        input.type  = show ? 'text' : 'password';
-        icon.className = show ? 'ph ph-eye-slash' : 'ph ph-eye';
-    });
+    // Password toggle — solo en modo normal
+    var pwToggle = document.getElementById('pw-toggle');
+    if (pwToggle) {
+        pwToggle.addEventListener('click', function() {
+            const input = document.getElementById('password');
+            const icon  = document.getElementById('pw-icon');
+            const show  = input.type === 'password';
+            input.type  = show ? 'text' : 'password';
+            icon.className = show ? 'ph ph-eye-slash' : 'ph ph-eye';
+        });
+    }
 
-    // Loading state on submit
-    document.getElementById('login-form').addEventListener('submit', function() {
+    // Loading state on submit — solo en modo normal
+    var loginForm = document.getElementById('login-form');
+    if (loginForm) { loginForm.addEventListener('submit', function() {
         const btn = document.getElementById('btn-submit');
         btn.classList.add('btn-loading');
         btn.querySelector('i').style.display = 'none';
         btn.innerHTML = '<span style="opacity:.85">Verificando...</span>';
         btn.classList.add('btn-loading');
-    });
+    }); }
 
     // ── Lector RFID (ESP32 HID Bluetooth) ────────────────────────────
     // Solo actúa cuando ningún input está enfocado — así no interfiere
