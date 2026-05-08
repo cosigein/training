@@ -51,6 +51,16 @@ def get_metadata():
     return target_db.metadata
 
 
+# Tablas de PostGIS/sistema que Alembic no debe tocar nunca.
+_EXCLUDE_TABLES = {"spatial_ref_sys", "geometry_columns", "geography_columns", "raster_columns", "raster_overviews"}
+
+
+def include_object(object, name, type_, reflected, compare_to):
+    if type_ == "table" and name in _EXCLUDE_TABLES:
+        return False
+    return True
+
+
 def run_migrations_offline():
     """Run migrations in 'offline' mode.
 
@@ -65,7 +75,8 @@ def run_migrations_offline():
     """
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
-        url=url, target_metadata=get_metadata(), literal_binds=True
+        url=url, target_metadata=get_metadata(), literal_binds=True,
+        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -97,6 +108,7 @@ def run_migrations_online():
     connectable = get_engine()
 
     with connectable.connect() as connection:
+        conf_args.setdefault("include_object", include_object)
         context.configure(
             connection=connection,
             target_metadata=get_metadata(),
