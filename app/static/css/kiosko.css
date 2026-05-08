@@ -570,8 +570,34 @@ body {
     .ksk-stat { padding: 0 14px; }
 }
 
+/* Tablet portrait (768 – 1023 px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .ksk-login-card   { max-width: 580px; padding: 56px; }
+    .ksk-rutas-grid   { grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .ksk-ruta-card    { min-height: 180px; padding: 24px; }
+    .ksk-ruta-label   { font-size: 20px; }
+    .ksk-stat         { padding: 0 32px; }
+    .ksk-stat__val    { font-size: 26px; }
+    .ksk-header       { height: 80px; padding: 0 32px; }
+    .ksk-driver-name  { font-size: 19px; }
+    .ksk-body         { padding: 28px 32px; }
+    .ksk-breakdown__row { grid-template-columns: 130px 1fr 70px; }
+}
+
+/* Tablet landscape / desktop (≥ 1024 px) */
 @media (min-width: 1024px) {
-    .ksk-rutas-grid { grid-template-columns: repeat(4, 1fr); }
+    .ksk-login-card   { max-width: 560px; padding: 60px; }
+    .ksk-rutas-grid   { grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .ksk-ruta-card    { min-height: 200px; padding: 28px; }
+    .ksk-ruta-label   { font-size: 20px; }
+    .ksk-stat         { padding: 0 40px; }
+    .ksk-stat__val    { font-size: 28px; }
+    .ksk-header       { height: 84px; padding: 0 36px; }
+    .ksk-driver-name  { font-size: 20px; }
+    .ksk-body         { padding: 32px 40px; }
+    .ksk-breakdown__row { grid-template-columns: 140px 1fr 80px; }
+    .ksk-intento-map  { min-height: 0; }
+    .ksk-panel-breakdown__item { min-width: 160px; }
 }
 
 /* ── INTENTO — Score display (header) ──────────────────────────────── */

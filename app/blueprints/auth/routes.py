@@ -60,17 +60,7 @@ def login():
         set_refresh_cookies(response, refresh_token)
         return response
         
-    debug_students = []
-    if current_app.config.get('DEBUG'):
-        # Buscar estudiantes que tengan tarjeta RFID asignada para el simulador
-        students = User.query.filter_by(role=UserRole.STUDENT).all()
-        for s in students:
-            card = RfidCard.query.filter_by(assignedTo=s.id, active=True).filter(RfidCard.revokedAt.is_(None)).first()
-            if card:
-                s.rfid_uid = card.uid
-                debug_students.append(s)
-
-    return render_template("auth/login.html", debug_students=debug_students)
+    return render_template("auth/login.html")
     
 @auth_bp.route("/login-rfid", methods=["POST"])
 def login_rfid():

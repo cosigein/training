@@ -606,35 +606,12 @@
                 <input type="hidden" name="rfid_uid" id="rfid-uid-input">
             </form>
 
-            <div class="rfid-zone" id="btn-rfid" onclick="simulateRfid('RFID_DEMO_CARD')">
+            <div class="rfid-zone" id="btn-rfid">
                 <div class="rfid-icon-wrap">
                     <i class="ph ph-identification-card"></i>
                 </div>
                 <p class="rfid-title">Acercar tarjeta RFID</p>
                 <p class="rfid-sub">Apoye su tarjeta física sobre el lector</p>
-            </div>
-
-            <!-- Zona DEBUG -->
-            <div style="margin-top: 16px; padding: 12px; border: 1.5px dashed #f59e0b; background: #fffbeb; border-radius: 10px; text-align: center;">
-                <p style="font-size: 10px; font-weight: 800; color: #b45309; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 1px;">
-                    <i class="ph ph-bug"></i> Modo DEBUG
-                </p>
-                {% if debug_students %}
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <select id="debug-student-selector" style="width: 100%; font-size: 11px; padding: 7px; border: 1.2px solid #f59e0b; border-radius: 6px; background: #fff; outline: none; font-family: var(--font-body); color: #92400e;">
-                        <option value="">Seleccionar Alumno (Kiosko)...</option>
-                        {% for s in debug_students %}
-                        <option value="{{ s.rfid_uid }}">{{ s.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <button type="button" onclick="const uid = document.getElementById('debug-student-selector').value; if(uid) simulateRfid(uid); else alert('Por favor, selecciona un alumno primero');" 
-                            style="width: 100%; font-size: 11px; padding: 8px; background: #f59e0b; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; transition: all 150ms ease; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                        <i class="ph ph-fingerprint"></i> Simular Tap Seleccionado
-                    </button>
-                </div>
-                {% else %}
-                <p style="font-size: 10px; color: #b45309;">No hay alumnos con RFID activos.</p>
-                {% endif %}
             </div>
 
 
