@@ -239,25 +239,6 @@
             color: #1e293b;
         }
 
-        /* ── BOTÓN FULLSCREEN ── */
-        .ksk-fs-btn {
-            position: fixed;
-            bottom: 52px;
-            right: 16px;
-            width: 40px;
-            height: 40px;
-            background: rgba(255,255,255,.04);
-            border: 1px solid rgba(255,255,255,.07);
-            border-radius: 8px;
-            color: #1e293b;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all .15s;
-        }
-        .ksk-fs-btn:hover { background: rgba(255,255,255,.08); color: #334155; }
     </style>
 </head>
 <body>
@@ -307,11 +288,6 @@
     <span class="ksk-bar__clock" id="ksk-clock"></span>
 </div>
 
-<!-- Botón fullscreen -->
-<button class="ksk-fs-btn" id="ksk-fs-btn" title="Pantalla completa">
-    <i class="ph ph-arrows-out" id="ksk-fs-icon"></i>
-</button>
-
 <script>
 (function () {
     /* ── Reloj ── */
@@ -338,20 +314,19 @@
     window.addEventListener('offline', updateOnline);
     updateOnline();
 
-    /* ── Fullscreen ── */
-    var fsBtn  = document.getElementById('ksk-fs-btn');
-    var fsIcon = document.getElementById('ksk-fs-icon');
-    function updateFsIcon() {
-        fsIcon.className = document.fullscreenElement ? 'ph ph-arrows-in' : 'ph ph-arrows-out';
-    }
-    fsBtn.addEventListener('click', function () {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(function(){});
-        } else {
-            document.exitFullscreen();
+    /* ── Wake Lock — pantalla siempre encendida ── */
+    var wakeLock = null;
+    function requestWakeLock() {
+        if ('wakeLock' in navigator) {
+            navigator.wakeLock.request('screen')
+                .then(function (lock) { wakeLock = lock; })
+                .catch(function () {});
         }
+    }
+    requestWakeLock();
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') requestWakeLock();
     });
-    document.addEventListener('fullscreenchange', updateFsIcon);
 
     /* Auto-fullscreen al primer toque */
     document.addEventListener('touchstart', function autoFs() {
