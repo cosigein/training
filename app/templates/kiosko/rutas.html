@@ -26,7 +26,7 @@
                 <span>{{ convocatoria.nombre }}</span>
             </div>
         </div>
-        <a href="{{ url_for('auth.logout') }}" class="ksk-btn ksk-btn--danger" style="height:44px; padding:0 20px; font-size:13px">
+        <a href="{{ url_for('kiosko.index') }}" class="ksk-btn ksk-btn--danger" style="height:44px; padding:0 20px; font-size:13px">
             <i class="ph ph-sign-out"></i>
             SALIR
         </a>
@@ -178,7 +178,7 @@
     var idleWarn = document.getElementById('ksk-idle-warn');
     var idleTxt = document.getElementById('ksk-idle-txt');
     var idleSep = document.getElementById('ksk-idle-sep');
-    var LOGOUT_URL = '{{ url_for("auth.logout") }}';
+    var LOGOUT_URL = '{{ url_for("kiosko.index") }}';
     var IDLE_TIMEOUT = 5 * 60 * 1000;   // 5 min → cierre automático
     var WARN_AT = 60 * 1000;            // aviso cuando queda 1 min
 

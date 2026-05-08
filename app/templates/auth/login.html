@@ -522,6 +522,25 @@
         }
         .kiosko-mode .kiosko-plaza-btn:hover { background: #1d4ed8; }
         .kiosko-mode .login-footer { color: #1e293b; }
+        .ksk-fullscreen-btn {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 10px;
+            color: #475569;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            transition: background 150ms;
+        }
+        .ksk-fullscreen-btn:hover { background: rgba(255,255,255,.12); color: #94a3b8; }
         .kiosko-mode .rfid-error {
             padding: 14px 16px;
             background: rgba(220,38,38,.12);
@@ -539,6 +558,11 @@
 </head>
 
 <body{% if request.args.get('kiosko') %} class="kiosko-mode"{% endif %}>
+{% if request.args.get('kiosko') %}
+<button class="ksk-fullscreen-btn" id="ksk-fs-btn" title="Pantalla completa">
+    <i class="ph ph-arrows-out" id="ksk-fs-icon"></i>
+</button>
+{% endif %}
 <div class="login-root">
 
     <!-- Panel izquierdo — Branding -->
@@ -650,16 +674,6 @@
                 <p class="rfid-title">Acercar tarjeta RFID</p>
                 <p class="rfid-sub">El lector registrará tu entrada automáticamente</p>
             </div>
-
-            <div class="login-divider">O introducí tu plaza</div>
-
-            <form method="GET" action="{{ url_for('kiosko.rutas') }}" style="display:flex; flex-direction:column; gap:12px;">
-                <input type="text" name="plaza" class="kiosko-plaza-input"
-                       placeholder="Nº plaza" maxlength="6" autocomplete="off">
-                <button type="submit" class="kiosko-plaza-btn">
-                    <i class="ph ph-arrow-right-bold"></i> Acceder
-                </button>
-            </form>
 
             <p class="login-footer">Convocatoria 2026 · Bomberos CMadrid</p>
 
@@ -791,6 +805,25 @@
         rfidTimer = setTimeout(function () { rfidBuffer = ''; }, 500);
     });
     // ─────────────────────────────────────────────────────────────────
+
+    // Pantalla completa (solo modo kiosko)
+    var fsBtn = document.getElementById('ksk-fs-btn');
+    if (fsBtn) {
+        fsBtn.addEventListener('click', function () {
+            var icon = document.getElementById('ksk-fs-icon');
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(function () {});
+                icon.className = 'ph ph-arrows-in';
+            } else {
+                document.exitFullscreen();
+                icon.className = 'ph ph-arrows-out';
+            }
+        });
+        document.addEventListener('fullscreenchange', function () {
+            var icon = document.getElementById('ksk-fs-icon');
+            if (icon) icon.className = document.fullscreenElement ? 'ph ph-arrows-in' : 'ph ph-arrows-out';
+        });
+    }
 </script>
 
 </body>
