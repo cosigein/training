@@ -66,6 +66,13 @@
 (function () {
     var GPS_URL = '{% if attempt_id %}{{ url_for("kiosko.intento_gps", attempt_id=attempt_id) }}{% endif %}';
 
+    /* Auto-fullscreen al primer toque */
+    document.addEventListener('touchstart', function autoFs() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(function(){});
+        }
+    }, { once: true });
+
     // ── Clock ─────────────────────────────────────────────────────────
     var clockEl = document.getElementById('ksk-clock');
     function updateClock() {

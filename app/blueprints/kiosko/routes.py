@@ -27,7 +27,12 @@ from app.models.session import GpsMeasurement
 
 @kiosko_bp.route("/")
 def index():
-    return redirect(url_for("auth.login", kiosko=1))
+    return redirect(url_for("kiosko.login"))
+
+
+@kiosko_bp.route("/login")
+def login():
+    return render_template("kiosko/login.html")
 
 
 @kiosko_bp.route("/entrar", methods=["POST"])
@@ -43,7 +48,7 @@ def rfid_login():
     code = (request.args.get("code") or "").strip()
     resolved = resolve_enrollment_by_rfid(code)
     if not resolved:
-        return redirect(url_for("auth.login", kiosko=1, error="rfid"))
+        return redirect(url_for("kiosko.login", error="rfid"))
 
     enrollment, conv, org = resolved
     ctx = get_student_dashboard(enrollment.studentId, org.id, conv.id)

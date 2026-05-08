@@ -179,6 +179,13 @@
     var idleTxt = document.getElementById('ksk-idle-txt');
     var idleSep = document.getElementById('ksk-idle-sep');
     var LOGOUT_URL = '{{ url_for("kiosko.index") }}';
+
+    /* Auto-fullscreen al primer toque */
+    document.addEventListener('touchstart', function autoFs() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(function(){});
+        }
+    }, { once: true });
     var IDLE_TIMEOUT = 5 * 60 * 1000;   // 5 min → cierre automático
     var WARN_AT = 60 * 1000;            // aviso cuando queda 1 min
 

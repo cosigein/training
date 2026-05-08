@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -9,254 +8,394 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/kiosko.css') }}">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230d47a1'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='system-ui,sans-serif' font-size='13' font-weight='700' fill='white'%3ECM%3C/text%3E%3C/svg%3E">
     <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
-</head>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
 
+        body {
+            margin: 0;
+            background: #03080f;
+            color: #f1f5f9;
+            font-family: var(--font-body);
+            height: 100dvh;
+            overflow: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ── FONDO con gradiente radial ── */
+        .ksk-bg {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 50% 40%, #071428 0%, #03080f 70%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+        }
+
+        /* ── MARCA ── */
+        .ksk-brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 48px;
+        }
+
+        .ksk-brand__logo {
+            width: 52px;
+            height: 52px;
+            background: #0d47a1;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-heading);
+            font-size: 15px;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: .5px;
+            flex-shrink: 0;
+        }
+
+        .ksk-brand__text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .ksk-brand__name {
+            font-family: var(--font-heading);
+            font-size: 22px;
+            font-weight: 700;
+            color: #f1f5f9;
+            letter-spacing: -.3px;
+        }
+
+        .ksk-brand__name span { color: #3b82f6; }
+
+        .ksk-brand__sub {
+            font-size: 12px;
+            color: #334155;
+            letter-spacing: .3px;
+        }
+
+        /* ── ZONA RFID ── */
+        .ksk-rfid-zone {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 28px;
+        }
+
+        /* Anillos animados */
+        .ksk-rings {
+            position: absolute;
+            inset: -60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .ksk-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1.5px solid rgba(59, 130, 246, 0.25);
+            animation: ksk-pulse 3s ease-out infinite;
+        }
+
+        .ksk-ring:nth-child(1) { width: 160px; height: 160px; animation-delay: 0s; }
+        .ksk-ring:nth-child(2) { width: 220px; height: 220px; animation-delay: .8s; }
+        .ksk-ring:nth-child(3) { width: 280px; height: 280px; animation-delay: 1.6s; }
+
+        @keyframes ksk-pulse {
+            0%   { opacity: .6; transform: scale(.85); }
+            60%  { opacity: .15; }
+            100% { opacity: 0;  transform: scale(1.1); }
+        }
+
+        /* Icono central */
+        .ksk-rfid-icon {
+            position: relative;
+            z-index: 2;
+            width: 120px;
+            height: 120px;
+            background: #0a1628;
+            border: 2px solid rgba(59, 130, 246, 0.35);
+            border-radius: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 56px;
+            color: #3b82f6;
+            transition: all .3s ease;
+            box-shadow: 0 0 40px rgba(59,130,246,.12), inset 0 1px 0 rgba(255,255,255,.05);
+        }
+
+        .ksk-rfid-icon--reading {
+            border-color: #3b82f6;
+            color: #93c5fd;
+            box-shadow: 0 0 60px rgba(59,130,246,.35), inset 0 1px 0 rgba(255,255,255,.05);
+            animation: ksk-reading .6s ease-in-out infinite alternate;
+        }
+
+        @keyframes ksk-reading {
+            from { box-shadow: 0 0 40px rgba(59,130,246,.3); }
+            to   { box-shadow: 0 0 80px rgba(59,130,246,.6); }
+        }
+
+        /* Textos */
+        .ksk-rfid-label {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .ksk-rfid-title {
+            font-family: var(--font-heading);
+            font-size: 24px;
+            font-weight: 700;
+            color: #e2e8f0;
+            letter-spacing: -.2px;
+        }
+
+        .ksk-rfid-sub {
+            font-size: 14px;
+            color: #334155;
+        }
+
+        /* ── ERROR ── */
+        .ksk-error {
+            margin-top: 32px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 24px;
+            background: rgba(220, 38, 38, .1);
+            border: 1px solid rgba(220, 38, 38, .3);
+            border-radius: 12px;
+            color: #fca5a5;
+            font-size: 14px;
+            font-weight: 500;
+            animation: ksk-fadein .3s ease;
+        }
+
+        .ksk-error i { font-size: 18px; flex-shrink: 0; }
+
+        @keyframes ksk-fadein {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── BARRA INFERIOR ── */
+        .ksk-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: #020509;
+            border-top: 1px solid rgba(255,255,255,.04);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            gap: 16px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .4px;
+            text-transform: uppercase;
+            color: #1e293b;
+        }
+
+        .ksk-bar__dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #22c55e;
+            flex-shrink: 0;
+            transition: background .3s;
+        }
+
+        .ksk-bar__dot--offline { background: #ef4444; animation: blink 1s step-start infinite; }
+        @keyframes blink { 50% { opacity: .2; } }
+
+        .ksk-bar__status { color: #22c55e; }
+        .ksk-bar__status--offline { color: #ef4444; }
+
+        .ksk-bar__sep {
+            width: 1px; height: 14px;
+            background: rgba(255,255,255,.06);
+        }
+
+        .ksk-bar__clock {
+            margin-left: auto;
+            font-variant-numeric: tabular-nums;
+            font-size: 13px;
+            color: #1e293b;
+        }
+
+        /* ── BOTÓN FULLSCREEN ── */
+        .ksk-fs-btn {
+            position: fixed;
+            bottom: 52px;
+            right: 16px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.07);
+            border-radius: 8px;
+            color: #1e293b;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .ksk-fs-btn:hover { background: rgba(255,255,255,.08); color: #334155; }
+    </style>
+</head>
 <body>
 
-    <div class="ksk-login-bg">
-        <div class="ksk-login-card">
+<div class="ksk-bg">
 
-            <div class="ksk-brand">
-                <div class="ksk-brand__icon">CM</div>
-                <div>
-                    <div class="ksk-brand__name">CMadrid <span style="color:#1a56db">Training</span></div>
-                    <div class="ksk-brand__sub">Sistema de evaluación · Bomberos CMadrid</div>
-                </div>
-            </div>
-
-            <form class="ksk-login-form" action="{{ url_for('kiosko.rutas') }}" method="get">
-                <label for="plaza">Número de plaza</label>
-                <input type="text" id="plaza" name="plaza" class="ksk-input" maxlength="6"
-                    autocomplete="off" autofocus>
-                <button type="submit" class="ksk-btn ksk-btn--primary">
-                    <i class="ph ph-arrow-right-bold"></i>
-                    ACCEDER
-                </button>
-            </form>
-
-            {% if request.args.get('error') == 'rfid' %}
-            <div class="ksk-login-footer" style="color:#f87171; margin-bottom:8px;">
-                <i class="ph ph-warning-circle"></i>
-                Tarjeta no reconocida. Introduce tu plaza manualmente.
-            </div>
-            {% endif %}
-            <div class="ksk-login-footer">
-                Convocatoria 2026 · Bomberos CMadrid<br>
-                Pasa tu tarjeta o introduce tu número de plaza
-            </div>
-
+    <div class="ksk-brand">
+        <div class="ksk-brand__logo">CM</div>
+        <div class="ksk-brand__text">
+            <div class="ksk-brand__name">CMadrid <span>Training</span></div>
+            <div class="ksk-brand__sub">Sistema de evaluación · Bomberos CMadrid</div>
         </div>
     </div>
 
-    <!-- Recovery modal: shown if there are pending offline taps -->
-    <div id="ksk-recovery" class="ksk-recovery-overlay" style="display:none;" role="dialog" aria-modal="true">
-        <div class="ksk-recovery-modal">
-            <div class="ksk-recovery-modal__title">
-                <i class="ph ph-warning-circle"></i>
-                Registros pendientes
-            </div>
-            <div class="ksk-recovery-modal__body">
-                Se detectaron registros sin sincronizar de la sesión anterior. Puede reenviarlos ahora
-                o limpiarlos si ya fueron procesados manualmente.
-            </div>
-            <div class="ksk-recovery-modal__count" id="ksk-recovery-count">0</div>
-            <div class="ksk-recovery-modal__body" style="font-size:11px;color:#475569;text-align:center;margin-top:-12px;">
-                registros sin sincronizar
-            </div>
-            <div class="ksk-recovery-modal__actions">
-                <button class="ksk-btn ksk-btn--primary" style="flex:1;" onclick="kskRetryQueue()">
-                    <i class="ph ph-arrows-clockwise"></i> Reintentar
-                </button>
-                <button class="ksk-btn ksk-btn--ghost" style="flex:1;" onclick="kskClearQueue()">
-                    <i class="ph ph-trash"></i> Limpiar
-                </button>
-            </div>
-            <button class="ksk-btn ksk-btn--ghost" onclick="document.getElementById('ksk-recovery').style.display='none'">
-                Continuar sin sincronizar
-            </button>
+    <div class="ksk-rfid-zone">
+        <div class="ksk-rings">
+            <div class="ksk-ring"></div>
+            <div class="ksk-ring"></div>
+            <div class="ksk-ring"></div>
+        </div>
+        <div class="ksk-rfid-icon" id="rfid-icon">
+            <i class="ph ph-identification-card" id="rfid-icon-i"></i>
+        </div>
+        <div class="ksk-rfid-label">
+            <div class="ksk-rfid-title" id="rfid-title">Acercar tarjeta</div>
+            <div class="ksk-rfid-sub" id="rfid-sub">Apoya tu tarjeta sobre el lector para identificarte</div>
         </div>
     </div>
 
-    <!-- Persistent status bar -->
-    <div class="ksk-statusbar" style="position:fixed;bottom:0;left:0;right:0;z-index:10;">
-        <div class="ksk-statusbar__online" id="ksk-status-label">
-            <span class="ksk-statusbar__dot" id="ksk-dot"></span>
-            <span id="ksk-status-text">EN LÍNEA</span>
-        </div>
-        <div class="ksk-statusbar__sep"></div>
-        <div class="ksk-statusbar__pending ksk-statusbar__pending--hidden" id="ksk-pending">
-            <i class="ph ph-cloud-slash"></i>
-            <span>0 pendientes</span>
-        </div>
-        <span class="ksk-statusbar__clock" id="ksk-clock"></span>
+    {% if request.args.get('error') == 'rfid' %}
+    <div class="ksk-error">
+        <i class="ph ph-warning-circle"></i>
+        Tarjeta no reconocida o alumno sin convocatoria activa
     </div>
+    {% endif %}
+
+</div>
+
+<!-- Barra inferior -->
+<div class="ksk-bar">
+    <span class="ksk-bar__dot" id="ksk-dot"></span>
+    <span class="ksk-bar__status" id="ksk-status">EN LÍNEA</span>
+    <span class="ksk-bar__sep"></span>
+    <span id="ksk-pending" style="display:none; color:#f59e0b;">
+        <i class="ph ph-cloud-slash"></i> <span id="ksk-pending-n">0</span> pendientes
+    </span>
+    <span class="ksk-bar__clock" id="ksk-clock"></span>
+</div>
+
+<!-- Botón fullscreen -->
+<button class="ksk-fs-btn" id="ksk-fs-btn" title="Pantalla completa">
+    <i class="ph ph-arrows-out" id="ksk-fs-icon"></i>
+</button>
 
 <script>
 (function () {
-    var dot = document.getElementById('ksk-dot');
-    var statusLabel = document.getElementById('ksk-status-label');
-    var statusText = document.getElementById('ksk-status-text');
+    /* ── Reloj ── */
     var clockEl = document.getElementById('ksk-clock');
-    var pendingEl = document.getElementById('ksk-pending');
-    var recoveryEl = document.getElementById('ksk-recovery');
-    var recoveryCount = document.getElementById('ksk-recovery-count');
-
-    function updateClock() {
-        var now = new Date();
+    function tick() {
+        var n = new Date();
         clockEl.textContent =
-            String(now.getHours()).padStart(2,'0') + ':' +
-            String(now.getMinutes()).padStart(2,'0') + ':' +
-            String(now.getSeconds()).padStart(2,'0');
+            String(n.getHours()).padStart(2,'0') + ':' +
+            String(n.getMinutes()).padStart(2,'0') + ':' +
+            String(n.getSeconds()).padStart(2,'0');
     }
-    setInterval(updateClock, 1000);
-    updateClock();
+    setInterval(tick, 1000); tick();
 
+    /* ── Online/offline ── */
+    var dot    = document.getElementById('ksk-dot');
+    var status = document.getElementById('ksk-status');
     function updateOnline() {
-        var online = navigator.onLine;
-        dot.classList.toggle('ksk-statusbar__dot--offline', !online);
-        statusLabel.classList.toggle('ksk-statusbar__online--offline', !online);
-        statusText.textContent = online ? 'EN LÍNEA' : 'SIN CONEXIÓN';
-        if (online) syncQueue();
+        var ok = navigator.onLine;
+        dot.classList.toggle('ksk-bar__dot--offline', !ok);
+        status.className = ok ? 'ksk-bar__status' : 'ksk-bar__status--offline';
+        status.textContent = ok ? 'EN LÍNEA' : 'SIN CONEXIÓN';
     }
     window.addEventListener('online', updateOnline);
     window.addEventListener('offline', updateOnline);
     updateOnline();
 
-    var DB_NAME = 'ksk_offline', STORE = 'taps', db = null;
-
-    function openDB(cb) {
-        if (db) { cb(db); return; }
-        var req = indexedDB.open(DB_NAME, 1);
-        req.onupgradeneeded = function (e) {
-            e.target.result.createObjectStore(STORE, { autoIncrement: true });
-        };
-        req.onsuccess = function (e) { db = e.target.result; cb(db); };
-        req.onerror = function () {};
+    /* ── Fullscreen ── */
+    var fsBtn  = document.getElementById('ksk-fs-btn');
+    var fsIcon = document.getElementById('ksk-fs-icon');
+    function updateFsIcon() {
+        fsIcon.className = document.fullscreenElement ? 'ph ph-arrows-in' : 'ph ph-arrows-out';
     }
-
-    function countPending(cb) {
-        openDB(function (d) {
-            var req = d.transaction(STORE, 'readonly').objectStore(STORE).count();
-            req.onsuccess = function () { cb(req.result); };
-            req.onerror = function () { cb(0); };
-        });
-    }
-
-    function updateBadge() {
-        countPending(function (n) {
-            if (n > 0) {
-                pendingEl.classList.remove('ksk-statusbar__pending--hidden');
-                pendingEl.querySelector('span').textContent = n + ' pendiente' + (n !== 1 ? 's' : '');
-            } else {
-                pendingEl.classList.add('ksk-statusbar__pending--hidden');
-            }
-        });
-    }
-
-    function syncQueue() {
-        if (!navigator.onLine) return;
-        openDB(function (d) {
-            var tx = d.transaction(STORE, 'readonly'), store = tx.objectStore(STORE);
-            var items, keys;
-            store.getAll().onsuccess = function (e) { items = e.target.result; };
-            store.getAllKeys().onsuccess = function (e) {
-                keys = e.target.result;
-                tx.oncomplete = function () {
-                    if (!items || !items.length) return;
-                    items.forEach(function (item, i) {
-                        fetch('/kiosko/tap', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(item)
-                        }).then(function (r) {
-                            if (r.ok) openDB(function (d2) {
-                                d2.transaction(STORE, 'readwrite').objectStore(STORE).delete(keys[i]);
-                                updateBadge();
-                            });
-                        }).catch(function () {});
-                    });
-                };
-            };
-        });
-    }
-
-    // Recovery check on page load
-    openDB(function () {
-        countPending(function (n) {
-            updateBadge();
-            if (n > 0) {
-                if (recoveryCount) recoveryCount.textContent = n;
-                if (recoveryEl) recoveryEl.style.display = 'flex';
-            }
-        });
+    fsBtn.addEventListener('click', function () {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(function(){});
+        } else {
+            document.exitFullscreen();
+        }
     });
+    document.addEventListener('fullscreenchange', updateFsIcon);
 
-    window.kskRetryQueue = function () {
-        if (recoveryEl) recoveryEl.style.display = 'none';
-        syncQueue();
-    };
-    window.kskClearQueue = function () {
-        openDB(function (d) {
-            d.transaction(STORE, 'readwrite').objectStore(STORE).clear().onsuccess = function () {
-                updateBadge();
-                if (recoveryEl) recoveryEl.style.display = 'none';
-            };
-        });
-    };
-    window.kskAddOfflineTap = function (data) {
-        openDB(function (d) {
-            d.transaction(STORE, 'readwrite').objectStore(STORE).add(data);
-            updateBadge();
-        });
-    };
+    /* Auto-fullscreen al primer toque */
+    document.addEventListener('touchstart', function autoFs() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(function(){});
+        }
+        document.removeEventListener('touchstart', autoFs);
+    }, { once: true });
 
-    // Form debounce — evita doble submit
-    var lastSubmit = 0;
-    var form = document.querySelector('.ksk-login-form');
-    if (form) {
-        form.addEventListener('submit', function (e) {
-            var now = Date.now();
-            if (now - lastSubmit < 2000) { e.preventDefault(); return; }
-            lastSubmit = now;
-        });
-    }
-
-    // ── Lector RFID (ESP32 HID Bluetooth) ─────────────────────────────────
-    // El ESP32 teclea el código de la tarjeta en milisegundos y termina con Enter.
-    // El buffer se resetea si pasan >500ms sin pulsación, lo que descarta
-    // teclas humanas accidentales (demasiado lentas para ser RFID).
-    var rfidBuffer = '';
-    var rfidTimer  = null;
+    /* ── Buffer RFID ── */
+    var rfidIcon  = document.getElementById('rfid-icon');
+    var rfidIconI = document.getElementById('rfid-icon-i');
+    var rfidTitle = document.getElementById('rfid-title');
+    var rfidSub   = document.getElementById('rfid-sub');
+    var rfidBuf   = '';
+    var rfidTimer = null;
 
     document.addEventListener('keydown', function (e) {
         if (rfidTimer) { clearTimeout(rfidTimer); rfidTimer = null; }
 
         if (e.key === 'Enter') {
-            var raw = rfidBuffer.trim();
-            rfidBuffer = '';
+            var raw = rfidBuf.trim();
+            rfidBuf = '';
             if (raw.length > 0) {
                 e.preventDefault();
-                rfidScanRecibido(raw);
+                /* Feedback visual */
+                rfidIcon.classList.add('ksk-rfid-icon--reading');
+                rfidIconI.className = 'ph ph-arrows-clockwise';
+                rfidTitle.textContent = 'Leyendo tarjeta…';
+                rfidSub.textContent   = 'Por favor, no retires la tarjeta';
+                /* Mantener fullscreen en la navegación */
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(function(){});
+                }
+                setTimeout(function () {
+                    window.location.href = '/kiosko/rfid?code=' + encodeURIComponent(raw);
+                }, 300);
             }
             return;
         }
 
-        if (e.key.length === 1) { rfidBuffer += e.key; }
-
-        rfidTimer = setTimeout(function () { rfidBuffer = ''; }, 500);
+        if (e.key.length === 1) { rfidBuf += e.key; }
+        rfidTimer = setTimeout(function () { rfidBuf = ''; }, 500);
     });
-
-    function rfidScanRecibido(raw) {
-        var btn = document.querySelector('.ksk-btn.ksk-btn--primary');
-        if (btn) { btn.textContent = 'Leyendo tarjeta…'; }
-        window.location.href = '/kiosko/rfid?code=' + encodeURIComponent(raw);
-    }
-    // ──────────────────────────────────────────────────────────────────────
-
-    setInterval(updateBadge, 5000);
 }());
 </script>
 </body>
