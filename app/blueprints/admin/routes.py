@@ -1,9 +1,12 @@
+from datetime import datetime
 from flask import jsonify, request, render_template, redirect, url_for, flash, current_app
 from . import admin_bp
 from .services import admin_service
 from .convocatoria_service import convocatoria_service, ConvocatoriaError
 from app.utils.decorators import jwt_required, get_jwt_identity, require_role
-from app.models.auth import User
+from app.models.auth import User, UserRole
+from app.models.training import RfidCard, Enrollment, EnrollmentStatus
+from app.extensions import db
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MOCK PARA PRUEBAS UI (Eliminar en producción)
@@ -16,33 +19,121 @@ class MockUser:
     class role:
         value = "SUPER_ADMIN"
 
+MOCK_CONVOCATORIAS = [
+    {
+        "id": "conv-a-2026", "name": "CM-2026-A", "status": "OPEN",
+        "plazas": 50, "candidatos": 198,
+        "cierre": "15/06/2026", "completados": 156, "pendientes": 42,
+    },
+    {
+        "id": "conv-b-2026", "name": "CM-2026-B", "status": "CLOSING",
+        "plazas": 30, "candidatos": 147,
+        "cierre": "20/05/2026", "completados": 147, "pendientes": 0,
+        "iniciado_por": "María García", "iniciado_hace": "12 minutos",
+    },
+    {
+        "id": "conv-z-2025", "name": "CM-2025-Z", "status": "LOCKED",
+        "plazas": 25, "candidatos": 112,
+        "cierre": "30/11/2025", "completados": 112, "pendientes": 0,
+    },
+]
+
+MOCK_SYSTEM_STATUS = {
+    "api_ok": True, "db_ok": True,
+    "webfleet_cuota": 22,
+    "kioskos_online": 4, "kioskos_total": 6,
+    "candidatos_total": 457,
+    "intentos_hoy": 12,
+}
+
+MOCK_GDPR_REQUESTS = [
+    {"id": "gr-001", "alumno": "Juan Carlos Pérez López", "tipo": "Olvido", "fecha": "01/05/2026", "estado": "PENDING"},
+    {"id": "gr-002", "alumno": "María del Carmen García Ruiz", "tipo": "Acceso", "fecha": "28/04/2026", "estado": "APPROVED"},
+    {"id": "gr-003", "alumno": "Pedro Antonio Fernández Díaz", "tipo": "Olvido", "fecha": "25/04/2026", "estado": "REJECTED"},
+]
+
+MOCK_USUARIOS = [
+    {"id": "u-001", "nombre": "Antonio Hermoso", "email": "ahermoso@cmadrid.es", "rol": "SUPER_ADMIN", "acceso": "05/05/2026 09:12"},
+    {"id": "u-002", "nombre": "María García Soto", "email": "mgarcia@cmadrid.es", "rol": "ADMIN", "acceso": "05/05/2026 08:45"},
+    {"id": "u-003", "nombre": "Carlos Ruiz Martínez", "email": "cruiz@cmadrid.es", "rol": "ADMIN", "acceso": "04/05/2026 16:30"},
+    {"id": "u-004", "nombre": "Ana Romero Vidal", "email": "aromero@cmadrid.es", "rol": "MANAGER", "acceso": "05/05/2026 09:00"},
+    {"id": "u-005", "nombre": "Luis Castro Pinto", "email": "lcastro@cmadrid.es", "rol": "MANAGER", "acceso": "04/05/2026 14:22"},
+    # Alumnos de las convocatorias
+    {"id": "u-006", "nombre": "María García López", "email": "mgarcia.l@alumno.es", "rol": "ALUMNO", "acceso": "06/05/2026 10:15"},
+    {"id": "u-007", "nombre": "Elena Jiménez Torres", "email": "ejimenez@alumno.es", "rol": "ALUMNO", "acceso": "06/05/2026 09:30"},
+    {"id": "u-008", "nombre": "Roberto Gómez Paz", "email": "rgomez@alumno.es", "rol": "ALUMNO", "acceso": "05/05/2026 18:20"},
+    {"id": "u-009", "nombre": "Pedro Sánchez Villa", "email": "psanchez@alumno.es", "rol": "ALUMNO", "acceso": "06/05/2026 11:00"},
+    {"id": "u-010", "nombre": "Ana Romero Díaz", "email": "aromero.d@alumno.es", "rol": "ALUMNO", "acceso": "05/05/2026 09:45"},
+    {"id": "u-011", "nombre": "Lucía Fernández", "email": "lfernandez@alumno.es", "rol": "ALUMNO", "acceso": "04/05/2026 12:10"},
+    {"id": "u-012", "nombre": "Francisco Morales Vega", "email": "fmorales@alumno.es", "rol": "ALUMNO", "acceso": "06/05/2026 08:50"},
+    {"id": "u-013", "nombre": "Carmen López Blanco", "email": "clopez@alumno.es", "rol": "ALUMNO", "acceso": "05/05/2026 20:15"},
+    {"id": "u-014", "nombre": "Javier Herrero Ortega", "email": "jherrero@alumno.es", "rol": "ALUMNO", "acceso": "05/05/2026 15:40"},
+    {"id": "u-015", "nombre": "Miguel Ángel Ruiz", "email": "mruiz@alumno.es", "rol": "ALUMNO", "acceso": "04/05/2026 17:22"},
+    {"id": "u-016", "nombre": "Isabel Navarro Cid", "email": "inavarro@alumno.es", "rol": "ALUMNO", "acceso": "Hoy 09:00"},
+]
+
 # ─────────────────────────────────────────────────────────────────────────────
 # UI Views (Admin Portal)
 # ─────────────────────────────────────────────────────────────────────────────
 
 @admin_bp.route("/dashboard", endpoint="dashboard", methods=["GET"])
 def admin_dashboard():
-    return render_template("admin/dashboard.html", current_user=MockUser())
+    return render_template("admin/dashboard.html",
+        current_user=MockUser(),
+        active_page="dashboard",
+        convocatorias=MOCK_CONVOCATORIAS,
+        stats=MOCK_SYSTEM_STATUS,
+    )
 
 @admin_bp.route("/matriz", endpoint="matriz", methods=["GET"])
 def admin_matriz():
-    return render_template("admin/matriz.html", current_user=MockUser())
+    return render_template("admin/matriz.html",
+        current_user=MockUser(),
+        active_page="matriz",
+        convocatorias=MOCK_CONVOCATORIAS,
+    )
 
 @admin_bp.route("/simulador", endpoint="simulador", methods=["GET"])
 def admin_simulador():
-    return render_template("admin/simulador.html", current_user=MockUser())
+    return render_template("admin/simulador.html",
+        current_user=MockUser(),
+        active_page="simulador",
+        convocatorias=MOCK_CONVOCATORIAS,
+    )
 
 @admin_bp.route("/cierre", endpoint="cierre", methods=["GET"])
-def admin_cierre():
-    return render_template("admin/cierre.html", current_user=MockUser())
+@admin_bp.route("/cierre/<string:conv_id>", endpoint="cierre_detail", methods=["GET"])
+def admin_cierre(conv_id=None):
+    return render_template("admin/cierre.html",
+        current_user=MockUser(),
+        active_page="cierre",
+        convocatorias=[c for c in MOCK_CONVOCATORIAS if c["status"] in ("OPEN", "CLOSING", "CLOSED")],
+        target_conv_id=conv_id
+    )
 
 @admin_bp.route("/gdpr-panel", endpoint="gdpr", methods=["GET"])
 def admin_gdpr():
-    return render_template("admin/gdpr.html", current_user=MockUser())
+    return render_template("admin/gdpr.html",
+        current_user=MockUser(),
+        active_page="gdpr",
+        solicitudes=MOCK_GDPR_REQUESTS,
+    )
 
 @admin_bp.route("/convocatorias-panel", endpoint="convocatorias", methods=["GET"])
 def admin_convocatorias_ui():
-    return render_template("admin/convocatorias.html", current_user=MockUser())
+    return render_template("admin/convocatorias.html",
+        current_user=MockUser(),
+        active_page="convocatorias",
+        convocatorias=MOCK_CONVOCATORIAS,
+    )
+
+@admin_bp.route("/usuarios-panel", endpoint="usuarios", methods=["GET"])
+def admin_usuarios_ui():
+    return render_template("admin/usuarios.html",
+        current_user=MockUser(),
+        active_page="usuarios",
+        usuarios=MOCK_USUARIOS,
+    )
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Users / Organizations (legacy, usados por el sidebar)
@@ -351,10 +442,39 @@ def close_reverse(conv_id):
 def download_acta(conv_id):
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
+    # Demo/Mock check
+    mock_conv = next((c for c in MOCK_CONVOCATORIAS if c["id"] == conv_id), None)
+    
     from app.models.training import Convocatoria, ConvocatoriaStatus
     conv = Convocatoria.query.filter_by(id=conv_id, organizationId=user.organizationId).first()
-    if not conv:
+    
+    if not conv and not mock_conv:
         return jsonify({"message": "Convocatoria no encontrada"}), 404
+    
+    # If it's a mock or real but locked/closed
+    status = conv.status if conv else mock_conv["status"]
+    if status not in (ConvocatoriaStatus.CLOSED, ConvocatoriaStatus.LOCKED, "CLOSED", "LOCKED"):
+        return jsonify({"message": "El acta solo está disponible para convocatorias cerradas"}), 409
+    
+    from flask import Response
+    if mock_conv and not conv:
+        # Return a valid minimal PDF for demo
+        dummy_pdf = (
+            b"%PDF-1.1\n"
+            b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
+            b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n"
+            b"3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 612 792] /Contents 5 0 R >>\nendobj\n"
+            b"4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n"
+            b"5 0 obj\n<< /Length 50 >>\nstream\nBT /F1 24 Tf 100 700 Td (Acta de Convocatoria - DEMO) Tj ET\nendstream\n"
+            b"endobj\n"
+            b"xref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000059 00000 n \n0000000116 00000 n \n0000000223 00000 n \n0000000295 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n395\n%%EOF"
+        )
+        filename = f"acta_{mock_conv['name'].replace(' ', '_')}_20260101.pdf"
+        return Response(
+            dummy_pdf,
+            mimetype="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
     if conv.status not in (ConvocatoriaStatus.CLOSED, ConvocatoriaStatus.LOCKED):
         return jsonify({"message": "El acta solo está disponible para convocatorias cerradas"}), 409
     if not conv.acta:
@@ -480,3 +600,109 @@ def _enrollment_to_dict(e):
         "attemptsCount": e.attemptsCount,
         "enrolledAt": e.enrolledAt.isoformat() if e.enrolledAt else None,
     }
+
+
+# ── Gestión de tarjetas RFID ───────────────────────────────────────────────────
+
+@admin_bp.route("/rfid")
+@require_role(["ADMIN"])
+def rfid_cards():
+    org_id = get_jwt_identity()
+    user = User.query.get(org_id)
+    org_id = user.organizationId if user else None
+
+    cards = (
+        RfidCard.query
+        .filter_by(organizationId=org_id)
+        .order_by(RfidCard.createdAt.desc())
+        .all()
+    )
+    students = (
+        User.query
+        .filter_by(organizationId=org_id, role=UserRole.STUDENT)
+        .order_by(User.name)
+        .all()
+    )
+    cards_data = []
+    for c in cards:
+        student = User.query.get(c.assignedTo) if c.assignedTo else None
+        cards_data.append({
+            "id": c.id,
+            "uid": c.uid,
+            "active": c.active,
+            "assignedTo": c.assignedTo,
+            "studentName": student.name if student else None,
+            "studentEmail": student.email if student else None,
+            "assignedAt": c.assignedAt.strftime("%d/%m/%Y") if c.assignedAt else None,
+            "revokedAt": c.revokedAt.strftime("%d/%m/%Y") if c.revokedAt else None,
+        })
+
+    return render_template(
+        "admin/rfid.html",
+        cards=cards_data,
+        students=students,
+        active_page="rfid",
+    )
+
+
+@admin_bp.route("/rfid", methods=["POST"])
+@require_role(["ADMIN"])
+def rfid_create():
+    org_id = get_jwt_identity()
+    user = User.query.get(org_id)
+    org_id = user.organizationId if user else None
+
+    uid = (request.form.get("uid") or "").strip()
+    student_id = (request.form.get("student_id") or "").strip()
+
+    if not uid:
+        flash("El código de tarjeta no puede estar vacío.", "danger")
+        return redirect(url_for("admin.rfid_cards"))
+
+    existing = RfidCard.query.filter_by(uid=uid, organizationId=org_id, active=True).first()
+    if existing:
+        flash(f"Ya existe una tarjeta activa con el código «{uid}».", "danger")
+        return redirect(url_for("admin.rfid_cards"))
+
+    card = RfidCard(
+        uid=uid,
+        organizationId=org_id,
+        assignedTo=student_id or None,
+        assignedAt=datetime.utcnow() if student_id else None,
+        active=True,
+    )
+    db.session.add(card)
+    db.session.commit()
+    flash(f"Tarjeta «{uid}» registrada correctamente.", "success")
+    return redirect(url_for("admin.rfid_cards"))
+
+
+@admin_bp.route("/rfid/<string:card_id>/assign", methods=["POST"])
+@require_role(["ADMIN"])
+def rfid_assign(card_id):
+    org_id = get_jwt_identity()
+    user = User.query.get(org_id)
+    org_id = user.organizationId if user else None
+
+    card = RfidCard.query.filter_by(id=card_id, organizationId=org_id).first_or_404()
+    student_id = (request.form.get("student_id") or "").strip()
+    card.assignedTo = student_id or None
+    card.assignedAt = datetime.utcnow() if student_id else None
+    db.session.commit()
+    flash("Asignación actualizada.", "success")
+    return redirect(url_for("admin.rfid_cards"))
+
+
+@admin_bp.route("/rfid/<string:card_id>/revoke", methods=["POST"])
+@require_role(["ADMIN"])
+def rfid_revoke(card_id):
+    org_id = get_jwt_identity()
+    user = User.query.get(org_id)
+    org_id = user.organizationId if user else None
+
+    card = RfidCard.query.filter_by(id=card_id, organizationId=org_id).first_or_404()
+    card.active = False
+    card.revokedAt = datetime.utcnow()
+    db.session.commit()
+    flash(f"Tarjeta «{card.uid}» revocada.", "warning")
+    return redirect(url_for("admin.rfid_cards"))

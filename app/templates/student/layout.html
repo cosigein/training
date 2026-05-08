@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Portal del candidato — consulte sus resultados, historial y evolución en CMadrid Training">
     <title>{% block title %}Mis resultados — {{ candidato.nombre if candidato else 'CMadrid Training' }}{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/alumno.css') }}">
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230d47a1'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='system-ui,sans-serif' font-size='13' font-weight='700' fill='white'%3ECM%3C/text%3E%3C/svg%3E">
+    <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -25,33 +27,55 @@
 
         </div>
 
-        <nav class="alu-nav">
+        <nav class="alu-nav" role="navigation" aria-label="Menú principal">
             <a href="{{ url_for('student.dashboard') }}"
-               class="alu-nav__btn {% if active_page == 'dashboard' %}active{% endif %}">
-                <i class="ph ph-house"></i> <span>Mis resultados</span>
+               class="alu-nav__btn {% if active_page == 'dashboard' %}active{% endif %}"
+               aria-label="Ir a mis resultados" aria-current="{{ 'page' if active_page == 'dashboard' else 'false' }}">
+                <i class="ph ph-house" aria-hidden="true"></i> <span>Mis resultados</span>
             </a>
             <a href="{{ url_for('student.historial') }}"
-               class="alu-nav__btn {% if active_page == 'historial' %}active{% endif %}">
-                <i class="ph ph-clock-counter-clockwise"></i> <span>Historial</span>
+               class="alu-nav__btn {% if active_page == 'historial' %}active{% endif %}"
+               aria-label="Ver historial de intentos" aria-current="{{ 'page' if active_page == 'historial' else 'false' }}">
+                <i class="ph ph-clock-counter-clockwise" aria-hidden="true"></i> <span>Historial</span>
+            </a>
+            <a href="{{ url_for('student.evolucion') }}"
+               class="alu-nav__btn {% if active_page == 'evolucion' %}active{% endif %}"
+               aria-label="Ver mi evolución por circuito" aria-current="{{ 'page' if active_page == 'evolucion' else 'false' }}">
+                <i class="ph ph-trend-up" aria-hidden="true"></i> <span>Mi evolución</span>
             </a>
         </nav>
 
         <div class="alu-header__right">
             {% if candidato %}
-            <div class="alu-user-chip">
-                <div class="alu-user-chip__avatar">
+            <div class="alu-user-chip" aria-label="Usuario: {{ candidato.nombre }}">
+                <div class="alu-user-chip__avatar" aria-hidden="true">
                     {{ candidato.nombre[0] }}{{ candidato.nombre.split()[1][0] if candidato.nombre.split()|length > 1 else '' }}
                 </div>
                 <span class="alu-user-chip__name">{{ candidato.nombre.split()[0] }}</span>
             </div>
             {% endif %}
-            <a href="{{ url_for('auth.logout') }}" class="alu-logout-btn" title="Cerrar sesión">
-                <i class="ph ph-sign-out"></i>
+            <a href="{{ url_for('auth.logout') }}" class="alu-logout-btn" aria-label="Cerrar sesión y salir">
+                <i class="ph ph-sign-out" aria-hidden="true"></i>
+                <span class="alu-logout-label">Salir</span>
             </a>
         </div>
     </header>
 
     <div class="alu-body">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div style="margin-bottom: 24px;">
+            {% for category, message in messages %}
+            <div class="alu-alert alu-alert--{% if category == 'success' %}success{% elif category == 'danger' %}warning{% else %}info{% endif %}" 
+                 style="margin-bottom: 12px;">
+                <i class="ph {% if category == 'success' %}ph-check-circle{% elif category == 'danger' %}ph-warning-circle{% else %}ph-info{% endif %}"></i>
+                <div>{{ message }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+        
         {% block content %}{% endblock %}
     </div>
 

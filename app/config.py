@@ -33,6 +33,26 @@ class BaseConfig:
     CACHE_TYPE = "RedisCache"
     CACHE_REDIS_URL = REDIS_URL
 
+    # Webfleet (D-WF-001 — integración con Webfleet.connect API).
+    # Si WEBFLEET_ENABLED=false o faltan credenciales, el cliente entra en
+    # modo MOCK: devuelve datos sintéticos de prueba. Útil para desarrollo y
+    # demo sin acceso a la cuenta real de Bridgestone.
+    WEBFLEET_ENABLED = os.environ.get("WEBFLEET_ENABLED", "false").lower() in ("true", "1", "yes")
+    WEBFLEET_BASE_URL = os.environ.get("WEBFLEET_BASE_URL", "https://csv.webfleet.com/extern")
+    WEBFLEET_ACCOUNT = os.environ.get("WEBFLEET_ACCOUNT", "")
+    WEBFLEET_USERNAME = os.environ.get("WEBFLEET_USERNAME", "")
+    WEBFLEET_PASSWORD = os.environ.get("WEBFLEET_PASSWORD", "")
+    WEBFLEET_APIKEY = os.environ.get("WEBFLEET_APIKEY", "")
+    # Cuota Webfleet de CMadrid: 14.400 req/día. Alertas a 70/85/95%.
+    WEBFLEET_DAILY_QUOTA = int(os.environ.get("WEBFLEET_DAILY_QUOTA", "14400"))
+    # Circuit breaker: tras N fallos consecutivos, abre por COOLDOWN segundos.
+    WEBFLEET_CB_FAIL_THRESHOLD = int(os.environ.get("WEBFLEET_CB_FAIL_THRESHOLD", "3"))
+    WEBFLEET_CB_COOLDOWN_S = int(os.environ.get("WEBFLEET_CB_COOLDOWN_S", "60"))
+    # Sync periódico: cada N minutos busca attempts cerrados sin sync de las
+    # últimas WEBFLEET_SYNC_LOOKBACK_H horas.
+    WEBFLEET_SYNC_INTERVAL_MIN = int(os.environ.get("WEBFLEET_SYNC_INTERVAL_MIN", "10"))
+    WEBFLEET_SYNC_LOOKBACK_H = int(os.environ.get("WEBFLEET_SYNC_LOOKBACK_H", "24"))
+
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "postgresql://localhost/doback_dev")

@@ -1,0 +1,86 @@
+{% extends "admin/layout.html" %}
+
+{% set active_page = 'convocatorias' %}
+
+{% block title %}Convocatorias | CMadrid Admin{% endblock %}
+
+{% block content %}
+
+<div class="adm-page-header" style="margin-bottom: 20px;">
+    <div>
+        <h1 class="adm-page-title">Convocatorias</h1>
+        <p class="adm-page-subtitle">Gestión de convocatorias del sistema</p>
+    </div>
+    <a href="{{ url_for('admin.new_convocatoria_form') }}" class="adm-btn">
+        <i class="ph ph-plus"></i> Nueva convocatoria
+    </a>
+</div>
+
+<div class="adm-card">
+    <div class="adm-card__body" style="padding: 0;">
+        {% if convocatorias %}
+        <div class="adm-table-wrap">
+            <table class="adm-table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Estado</th>
+                        <th style="text-align: right;">Plazas</th>
+                        <th style="text-align: right;">Candidatos</th>
+                        <th style="text-align: right;">Completados</th>
+                        <th>Cierre</th>
+                        <th style="text-align: right;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for conv in convocatorias %}
+                    <tr>
+                        <td>
+                            <div style="font-weight: 600; color: #1e293b;">{{ conv.name }}</div>
+                            <div style="font-size: 11px; color: #94a3b8;">ID: {{ conv.id }}</div>
+                        </td>
+                        <td>
+                            <span class="adm-badge adm-badge--{{ conv.status | lower }}">{{ conv.status }}</span>
+                        </td>
+                        <td style="text-align: right; font-weight: 700;">{{ conv.plazas }}</td>
+                        <td style="text-align: right;">{{ conv.candidatos }}</td>
+                        <td style="text-align: right;">
+                            <span style="color: {% if conv.pendientes == 0 %}#16a34a{% else %}#d97706{% endif %}; font-weight: 600;">
+                                {{ conv.completados }}
+                            </span>
+                            {% if conv.pendientes > 0 %}
+                            <span style="font-size: 11px; color: #94a3b8;"> ({{ conv.pendientes }} pend.)</span>
+                            {% endif %}
+                        </td>
+                        <td style="color: #64748b; font-size: 12px;">{{ conv.cierre }}</td>
+                        <td style="text-align: right;">
+                            <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                                <a href="{{ url_for('admin.get_convocatoria_detail', conv_id=conv.id) }}" class="adm-btn adm-btn--sm adm-btn--secondary">
+                                    <i class="ph ph-users"></i> Ver alumnos
+                                </a>
+                                {% if conv.status in ['OPEN', 'CLOSING'] %}
+                                <a href="{{ url_for('admin.cierre') }}" class="adm-btn adm-btn--sm">
+                                    <i class="ph ph-lock"></i> Cerrar
+                                </a>
+                                {% else %}
+                                <a href="{{ url_for('admin.download_acta', conv_id=conv.id) }}" class="adm-btn adm-btn--sm adm-btn--secondary">
+                                    <i class="ph ph-file-pdf"></i> Acta
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="adm-empty">
+            <i class="ph ph-clipboard-text"></i>
+            <p>No hay convocatorias registradas.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

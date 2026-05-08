@@ -4,7 +4,7 @@ Servicio de datos para el portal Manager: ranking, matriz, detalle de alumno/int
 from app.extensions import db
 from app.models.training import (
     Convocatoria, Enrollment, EnrollmentStatus,
-    AttemptEvent, AuditRequest, AuditStatus,
+    AttemptEvent
 )
 from app.models.session import Attempt, AttemptStatus
 from app.models.auth import User
@@ -46,16 +46,6 @@ def _conv_to_dict(conv, org_id):
         .filter(Enrollment.status != EnrollmentStatus.INVALIDATED)
         .count()
     )
-    pending_audits = (
-        AuditRequest.query
-        .join(Attempt, AuditRequest.originalAttemptId == Attempt.id)
-        .filter(
-            AuditRequest.organizationId == org_id,
-            AuditRequest.status == AuditStatus.PENDING,
-            Attempt.convocatoriaId == conv.id,
-        )
-        .count()
-    )
     return {
         "id": conv.id,
         "nombre": conv.name,
@@ -65,7 +55,6 @@ def _conv_to_dict(conv, org_id):
         "total_candidatos": count,
         "fecha_cierre": _fmt_date(conv.closedAt),
         "ultima_actualizacion": _fmt_datetime(conv.updatedAt),
-        "auditorias_pendientes": pending_audits,
     }
 
 
@@ -131,17 +120,29 @@ def get_ranking(conv_id, org_id):
         scores = [a.score for a in scored]
         nota_media = sum(scores) / len(scores) if scores else 0.0
 
-        tiene_auditoria = AuditRequest.query.filter(
+        audit_req = AuditRequest.query.filter(
             AuditRequest.organizationId == org_id,
             AuditRequest.requestedBy == enrollment.studentId,
             AuditRequest.status.in_([AuditStatus.PENDING, AuditStatus.REVIEWING]),
-        ).first() is not None
+        ).first()
+
+        audit_data = None
+        if audit_req:
+            att = audit_req.original_attempt
+            audit_data = {
+                "id": audit_req.id,
+                "reason": audit_req.reason,
+                "fecha": audit_req.createdAt.strftime("%d/%m/%Y") if audit_req.createdAt else "—",
+                "hora": audit_req.createdAt.strftime("%H:%M") if audit_req.createdAt else "—",
+                "attempt_id": audit_req.originalAttemptId,
+                "ruta": (_slots_for_enrollment(att.enrollmentId).get(att.id, "—")
+                         if att and att.enrollmentId else "—"),
+            }
 
         entries.append({
             "nota_media": nota_media,
             "rutas_completadas": len(scored),
             "rutas_total": total,
-            "tiene_auditoria": tiene_auditoria,
             "candidato": {
                 "id": student.id,
                 "nombre": student.name,
@@ -158,6 +159,31 @@ def get_ranking(conv_id, org_id):
     return _conv_to_dict(conv, org_id), entries
 
 
+def _slots_for_enrollment(enrollment_id):
+    """Mapa {attempt_id: 'R01'} para los attempts del enrollment, asignando
+    R01, R02, … por orden cronológico de startTime. NO depende del
+    `sequence` guardado (que puede estar contaminado por session_number del
+    Doback). Incluye TODOS los estados (OPEN, CLOSED, INVALIDATED).
+    """
+    atts = (
+        Attempt.query
+        .filter_by(enrollmentId=enrollment_id)
+        .order_by(Attempt.startTime.asc(), Attempt.createdAt.asc())
+        .all()
+    )
+    return {a.id: f"R{i+1:02d}" for i, a in enumerate(atts)}
+
+
+def _continuous_slot_codes(slot_by_attempt):
+    """Dado el mapa de slots, genera la lista R01..R{max} sin huecos.
+    Las columnas de la matriz son continuas: si un alumno hizo 10 intentos,
+    se muestran 10 columnas, los demás alumnos las verán vacías."""
+    if not slot_by_attempt:
+        return []
+    max_n = max(int(s[1:]) for s in slot_by_attempt.values())
+    return [f"R{i:02d}" for i in range(1, max_n + 1)]
+
+
 def get_matrix_data(conv_id, org_id):
     conv = Convocatoria.query.filter_by(id=conv_id, organizationId=org_id).first()
     if not conv:
@@ -165,14 +191,14 @@ def get_matrix_data(conv_id, org_id):
 
     enrollments = _enrollments_ordered(conv_id, org_id)
 
-    scored_attempts = (
-        Attempt.query
-        .filter_by(convocatoriaId=conv_id, status=AttemptStatus.CLOSED)
-        .filter(Attempt.score.isnot(None), Attempt.routeId.isnot(None))
-        .all()
-    )
-    route_ids = sorted({a.routeId for a in scored_attempts})
-    circuitos = [{"id": r, "label": r} for r in route_ids]
+    # Pre-computar slots de TODOS los enrollments (incluye TODOS los estados,
+    # así un alumno con 10 intentos abiertos genera columnas hasta R10 aunque
+    # haya cerrado solo unos pocos).
+    slot_by_attempt: dict = {}
+    for enrollment in enrollments:
+        slot_by_attempt.update(_slots_for_enrollment(enrollment.id))
+    slot_codes = _continuous_slot_codes(slot_by_attempt)
+    circuitos = [{"id": s, "label": s} for s in slot_codes]
 
     candidatos = []
     for idx, enrollment in enumerate(enrollments):
@@ -180,34 +206,29 @@ def get_matrix_data(conv_id, org_id):
         if not student:
             continue
 
-        # mejor scored attempt por ruta (mayor score)
-        best_by_route: dict = {}
+        # Mapear cada attempt CERRADO del enrollment a su slot
+        attempts_by_slot: dict = {}
         for a in (
             Attempt.query
             .filter_by(enrollmentId=enrollment.id, status=AttemptStatus.CLOSED)
             .filter(Attempt.score.isnot(None))
             .all()
         ):
-            if a.routeId:
-                prev = best_by_route.get(a.routeId)
-                if prev is None or (a.score or 0) > (prev.score or 0):
-                    best_by_route[a.routeId] = a
+            slot = slot_by_attempt.get(a.id)
+            if slot:
+                attempts_by_slot[slot] = a
 
         notas = {}
-        for route_id in route_ids:
-            att = best_by_route.get(route_id)
+        for slot in slot_codes:
+            att = attempts_by_slot.get(slot)
             if att is None:
-                notas[route_id] = None
+                notas[slot] = None
             else:
-                has_audit = AuditRequest.query.filter(
-                    AuditRequest.originalAttemptId == att.id,
-                    AuditRequest.status.in_([AuditStatus.PENDING, AuditStatus.REVIEWING]),
-                ).first() is not None
-                notas[route_id] = {
+                notas[slot] = {
                     "nota": att.score,
                     "data_quality": _data_quality_label(att.dataQuality),
-                    "audit": has_audit,
                     "attempt_id": att.id,
+                    "route_code": att.routeId or "—",
                 }
 
         total = Attempt.query.filter_by(enrollmentId=enrollment.id).count()
@@ -217,11 +238,90 @@ def get_matrix_data(conv_id, org_id):
             "plaza": str(idx + 1).zfill(3),
             "categoria": "C",
             "notas": notas,
-            "rutas_completadas": len(best_by_route),
+            "rutas_completadas": len(attempts_by_slot),
             "rutas_total": total,
         })
 
     return _conv_to_dict(conv, org_id), candidatos, circuitos
+
+
+def get_all_matrix_data(org_id):
+    # Obtener todos los alumnos que tienen al menos un enrollment activo
+    enrollments = (
+        Enrollment.query
+        .filter_by(organizationId=org_id)
+        .filter(Enrollment.status != EnrollmentStatus.INVALIDATED)
+        .all()
+    )
+    student_ids = {e.studentId for e in enrollments}
+
+    # Obtener todos los intentos cerrados de estos alumnos
+    attempts = (
+        Attempt.query
+        .filter(Attempt.studentId.in_(student_ids))
+        .filter_by(organizationId=org_id, status=AttemptStatus.CLOSED)
+        .filter(Attempt.score.isnot(None))
+        .all()
+    )
+
+    # Slots por enrollment de TODOS los alumnos
+    slot_by_attempt: dict = {}
+    for enrollment in enrollments:
+        slot_by_attempt.update(_slots_for_enrollment(enrollment.id))
+    slot_codes = _continuous_slot_codes(slot_by_attempt)
+    circuitos = [{"id": s, "label": s} for s in slot_codes]
+
+    students = User.query.filter(User.id.in_(student_ids)).all()
+    student_map = {s.id: s for s in students}
+
+    candidatos = []
+    for sid in student_ids:
+        student = student_map.get(sid)
+        if not student:
+            continue
+
+        attempts_by_slot = {}
+        student_attempts = [a for a in attempts if a.studentId == sid]
+        for a in student_attempts:
+            slot = slot_by_attempt.get(a.id)
+            if slot:
+                attempts_by_slot[slot] = a
+
+        notas = {}
+        for slot in slot_codes:
+            att = attempts_by_slot.get(slot)
+            if att is None:
+                notas[slot] = None
+            else:
+                notas[slot] = {
+                    "nota": att.score,
+                    "data_quality": _data_quality_label(att.dataQuality),
+                    "attempt_id": att.id,
+                    "route_code": att.routeId or "—",
+                }
+
+        candidatos.append({
+            "id": student.id,
+            "nombre": student.name,
+            "plaza": "—",
+            "categoria": "G", # Global
+            "notas": notas,
+            "rutas_completadas": len(attempts_by_slot),
+            "rutas_total": len(student_attempts),
+        })
+
+    all_conv_dict = {
+        "id": "all",
+        "nombre": "Todos los candidatos",
+        "descripcion": "Vista global de todos los procesos",
+        "status": "OPEN",
+        "plazas": 0,
+        "total_candidatos": len(candidatos),
+        "fecha_cierre": "—",
+        "ultima_actualizacion": "—",
+    }
+
+    return all_conv_dict, candidatos, circuitos
 
 
 def get_alumno_active_conv_id(student_id, org_id):
@@ -259,24 +359,68 @@ def get_alumno_detail(student_id, conv_id, org_id):
         Attempt.query
         .filter_by(enrollmentId=enrollment.id, status=AttemptStatus.CLOSED)
         .filter(Attempt.score.isnot(None))
-        .order_by(Attempt.endTime)
+        .order_by(Attempt.endTime.desc())
         .all()
     )
     total_count = Attempt.query.filter_by(enrollmentId=enrollment.id).count()
 
+    # 1. Identificar TODAS las rutas de esta convocatoria (basado en intentos de todos los alumnos)
+    all_routes_in_conv = db.session.query(Attempt.routeId).filter_by(
+        convocatoriaId=conv_id, organizationId=org_id
+    ).filter(Attempt.routeId.isnot(None)).distinct().all()
+    route_ids = sorted([r[0] for r in all_routes_in_conv])
+    slot_map = _slots_for_enrollment(enrollment.id)
     intentos = [
         {
-            "ruta_id": a.routeId or "—",
-            "ruta_label": a.routeId or "—",
+            "ruta_id": slot_map.get(a.id, "—"),
+            "ruta_label": slot_map.get(a.id, "—"),
+            "route_code": a.routeId or "—",
             "nota": a.score,
             "data_quality": _data_quality_label(a.dataQuality),
             "audit": False,  # TODO Tarea 12
             "attempt_id": a.id,
+            "fecha": a.endTime.strftime("%d/%m/%Y") if a.endTime else "—",
         }
         for a in scored_attempts
     ]
 
-    scores = [i["nota"] for i in intentos]
+    # Asegurar que la ruta principal esté presente
+    if conv and conv.routePrincipal and conv.routePrincipal not in route_ids:
+        route_ids.append(conv.routePrincipal)
+        route_ids.sort()
+
+    # 2. Mapear mejor intento del alumno por ruta
+    best_attempts = {}
+    for a in scored_attempts:
+        if a.routeId:
+            prev = best_attempts.get(a.routeId)
+            if prev is None or (a.score or 0) > (prev.score or 0):
+                best_attempts[a.routeId] = a
+
+    intentos = []
+    for rid in route_ids:
+        a = best_attempts.get(rid)
+        if a:
+            intentos.append({
+                "ruta_id": rid,
+                "ruta_label": rid,
+                "nota": a.score,
+                "data_quality": _data_quality_label(a.dataQuality),
+                "attempt_id": a.id,
+                "fecha": a.endTime.strftime("%d/%m/%Y") if a.endTime else "—",
+                "realizado": True
+            })
+        else:
+            intentos.append({
+                "ruta_id": rid,
+                "ruta_label": rid,
+                "nota": None,
+                "realizado": False,
+                "fecha": "—"
+            })
+
+    # Nota media solo de las realizadas
+    scores = [i["nota"] for i in intentos if i["realizado"] and i["nota"] is not None]
     nota_media = sum(scores) / len(scores) if scores else 0.0
 
     candidato = {
@@ -289,24 +433,6 @@ def get_alumno_detail(student_id, conv_id, org_id):
     }
 
     return _conv_to_dict(conv, org_id) if conv else None, candidato, intentos, nota_media
-
-
-def _get_auditoria_for_attempt(attempt_id, org_id):
-    ar = (
-        AuditRequest.query
-        .filter_by(originalAttemptId=attempt_id, organizationId=org_id)
-        .order_by(AuditRequest.createdAt.desc())
-        .first()
-    )
-    if not ar:
-        return None
-    return {
-        "id": ar.id,
-        "status": ar.status.value,
-        "reason": ar.reason,
-        "resolution": ar.resolution,
-        "createdAt": ar.createdAt.strftime("%d/%m/%Y %H:%M") if ar.createdAt else "—",
-    }
 
 
 def get_intento_detail(attempt_id, org_id):
@@ -322,7 +448,13 @@ def get_intento_detail(attempt_id, org_id):
         "data_quality": _data_quality_label(attempt.dataQuality),
         "attempt_id": attempt.id,
     }
-    ruta = {"id": attempt.routeId or "—", "label": attempt.routeId or "—"}
+    slot_map = _slots_for_enrollment(attempt.enrollmentId) if attempt.enrollmentId else {}
+    slot = slot_map.get(attempt.id, "—")
+    ruta = {
+        "id": slot,
+        "label": slot,
+        "route_code": attempt.routeId or "—",
+    }
 
     return {
         "attempt_id": attempt.id,
@@ -336,7 +468,6 @@ def get_intento_detail(attempt_id, org_id):
         "nota_info": nota_info,
         "score_breakdown": _build_breakdown(attempt, conv),
         "eventos": _build_eventos(attempt.id),
-        "auditoria": _get_auditoria_for_attempt(attempt.id, org_id),
         "convocatoria": _conv_to_dict(conv, org_id) if conv else None,
     }
 

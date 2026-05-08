@@ -3,90 +3,192 @@
 
 {% block content %}
 
-<a href="{{ url_for('manager.matriz', conv_id=convocatoria.id) }}" class="mgr-action-btn mgr-action-btn--secondary" style="margin-bottom:12px;">
-    <i class="ph ph-arrow-left"></i> Volver a Matriz
-</a>
-
-<div class="mgr-page-header">
-    <div>
-        <h1 class="mgr-page-title">Perfil de Aspirante</h1>
-        <p class="mgr-page-subtitle">
-            Convocatoria {{ convocatoria.nombre }}
-        </p>
-    </div>
-    <span class="mgr-estado-badge {% if nota_media >= 5 %}mgr-estado-badge--final{% else %}mgr-estado-badge--provisional{% endif %}">
-        {% if nota_media >= 5 %}<i class="ph ph-check-circle"></i> APTO (PROVISIONAL){% else %}<i class="ph ph-x-circle"></i> NO APTO (PROVISIONAL){% endif %}
+<div class="mgr-back-bar" style="gap: 10px; margin-bottom: 8px;">
+    <a href="javascript:history.back()" class="mgr-btn-back" style="height: 28px; padding: 0 8px; font-size: 11px;">
+        <i class="ph ph-arrow-left" style="font-size: 14px;"></i> Volver
+    </a>
+    <a href="{{ url_for('manager.dashboard') }}" class="mgr-btn-back" style="height: 28px; padding: 0 8px; font-size: 11px;">
+        <i class="ph ph-house" style="font-size: 14px;"></i> Inicio
+    </a>
+    <span class="mgr-breadcrumb" style="font-size: 11px; gap: 6px;">
+        <span>Inicio</span>
+        <span class="mgr-breadcrumb__sep" style="font-size: 12px;">›</span>
+        <span>Perfil Aspirante</span>
     </span>
 </div>
 
-<div class="mgr-card mgr-mb-20">
-    <div class="mgr-card__header">
-        <h3><i class="ph ph-user"></i> Detalles del candidato</h3>
+<div class="mgr-page-header" style="margin-bottom: 12px;">
+    <div>
+        <h1 class="mgr-page-title" style="font-size: 18px;">Perfil de Aspirante</h1>
+        <p class="mgr-page-subtitle" style="font-size: 12px;">
+            {% if convocatoria %}Convocatoria {{ convocatoria.nombre }}{% else %}Sin convocatoria activa{% endif %}
+        </p>
     </div>
+    {% if convocatoria %}
+    <span class="mgr-estado-badge {% if nota_media >= 5 %}mgr-estado-badge--final{% else %}mgr-estado-badge--provisional{% endif %}" style="padding: 4px 10px; font-size: 11px;">
+        {% if nota_media >= 5 %}<i class="ph ph-check-circle"></i> APTO{% else %}<i class="ph ph-x-circle"></i> NO APTO{% endif %}
+    </span>
+    {% endif %}
+</div>
+
+<div class="mgr-card mgr-card--compact mgr-mb-12">
     <div class="mgr-grid-4">
         <div>
-            <span class="mgr-label">Nombre completo</span>
-            <div class="mgr-text-bold mgr-text-15 mgr-mt-4">{{ candidato.nombre }}</div>
+            <span class="mgr-label" style="font-size: 10px;">Nombre completo</span>
+            <div class="mgr-text-bold" style="font-size: 14px;">{{ candidato.nombre }}</div>
         </div>
         <div>
-            <span class="mgr-label">Número de Plaza</span>
-            <div class="mgr-text-bold mgr-text-15 mgr-mt-4">#{{ candidato.plaza }}</div>
+            <span class="mgr-label" style="font-size: 10px;">Número de Plaza</span>
+            <div class="mgr-text-bold" style="font-size: 14px;">#{{ candidato.plaza }}</div>
         </div>
         <div>
-            <span class="mgr-label">Categoría</span>
-            <div style="margin-top: 4px;">
-                <span class="mgr-badge-cat">{{ candidato.categoria }}</span>
+            <span class="mgr-label" style="font-size: 10px;">Categoría</span>
+            <div style="margin-top: 2px;">
+                <span class="mgr-badge-cat" style="font-size: 9px; padding: 0 4px;">{{ candidato.categoria }}</span>
             </div>
         </div>
         <div>
-            <span class="mgr-label">Nota Media Actual</span>
-            <div class="mgr-score-large mgr-mt-4 {% if nota_media >= 5 %}mgr-color-success{% else %}mgr-color-danger{% endif %}">
+            <span class="mgr-label" style="font-size: 10px;">Nota Media</span>
+            <div class="mgr-text-bold {% if nota_media >= 5 %}mgr-color-success{% else %}mgr-color-danger{% endif %}" style="font-size: 18px; line-height: 1;">
                 {{ "%.2f"|format(nota_media) }}
             </div>
         </div>
     </div>
 </div>
 
-<div class="mgr-card">
-    <div class="mgr-card__header">
-        <h3><i class="ph ph-map-trifold"></i> Desglose por Rutas ({{ candidato.rutas_completadas }} / {{ candidato.rutas_total }})</h3>
+<div style="margin-top: 16px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <i class="ph ph-map-trifold" style="font-size: 16px; color: #64748b;"></i>
+            <h3 style="font-size: 13px; font-weight: 700; color: #1e293b; margin: 0;">
+                Rutas ({{ candidato.rutas_completadas }} / {{ candidato.rutas_total }})
+            </h3>
+        </div>
+        <button id="btnToggleAcciones" class="mgr-action-btn mgr-action-btn--secondary" style="padding: 4px 10px; font-size: 12px; height: 28px;">
+            <i class="ph ph-plus"></i> Acciones
+        </button>
     </div>
 
-    <div class="mgr-conv-list">
+    <div class="mgr-routes-grid mgr-routes-grid--compact">
         {% for intento in intentos %}
-        <div class="mgr-conv-row mgr-conv-row--compact mgr-conv-row--clickable"
-             data-href="{{ url_for('manager.intento_detalle', attempt_id=intento.attempt_id) }}">
-            <div class="mgr-conv-row__main">
-                <div class="mgr-conv-row__title">
-                    <strong>{{ intento.ruta_label }}</strong>
-                    <span class="mgr-text-mono-muted">({{ intento.ruta_id }})</span>
-                </div>
-            </div>
-
-            <div class="mgr-conv-row__stats mgr-flex-center-gap">
-                {% if intento.audit %}
-                <span class="mgr-audit-chip" title="Auditoría pendiente">
-                    <i class="ph ph-scales"></i>
-                </span>
-                {% endif %}
-
-                <div class="mgr-score-row-val {% if intento.nota >= 5 %}mgr-color-success{% else %}mgr-color-danger{% endif %}">
+        <div class="mgr-route-card {% if intento.realizado %}mgr-route-card--clickable{% else %}mgr-route-card--pending{% endif %}"
+             {% if intento.realizado %}data-href="{{ url_for('manager.intento_detalle', attempt_id=intento.attempt_id) }}"{% endif %}>
+            
+            <div class="mgr-route-card__header">
+                <span class="mgr-route-id">{{ intento.ruta_id }}</span>
+                {% if intento.realizado %}
+                <div class="mgr-route-score {% if intento.nota >= 5 %}pass{% else %}fail{% endif %}">
                     {{ "%.1f"|format(intento.nota) }}
                 </div>
+                {% else %}
+                <div class="mgr-route-score fail" style="font-size: 10px; opacity: 0.5;">
+                    PENDIENTE
+                </div>
+                {% endif %}
+            </div>
 
-                <a href="{{ url_for('manager.intento_detalle', attempt_id=intento.attempt_id) }}" class="mgr-action-btn mgr-action-btn--secondary">
-                    Ver intento <i class="ph ph-caret-right"></i>
-                </a>
+            <div class="mgr-route-card__body">
+                <h4 class="mgr-route-title">{{ intento.ruta_label }}</h4>
+                
+                <div class="mgr-route-footer">
+                    <span class="mgr-route-date">
+                        <i class="ph ph-calendar"></i> {{ intento.fecha }}
+                    </span>
+                    {% if intento.realizado %}
+                    <i class="ph ph-arrow-right"></i>
+                    {% else %}
+                    <i class="ph ph-clock" style="color: #cbd5e1;"></i>
+                    {% endif %}
+                </div>
             </div>
         </div>
         {% endfor %}
 
         {% if not intentos %}
-        <div class="mgr-empty">
+        <div class="mgr-empty" style="grid-column: 1 / -1;">
             <i class="ph ph-clipboard-text"></i>
-            <p>Este candidato aún no ha completado ninguna ruta en esta convocatoria.</p>
+            <p>Este candidato aún no tiene rutas asignadas en esta convocatoria.</p>
         </div>
         {% endif %}
+    </div>
+</div>
+
+<!-- Acciones del manager: ocultas por defecto -->
+<div id="panelAcciones" class="mgr-card mgr-mb-20" style="display: none; margin-top: 20px; border-color: var(--color-primary-200); background: #f8fafc;">
+    <div class="mgr-card__header" style="background: rgba(13, 71, 161, 0.05);">
+        <h3 style="color: var(--color-primary-700);"><i class="ph ph-lightning"></i> Acciones de gestión</h3>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; padding:16px;">
+
+        <!-- Inscribir en convocatoria -->
+        <div>
+            <h4 style="margin:0 0 12px; font-size:13px; font-weight:700; color:#475569; text-transform: uppercase; letter-spacing: 0.5px;">
+                <i class="ph ph-clipboard-text"></i> Inscribir en convocatoria
+            </h4>
+            {% if convocatorias_disponibles %}
+            <form method="POST"
+                  action="{{ url_for('manager.inscribir_alumno', student_id=candidato.id) }}"
+                  style="display:flex; flex-direction:column; gap:10px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <select name="conv_id" required
+                        style="padding:10px; border:1px solid #cbd5e1; border-radius:8px; background: white;">
+                    <option value="">— elegir convocatoria —</option>
+                    {% for c in convocatorias_disponibles %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+                <small style="color:#64748b; font-size:12px; margin-bottom: 4px;">
+                    La ruta se elige al abrir cada intento.
+                </small>
+                <button type="submit" class="mgr-action-btn mgr-action-btn--secondary" style="width: fit-content;">
+                    <i class="ph ph-check"></i> Confirmar Inscripción
+                </button>
+            </form>
+            {% else %}
+            <p style="color:#64748b; font-size:13px;">
+                No hay convocatorias OPEN disponibles.
+                <a href="{{ url_for('manager.convocatoria_nueva') }}">Crear una</a>.
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- Abrir nuevo intento -->
+        <div>
+            <h4 style="margin:0 0 12px; font-size:13px; font-weight:700; color:#475569; text-transform: uppercase; letter-spacing: 0.5px;">
+                <i class="ph ph-flag"></i> Abrir nuevo intento
+            </h4>
+            {% if enrollments_activos %}
+            <form method="POST"
+                  action="{{ url_for('manager.abrir_intento', student_id=candidato.id) }}"
+                  style="display:flex; flex-direction:column; gap:10px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <select name="enrollment_id" required
+                        style="padding:10px; border:1px solid #cbd5e1; border-radius:8px; background: white;">
+                    <option value="">— elegir inscripción —</option>
+                    {% for e in enrollments_activos %}
+                    <option value="{{ e.id }}">
+                        {{ e.convocatoria.name if e.convocatoria else e.convocatoriaId }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <select name="route_id"
+                        style="padding:10px; border:1px solid #cbd5e1; border-radius:8px; background: white;">
+                    <option value="">— ruta principal de la convocatoria —</option>
+                    {% for r in rutas_disponibles %}
+                    <option value="{{ r.code }}">{{ r.code }} · {{ r.name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="mgr-action-btn mgr-action-btn--primary" style="width: fit-content;">
+                    <i class="ph ph-play"></i> Abrir intento y subir TXT
+                </button>
+            </form>
+            {% else %}
+            <p style="color:#64748b; font-size:13px;">
+                El alumno no tiene inscripciones activas. Inscríbelo primero.
+            </p>
+            {% endif %}
+        </div>
+
     </div>
 </div>
 
@@ -94,11 +196,20 @@
 
 {% block extra_js %}
 <script>
-document.querySelectorAll('.mgr-conv-row--clickable').forEach(row => {
-    row.style.cursor = 'pointer';
-    row.addEventListener('click', e => {
-        if (e.target.closest('a, button')) return;
-        window.location.href = row.dataset.href;
+document.getElementById('btnToggleAcciones').addEventListener('click', function() {
+    const panel = document.getElementById('panelAcciones');
+    if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        this.innerHTML = '<i class="ph ph-minus"></i> Ocultar Acciones';
+    } else {
+        panel.style.display = 'none';
+        this.innerHTML = '<i class="ph ph-plus"></i> Acciones';
+    }
+});
+
+document.querySelectorAll('.mgr-route-card--clickable').forEach(card => {
+    card.addEventListener('click', () => {
+        window.location.href = card.dataset.href;
     });
 });
 </script>

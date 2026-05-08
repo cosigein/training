@@ -9,7 +9,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230d47a1'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='system-ui,sans-serif' font-size='13' font-weight='700' fill='white'%3ECM%3C/text%3E%3C/svg%3E">
     <style>
         *, *::before, *::after { box-sizing: border-box; }
 
@@ -158,7 +159,7 @@
         .login-form-sub {
             font-size: 13px;
             color: #64748b;
-            margin: 0 0 28px;
+            margin: 0 0 20px;
         }
 
         /* ── FLASH MESSAGES ──────────────────────────────────── */
@@ -168,19 +169,22 @@
             margin: 0 0 20px;
         }
         .flash-item {
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-size: 13px;
-            margin-bottom: 8px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13.5px;
+            font-weight: 500;
+            margin-bottom: 24px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
-        .flash-item.danger  { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-        .flash-item.success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+        .flash-item.danger  { background: #fef2f2; color: #991b1b; border: 1.5px solid #fecaca; }
+        .flash-item.success { background: #f0fdf4; color: #166534; border: 1.5px solid #bbf7d0; }
+        .flash-item i { font-size: 18px; }
 
         /* ── FORM ────────────────────────────────────────────── */
-        .form-group { margin-bottom: 18px; }
+        .form-group { margin-bottom: 14px; }
 
         .form-label {
             display: block;
@@ -278,7 +282,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            margin: 20px 0;
+            margin: 14px 0;
             color: #cbd5e1;
             font-size: 12px;
             font-weight: 600;
@@ -291,35 +295,155 @@
             background: #e2e8f0;
         }
 
-        /* ── RFID BUTTON ─────────────────────────────────────── */
-        .btn-rfid {
+        /* ── RFID ZONE ───────────────────────────────────────── */
+        .rfid-zone {
+            background: #fff;
+            border: 2px solid #e2e8f0;
+            width: 100%;
+            padding: 24px 20px;
+            border-radius: 16px;
+            text-align: center;
+            transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .rfid-zone:hover {
+            border-color: #0d47a1;
+            background: #f8fafc;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px -5px rgba(13, 71, 161, 0.1);
+        }
+
+        .rfid-zone:active {
+            transform: translateY(0);
+        }
+
+        .rfid-icon-wrap {
+            position: relative;
+            width: 52px;
+            height: 52px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            width: 100%;
-            padding: 12px;
-            background: #f8fafc;
-            color: #64748b;
-            border: 1.5px dashed #cbd5e1;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: not-allowed;
-            opacity: 0.6;
-            font-family: var(--font-body);
+            background: #f1f5f9;
+            border-radius: 50%;
+            color: #0d47a1;
+            font-size: 32px;
+            transition: all 300ms ease;
         }
-        .btn-rfid i { font-size: 20px; color: #94a3b8; }
+
+        .rfid-zone:hover .rfid-icon-wrap {
+            background: #0d47a1;
+            color: #fff;
+            transform: scale(1.1);
+        }
+
+        .rfid-title {
+            font-family: var(--font-heading);
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        .rfid-sub {
+            font-size: 12px;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .rfid-zone--loading {
+            pointer-events: none;
+            opacity: 0.8;
+            border-color: #0d47a1;
+            background: #f8fafc;
+        }
 
         /* ── FOOTER ──────────────────────────────────────────── */
         .login-footer {
-            margin-top: 24px;
+            margin-top: 16px;
             font-size: 11px;
             color: #94a3b8;
             text-align: center;
-            line-height: 1.6;
+            line-height: 1.4;
         }
 
+        /* ── ANIMATED TRUCK ──────────────────────────────────── */
+        @keyframes wheelRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes truckBounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-2.5px); }
+        }
+        @keyframes lightPulse {
+            from { opacity: 0.4; }
+            to { opacity: 1; }
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spin { animation: spin 1s linear infinite; display: inline-block; }
+
+        .truck-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            padding: 8px;
+        }
+        .truck-body {
+            animation: truckBounce 1.8s ease-in-out infinite alternate;
+        }
+        .truck-wheel {
+            transform-box: fill-box;
+            transform-origin: center;
+            animation: wheelRotate 2s linear infinite;
+        }
+        @keyframes wheelRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes truckBounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-2.5px); }
+        }
+        @keyframes lightPulse {
+            from { opacity: 0.4; }
+            to { opacity: 1; }
+        }
+        @keyframes sirenFlash {
+            0%, 100% { fill: #3b82f6; opacity: 1; }
+            50% { fill: #fff; opacity: 0.8; }
+        }
+        .truck-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            padding: 8px;
+        }
+        .truck-body {
+            animation: truckBounce 1.8s ease-in-out infinite alternate;
+        }
+        .truck-wheel {
+            transform-box: fill-box;
+            transform-origin: center;
+            animation: wheelRotate 2s linear infinite;
+        }
+        .truck-light {
+            animation: lightPulse 3s ease-in-out infinite alternate;
+        }
+        .truck-siren {
+            animation: sirenFlash 0.4s infinite alternate;
+        }
         /* ── RESPONSIVE ──────────────────────────────────────── */
         @media (max-width: 768px) {
             .login-root { flex-direction: column; }
@@ -334,17 +458,182 @@
             .login-brand__sub, .login-brand__badge { display: none; }
             .login-right { padding: 32px 20px; }
         }
+
+        /* ── MODO KIOSKO ─────────────────────────────────────── */
+        .kiosko-mode .login-left   { display: none; }
+        .kiosko-mode .login-right  {
+            background: #060d1a;
+            align-items: center;
+            justify-content: center;
+        }
+        .kiosko-mode .login-form-wrap { max-width: 520px; }
+        .kiosko-mode .login-form-title { color: #f1f5f9; font-size: 28px; text-align: center; }
+        .kiosko-mode .login-form-sub   { color: #64748b; text-align: center; margin-bottom: 32px; }
+        .kiosko-mode .rfid-zone {
+            background: #0d1527;
+            border-color: rgba(13,71,161,.5);
+            padding: 40px;
+            gap: 16px;
+        }
+        .kiosko-mode .rfid-icon-wrap {
+            width: 80px; height: 80px;
+            background: rgba(13,71,161,.2);
+            border-radius: 50%;
+            font-size: 44px;
+            color: #93c5fd;
+        }
+        .kiosko-mode .rfid-title { color: #f1f5f9; font-size: 20px; }
+        .kiosko-mode .rfid-sub   { color: #64748b; font-size: 14px; }
+        .kiosko-mode .rfid-zone:hover .rfid-icon-wrap { background: #1a56db; color: #fff; }
+        .kiosko-mode .login-divider { color: #334155; }
+        .kiosko-mode .login-divider::before,
+        .kiosko-mode .login-divider::after { background: #1e293b; }
+        .kiosko-mode .kiosko-plaza-input {
+            width: 100%;
+            height: 64px;
+            padding: 0 20px;
+            background: #0a0f1a;
+            border: 2px solid rgba(255,255,255,.1);
+            border-radius: 10px;
+            color: #f1f5f9;
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 4px;
+            outline: none;
+            font-family: monospace;
+            transition: border-color 150ms;
+        }
+        .kiosko-mode .kiosko-plaza-input:focus { border-color: #1a56db; }
+        .kiosko-mode .kiosko-plaza-input::placeholder { color: #334155; letter-spacing: 2px; font-size: 18px; font-weight: 400; }
+        .kiosko-mode .kiosko-plaza-btn {
+            width: 100%;
+            height: 56px;
+            background: #1a56db;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            transition: background 150ms;
+        }
+        .kiosko-mode .kiosko-plaza-btn:hover { background: #1d4ed8; }
+        .kiosko-mode .login-footer { color: #1e293b; }
+        .ksk-fullscreen-btn {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 10px;
+            color: #475569;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            transition: background 150ms;
+        }
+        .ksk-fullscreen-btn:hover { background: rgba(255,255,255,.12); color: #94a3b8; }
+        .kiosko-mode .rfid-error {
+            padding: 14px 16px;
+            background: rgba(220,38,38,.12);
+            border: 1.5px solid rgba(220,38,38,.3);
+            border-radius: 10px;
+            color: #fca5a5;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .kiosko-mode .rfid-error i { font-size: 18px; flex-shrink: 0; }
     </style>
 </head>
 
-<body>
+<body{% if request.args.get('kiosko') %} class="kiosko-mode"{% endif %}>
+{% if request.args.get('kiosko') %}
+<button class="ksk-fullscreen-btn" id="ksk-fs-btn" title="Pantalla completa">
+    <i class="ph ph-arrows-out" id="ksk-fs-icon"></i>
+</button>
+{% endif %}
 <div class="login-root">
 
     <!-- Panel izquierdo — Branding -->
     <div class="login-left">
         <div class="login-brand">
             <div class="login-brand__icon">
-                <i class="ph ph-truck"></i>
+                <svg viewBox="0 0 100 80" class="truck-svg" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Shadow -->
+                    <ellipse cx="50" cy="68" rx="40" ry="4" fill="rgba(0,0,0,0.2)"/>
+                    
+                    <g class="truck-body">
+                        <!-- Rear Body -->
+                        <path d="M 10 35 h 40 v 25 h -40 z" fill="#dc2626"/>
+                        
+                        <!-- White stripe -->
+                        <rect x="10" y="48" width="40" height="4" fill="white"/>
+                        <rect x="52" y="48" width="35" height="4" fill="white"/>
+                        
+                        <!-- Cabin -->
+                        <path d="M 50 35 h 25 l 10 10 v 15 h -35 z" fill="#ef4444"/>
+                        
+                        <!-- Window -->
+                        <path d="M 52 38 h 18 l 6 6 v 4 h -24 z" fill="#bae6fd" opacity="0.8"/>
+                        <!-- Window Reflection -->
+                        <path d="M 55 38 l 5 10 m 5 -10 l 5 10" stroke="#f0f9ff" stroke-width="2" opacity="0.6"/>
+                        
+                        <!-- Ladder on top -->
+                        <rect x="12" y="26" width="36" height="6" fill="#94a3b8" rx="1"/>
+                        <line x1="12" y1="29" x2="48" y2="29" stroke="#cbd5e1" stroke-width="1"/>
+                        <line x1="16" y1="26" x2="16" y2="32" stroke="#475569" stroke-width="2"/>
+                        <line x1="24" y1="26" x2="24" y2="32" stroke="#475569" stroke-width="2"/>
+                        <line x1="32" y1="26" x2="32" y2="32" stroke="#475569" stroke-width="2"/>
+                        <line x1="40" y1="26" x2="40" y2="32" stroke="#475569" stroke-width="2"/>
+
+                        <!-- Siren Light -->
+                        <path d="M 56 35 v -4 c 0 -2 4 -2 4 0 v 4 z" class="truck-siren" fill="#3b82f6"/>
+                        
+                        <!-- Side compartments -->
+                        <rect x="14" y="38" width="8" height="8" fill="#b91c1c" rx="1"/>
+                        <rect x="26" y="38" width="8" height="8" fill="#b91c1c" rx="1"/>
+                        <rect x="38" y="38" width="8" height="8" fill="#b91c1c" rx="1"/>
+                        
+                        <!-- Hose/Pump Panel -->
+                        <circle cx="44" cy="54" r="3" fill="#64748b"/>
+                        <circle cx="44" cy="54" r="1.5" fill="#334155"/>
+                        <rect x="38" y="53" width="4" height="2" fill="#94a3b8"/>
+                        
+                        <!-- Front bumper -->
+                        <rect x="85" y="55" width="4" height="5" fill="#64748b" rx="1"/>
+                        
+                        <!-- Rear bumper -->
+                        <rect x="8" y="55" width="2" height="5" fill="#64748b" rx="1"/>
+                    </g>
+                    
+                    <!-- Wheels -->
+                    <g class="truck-wheel">
+                        <circle cx="25" cy="60" r="8" fill="#1e293b"/>
+                        <circle cx="25" cy="60" r="4" fill="#94a3b8"/>
+                        <circle cx="25" cy="60" r="2" fill="#f8fafc"/>
+                        <line x1="25" y1="56" x2="25" y2="64" stroke="#475569" stroke-width="1"/>
+                        <line x1="21" y1="60" x2="29" y2="60" stroke="#475569" stroke-width="1"/>
+                    </g>
+                    
+                    <g class="truck-wheel" style="animation-delay: -0.5s;">
+                        <circle cx="70" cy="60" r="8" fill="#1e293b"/>
+                        <circle cx="70" cy="60" r="4" fill="#94a3b8"/>
+                        <circle cx="70" cy="60" r="2" fill="#f8fafc"/>
+                        <line x1="70" y1="56" x2="70" y2="64" stroke="#475569" stroke-width="1"/>
+                        <line x1="66" y1="60" x2="74" y2="60" stroke="#475569" stroke-width="1"/>
+                    </g>
+                </svg>
             </div>
             <div>
                 <p class="login-brand__cm">CMadrid <span>Training</span></p>
@@ -365,9 +654,32 @@
     <div class="login-right">
         <div class="login-form-wrap">
 
-            <h1 class="login-form-title">Bienvenido</h1>
-            <p class="login-form-sub">Ingresá con tu correo y contraseña institucional</p>
+            {% if request.args.get('kiosko') %}
 
+            {# ── MODO KIOSKO: solo RFID + plaza manual ── #}
+            {% if request.args.get('error') == 'rfid' %}
+            <div class="rfid-error">
+                <i class="ph ph-warning-circle"></i>
+                Tarjeta no reconocida. Introducí tu número de plaza manualmente.
+            </div>
+            {% endif %}
+
+            <h1 class="login-form-title">CMadrid Training</h1>
+            <p class="login-form-sub">Pasá tu tarjeta sobre el lector</p>
+
+            <div class="rfid-zone" id="btn-rfid">
+                <div class="rfid-icon-wrap">
+                    <i class="ph ph-identification-card"></i>
+                </div>
+                <p class="rfid-title">Acercar tarjeta RFID</p>
+                <p class="rfid-sub">El lector registrará tu entrada automáticamente</p>
+            </div>
+
+            <p class="login-footer">Convocatoria 2026 · Bomberos CMadrid</p>
+
+            {% else %}
+
+            {# ── MODO NORMAL: email + contraseña ── #}
             {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
             <ul class="flash-list">
@@ -381,6 +693,9 @@
             {% endif %}
             {% endwith %}
 
+            <h1 class="login-form-title">Bienvenido</h1>
+            <p class="login-form-sub">Acceda con su correo y contraseña institucional</p>
+
             <form id="login-form" method="POST" action="{{ url_for('auth.login') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
@@ -389,7 +704,7 @@
                     <div class="input-wrap">
                         <i class="ph ph-envelope input-icon"></i>
                         <input type="email" id="email" name="email" class="form-input"
-                               placeholder="usuario@cmadrid.es" required autofocus>
+                               placeholder="usuario@cmadrid.com" required autofocus>
                     </div>
                 </div>
 
@@ -413,16 +728,20 @@
 
             <div class="login-divider">O</div>
 
-            <button type="button" class="btn-rfid" disabled title="Próximamente">
-                <i class="ph ph-identification-card"></i>
-                Acercar tarjeta RFID
-                <span style="font-size:11px; opacity:.6;">(próximamente)</span>
-            </button>
+            <div class="rfid-zone" id="btn-rfid">
+                <div class="rfid-icon-wrap">
+                    <i class="ph ph-identification-card"></i>
+                </div>
+                <p class="rfid-title">Acercar tarjeta RFID</p>
+                <p class="rfid-sub">Apoye su tarjeta física sobre el lector</p>
+            </div>
 
             <p class="login-footer">
                 Acceso restringido a personal autorizado de CMadrid.<br>
                 Tus datos están protegidos conforme al RGPD.
             </p>
+
+            {% endif %}
 
         </div>
     </div>
@@ -430,23 +749,81 @@
 </div>
 
 <script>
-    // Password toggle
-    document.getElementById('pw-toggle').addEventListener('click', function() {
-        const input = document.getElementById('password');
-        const icon  = document.getElementById('pw-icon');
-        const show  = input.type === 'password';
-        input.type  = show ? 'text' : 'password';
-        icon.className = show ? 'ph ph-eye-slash' : 'ph ph-eye';
-    });
+    // Password toggle — solo en modo normal
+    var pwToggle = document.getElementById('pw-toggle');
+    if (pwToggle) {
+        pwToggle.addEventListener('click', function() {
+            const input = document.getElementById('password');
+            const icon  = document.getElementById('pw-icon');
+            const show  = input.type === 'password';
+            input.type  = show ? 'text' : 'password';
+            icon.className = show ? 'ph ph-eye-slash' : 'ph ph-eye';
+        });
+    }
 
-    // Loading state on submit
-    document.getElementById('login-form').addEventListener('submit', function() {
+    // Loading state on submit — solo en modo normal
+    var loginForm = document.getElementById('login-form');
+    if (loginForm) { loginForm.addEventListener('submit', function() {
         const btn = document.getElementById('btn-submit');
         btn.classList.add('btn-loading');
         btn.querySelector('i').style.display = 'none';
         btn.innerHTML = '<span style="opacity:.85">Verificando...</span>';
         btn.classList.add('btn-loading');
+    }); }
+
+    // ── Lector RFID (ESP32 HID Bluetooth) ────────────────────────────
+    // Solo actúa cuando ningún input está enfocado — así no interfiere
+    // con el admin escribiendo email/contraseña.
+    var rfidBuffer = '';
+    var rfidTimer  = null;
+
+    document.addEventListener('keydown', function (e) {
+        var active = document.activeElement;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+
+        if (rfidTimer) { clearTimeout(rfidTimer); rfidTimer = null; }
+
+        if (e.key === 'Enter') {
+            var raw = rfidBuffer.trim();
+            rfidBuffer = '';
+            if (raw.length > 0) {
+                e.preventDefault();
+                var zone  = document.getElementById('btn-rfid');
+                var icon  = zone.querySelector('.rfid-icon-wrap i');
+                var title = zone.querySelector('.rfid-title');
+                var sub   = zone.querySelector('.rfid-sub');
+                zone.classList.add('rfid-zone--loading');
+                icon.className   = 'ph ph-arrows-clockwise spin';
+                title.textContent = 'Leyendo tarjeta…';
+                sub.textContent   = 'Por favor, no retire su tarjeta';
+                window.location.href = '/kiosko/rfid?code=' + encodeURIComponent(raw);
+            }
+            return;
+        }
+
+        if (e.key.length === 1) { rfidBuffer += e.key; }
+        rfidTimer = setTimeout(function () { rfidBuffer = ''; }, 500);
     });
+    // ─────────────────────────────────────────────────────────────────
+
+    // Pantalla completa (solo modo kiosko)
+    var fsBtn = document.getElementById('ksk-fs-btn');
+    if (fsBtn) {
+        fsBtn.addEventListener('click', function () {
+            var icon = document.getElementById('ksk-fs-icon');
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(function () {});
+                icon.className = 'ph ph-arrows-in';
+            } else {
+                document.exitFullscreen();
+                icon.className = 'ph ph-arrows-out';
+            }
+        });
+        document.addEventListener('fullscreenchange', function () {
+            var icon = document.getElementById('ksk-fs-icon');
+            if (icon) icon.className = document.fullscreenElement ? 'ph ph-arrows-in' : 'ph ph-arrows-out';
+        });
+    }
 </script>
 
 </body>

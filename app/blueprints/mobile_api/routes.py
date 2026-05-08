@@ -130,7 +130,7 @@ def me_standing(conv_id):
     )
     if not enrollment:
         # 404, no 403 — no leakeamos existencia de la convocatoria
-        return error_response(404, "not_found", "No estás inscripto en esa convocatoria")
+        return error_response(404, "not_found", "No está inscrito en esa convocatoria")
 
     conv_dict, entries = get_ranking(conv_id, user.organizationId)
     if not conv_dict:

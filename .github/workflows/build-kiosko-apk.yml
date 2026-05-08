@@ -1,0 +1,126 @@
+name: Build Kiosko APK
+
+on:
+  push:
+    paths:
+      - 'kiosko-apk/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install npm deps
+        working-directory: kiosko-apk
+        run: npm install
+
+      - name: Add Android platform
+        working-directory: kiosko-apk
+        run: npx cap add android
+
+      # ── Permisos Bluetooth + internet + network security config ──────
+      - name: Patch AndroidManifest.xml
+        working-directory: kiosko-apk/android/app/src/main
+        run: |
+          python3 - <<'EOF'
+          import re
+
+          with open('AndroidManifest.xml', 'r') as f:
+              content = f.read()
+
+          permissions = """
+              <uses-permission android:name="android.permission.INTERNET"/>
+              <uses-permission android:name="android.permission.BLUETOOTH"/>
+              <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+              <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
+              <uses-permission android:name="android.permission.BLUETOOTH_SCAN"/>
+          """
+
+          # Insertar permisos antes de <application
+          content = content.replace('<application', permissions + '\n    <application', 1)
+
+          # Añadir networkSecurityConfig al tag application
+          content = content.replace(
+              '<application',
+              '<application\n        android:networkSecurityConfig="@xml/network_security_config"',
+              1
+          )
+
+          with open('AndroidManifest.xml', 'w') as f:
+              f.write(content)
+          EOF
+
+      # ── Ícono CM (igual que el favicon web) ─────────────────────────
+      - name: Generate CM launcher icons
+        run: |
+          pip install pillow --quiet
+          python3 - <<'EOF'
+          from PIL import Image, ImageDraw, ImageFont
+          import os
+
+          sizes = {
+              'mipmap-mdpi':    48,
+              'mipmap-hdpi':    72,
+              'mipmap-xhdpi':   96,
+              'mipmap-xxhdpi': 144,
+              'mipmap-xxxhdpi':192,
+          }
+          base = 'kiosko-apk/android/app/src/main/res'
+
+          for folder, size in sizes.items():
+              img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+              draw = ImageDraw.Draw(img)
+              radius = max(2, size // 6)
+              draw.rounded_rectangle([0, 0, size - 1, size - 1], radius=radius, fill='#0d47a1')
+              fs = int(size * 0.40)
+              try:
+                  font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', fs)
+              except Exception:
+                  font = ImageFont.load_default()
+              bbox = draw.textbbox((0, 0), 'CM', font=font)
+              tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+              x = (size - tw) // 2 - bbox[0]
+              y = (size - th) // 2 - bbox[1]
+              draw.text((x, y), 'CM', fill='white', font=font)
+              out = os.path.join(base, folder)
+              os.makedirs(out, exist_ok=True)
+              img.save(os.path.join(out, 'ic_launcher.png'))
+              img.save(os.path.join(out, 'ic_launcher_round.png'))
+          EOF
+
+      # ── MainActivity con fullscreen inmersivo ────────────────────────
+      - name: Replace MainActivity.java
+        run: |
+          cp kiosko-apk/android_overlay/MainActivity.java \
+             kiosko-apk/android/app/src/main/java/com/cmadrid/kiosko/MainActivity.java
+
+      # ── Network security config ──────────────────────────────────────
+      - name: Copy network_security_config.xml
+        run: |
+          mkdir -p kiosko-apk/android/app/src/main/res/xml
+          cp kiosko-apk/android_overlay/res/xml/network_security_config.xml \
+             kiosko-apk/android/app/src/main/res/xml/network_security_config.xml
+
+      # ── Build ────────────────────────────────────────────────────────
+      - name: Build debug APK
+        working-directory: kiosko-apk/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: cmadrid-kiosko-debug
+          path: kiosko-apk/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30

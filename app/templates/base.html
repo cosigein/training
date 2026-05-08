@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CMadrid Training — sistema de evaluación para conductores de vehículo de emergencias">
     <title>{% block title %}CMadrid Training{% endblock %}</title>
 
     <!-- Fonts -->
@@ -25,13 +26,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/alert.css') }}">
 
     <!-- Vendors -->
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230d47a1'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='system-ui,sans-serif' font-size='13' font-weight='700' fill='white'%3ECM%3C/text%3E%3C/svg%3E">
+    <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
 
     {% block extra_css %}{% endblock %}
 </head>
 
-<body hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}'>
+<body>
     {% block layout %}
     <div class="app-container">
         {% if current_user.is_authenticated %}

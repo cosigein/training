@@ -17,4 +17,10 @@ BEAT_SCHEDULE = {
         "task": "training.lock_closed_convocatorias",
         "schedule": crontab(minute="*/15"),
     },
+    # Sync Webfleet de attempts cerrados sin sync (D-WF-001).
+    # Cada 10 minutos por defecto — configurable con WEBFLEET_SYNC_INTERVAL_MIN.
+    "webfleet-sync-recent": {
+        "task": "training.webfleet_sync_recent",
+        "schedule": crontab(minute="*/10"),
+    },
 }

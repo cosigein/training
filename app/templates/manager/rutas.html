@@ -1,0 +1,69 @@
+{% extends "manager/layout.html" %}
+{% block title %}Rutas — CMadrid Training{% endblock %}
+
+{% block content %}
+
+<div class="mgr-page-header">
+    <div>
+        <h1 class="mgr-page-title">Rutas</h1>
+        <p class="mgr-page-subtitle">Catálogo de recorridos disponibles. Las rutas inactivas no aparecen en los selectores.</p>
+    </div>
+    <a href="{{ url_for('manager.rutas_nueva') }}" class="mgr-action-btn mgr-action-btn--primary">
+        <i class="ph ph-plus"></i> Nueva ruta
+    </a>
+</div>
+
+<div class="mgr-conv-list">
+    {% for r in rutas %}
+    <div class="mgr-conv-row mgr-conv-row--compact">
+        <div class="mgr-conv-row__main">
+            <div class="mgr-conv-row__title">
+                <strong>{{ r.code }}</strong>
+                <span style="color:#475569;">{{ r.name }}</span>
+                {% if not r.active %}
+                <span class="mgr-conv-status mgr-conv-status--closed">INACTIVA</span>
+                {% endif %}
+            </div>
+            {% if r.description %}
+            <span class="mgr-conv-row__desc">{{ r.description }}</span>
+            {% endif %}
+        </div>
+
+        <div class="mgr-conv-row__stats">
+            {% if r.distanceKm %}
+            <div class="mgr-conv-stat">
+                <span class="mgr-conv-stat__val">{{ "%.1f"|format(r.distanceKm) }} km</span>
+                <span class="mgr-conv-stat__lbl">Distancia</span>
+            </div>
+            {% endif %}
+            {% if r.durationMin %}
+            <div class="mgr-conv-stat">
+                <span class="mgr-conv-stat__val">{{ r.durationMin }} min</span>
+                <span class="mgr-conv-stat__lbl">Duración</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="mgr-conv-row__actions">
+            <form method="POST" action="{{ url_for('manager.rutas_toggle', route_id=r.id) }}"
+                  onsubmit="return confirm('¿{{ 'Desactivar' if r.active else 'Activar' }} la ruta {{ r.code }}?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="mgr-action-btn mgr-action-btn--secondary">
+                    {% if r.active %}
+                    <i class="ph ph-pause"></i> Desactivar
+                    {% else %}
+                    <i class="ph ph-play"></i> Activar
+                    {% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div class="mgr-empty">
+        <i class="ph ph-map-trifold"></i>
+        <p>Aún no hay rutas en el catálogo. <a href="{{ url_for('manager.rutas_nueva') }}">Crea la primera</a>.</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

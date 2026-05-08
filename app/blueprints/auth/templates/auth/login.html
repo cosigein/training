@@ -7,7 +7,7 @@
     <div class="card" style="width: 100%; max-width: 400px; padding: var(--space-2xl);">
         <div style="text-align: center; margin-bottom: var(--space-xl);">
             <div style="font-family: var(--font-heading); font-size: 2rem; font-weight: 800; color: var(--color-primary-800); letter-spacing: -0.02em; margin-bottom: var(--space-sm);">CMadrid<span style="color: var(--color-accent-500)">Training</span></div>
-            <p style="color: var(--color-gray-500);">Bienvenido. Por favor inicia sesión.</p>
+            <p style="color: var(--color-gray-500);">Bienvenido. Por favor, inicie sesión.</p>
         </div>
 
         <form action="{{ url_for('auth.login') }}" method="POST">
@@ -15,7 +15,7 @@
             
             <div class="field">
                 <label class="field__label">Correo Electrónico</label>
-                <input type="email" name="email" class="field__input" placeholder="ejemplo@cmadrid.com" required>
+                <input type="email" name="email" class="field__input" required>
             </div>
 
             <div class="field">

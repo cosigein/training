@@ -5,14 +5,13 @@ El alumno solo accede a datos propios. Toda función verifica ownership por
 """
 from app.extensions import db
 from app.models.training import (
-    Convocatoria, Enrollment, EnrollmentStatus,
-    AttemptEvent, AuditRequest, AuditStatus,
+    Convocatoria,
+    Enrollment,
+    EnrollmentStatus,
+    AttemptEvent,
 )
 from app.models.session import Attempt, AttemptStatus
 from app.models.auth import User
-
-
-_TERMINAL_AUDIT = {AuditStatus.CONFIRMED, AuditStatus.REEVALUATED, AuditStatus.REJECTED}
 
 _EVENT_LABELS = {
     "HARSH_BRAKING": ("Frenadas bruscas", "Estabilidad"),
@@ -80,29 +79,6 @@ def _attempt_owned(attempt_id, student_id, org_id):
     return Attempt.query.filter_by(
         id=attempt_id, studentId=student_id, organizationId=org_id
     ).first()
-
-
-def _audit_for_attempt(attempt_id, org_id):
-    """AuditRequest más reciente de un attempt, formateada para el template del alumno."""
-    ar = (
-        AuditRequest.query
-        .filter_by(originalAttemptId=attempt_id, organizationId=org_id)
-        .order_by(AuditRequest.createdAt.desc())
-        .first()
-    )
-    if not ar:
-        return None
-    is_resolved = ar.status in _TERMINAL_AUDIT
-    return {
-        "id": ar.id,
-        "status": "RESOLVED" if is_resolved else "PENDING",
-        "raw_status": ar.status.value,
-        "razon": ar.reason,
-        "resolucion": ar.resolution or "",
-        "fecha_solicitud": _fmt_date(ar.createdAt),
-        "hora_solicitud": _fmt_time(ar.createdAt),
-        "fecha_resolucion": _fmt_date(ar.reviewedAt),
-    }
 
 
 def _best_attempt_by_route(enrollment_id):
@@ -180,23 +156,23 @@ def _build_pedagogico(attempt, ruta_label):
     elif nota >= 7:
         resumen = "Buen recorrido. La técnica general es correcta, queda margen de mejora."
         sugerencias = [
-            "Anticipá los frenados con al menos 3 segundos de margen.",
-            "Mantené velocidad constante en los tramos rectos.",
+            "Anticipe los frenados con al menos 3 segundos de margen.",
+            "Mantenga velocidad constante en los tramos rectos.",
         ]
     elif nota >= 5:
         resumen = "Recorrido aprobado. Hay incidencias claras que se pueden trabajar."
         sugerencias = [
-            "Revisá los puntos donde aparecen frenadas bruscas.",
-            "Ajustá la velocidad antes de entrar a curvas, no durante.",
-            "Practicá la trayectoria en condiciones controladas antes del próximo intento.",
+            "Revise los puntos donde aparecen frenadas bruscas.",
+            "Ajuste la velocidad antes de entrar a curvas, no durante.",
+            "Practique la trayectoria en condiciones controladas antes del próximo intento.",
         ]
     else:
         resumen = "Recorrido con incidencias significativas que afectaron varias familias."
         sugerencias = [
-            "Trabajá los frenados progresivos — son el factor con más peso.",
-            "Anticipá las curvas: reducí velocidad antes de entrar.",
-            "Seguí el GPS sin desviarte — cada desviación suma puntos negativos.",
-            "Considerá un repaso en vehículo ligero antes del próximo intento.",
+            "Trabaje los frenados progresivos — son el factor con más peso.",
+            "Anticipe las curvas: reduzca la velocidad antes de entrar.",
+            "Siga el GPS sin desviarse — cada desviación suma puntos negativos.",
+            "Considere un repaso en vehículo ligero antes del próximo intento.",
         ]
 
     return {"resumen": resumen, "infracciones": infracciones, "sugerencias": sugerencias}
@@ -219,14 +195,6 @@ def get_student_dashboard(student_id, org_id, conv_id=None):
     total_candidatos = len(enrollments)
 
     best_by_route = _best_attempt_by_route(enrollment.id)
-
-    pending_audit_attempt_ids = {
-        ar.originalAttemptId for ar in AuditRequest.query.filter(
-            AuditRequest.organizationId == org_id,
-            AuditRequest.requestedBy == student_id,
-            AuditRequest.status.in_([AuditStatus.PENDING, AuditStatus.REVIEWING]),
-        ).all()
-    }
 
     all_routes_in_conv = sorted({
         a.routeId for a in (
@@ -251,7 +219,6 @@ def get_student_dashboard(student_id, org_id, conv_id=None):
                 "info": {
                     "nota": att.score,
                     "data_quality": _dq_label(att.dataQuality),
-                    "audit": att.id in pending_audit_attempt_ids,
                     "attempt_id": att.id,
                     "fecha": _fmt_date(att.endTime),
                     "hora": _fmt_time(att.endTime),
@@ -274,29 +241,6 @@ def get_student_dashboard(student_id, org_id, conv_id=None):
         None,
     )
     dentro_del_corte = mi_posicion is not None and mi_posicion <= conv.plazas
-
-    auditoria_resuelta = None
-    last_resolved = (
-        AuditRequest.query
-        .filter(
-            AuditRequest.organizationId == org_id,
-            AuditRequest.requestedBy == student_id,
-            AuditRequest.status.in_(list(_TERMINAL_AUDIT)),
-        )
-        .order_by(AuditRequest.reviewedAt.desc())
-        .first()
-    )
-    if last_resolved:
-        att = (
-            Attempt.query.get(last_resolved.originalAttemptId)
-            if last_resolved.originalAttemptId else None
-        )
-        auditoria_resuelta = {
-            "ruta": (att.routeId if att else "—") or "—",
-            "resolucion": last_resolved.status.value,
-            "fecha_resolucion": _fmt_date(last_resolved.reviewedAt),
-            "comentario_manager": last_resolved.resolution or "",
-        }
 
     rutas_total = max(len(rutas_alumno) + len(rutas_pendientes), 1)
 
@@ -331,7 +275,6 @@ def get_student_dashboard(student_id, org_id, conv_id=None):
         "total_candidatos": total_candidatos,
         "plazas": conv.plazas,
         "dentro_del_corte": dentro_del_corte,
-        "auditoria_resuelta": auditoria_resuelta,
     }
 
 
@@ -343,7 +286,6 @@ def get_student_intento(attempt_id, student_id, org_id):
 
     student = User.query.get(student_id)
     conv = Convocatoria.query.get(attempt.convocatoriaId) if attempt.convocatoriaId else None
-    auditoria = _audit_for_attempt(attempt.id, org_id)
     enrollments = _enrollments_ordered(conv.id, org_id) if conv else []
     plaza = _plaza_for(enrollments, student_id)
     pedagogico = _build_pedagogico(attempt, attempt.routeId or "este circuito")
@@ -361,8 +303,6 @@ def get_student_intento(attempt_id, student_id, org_id):
         },
         "score_breakdown": _build_breakdown(attempt, conv),
         "pedagogico": pedagogico,
-        "auditoria": auditoria,
-        "puede_solicitar": auditoria is None and conv is not None,
     }
 
 
@@ -387,12 +327,6 @@ def get_student_historial(student_id, org_id, conv_id=None):
         rid: a.id for rid, a in _best_attempt_by_route(enrollment.id).items()
     }
 
-    audits_by_attempt = {}
-    for ar in AuditRequest.query.filter_by(organizationId=org_id, requestedBy=student_id).all():
-        if ar.originalAttemptId:
-            audits_by_attempt[ar.originalAttemptId] = _audit_for_attempt(
-                ar.originalAttemptId, org_id
-            )
 
     intentos = []
     for a in closed:
@@ -405,7 +339,6 @@ def get_student_historial(student_id, org_id, conv_id=None):
             "attempt_id": a.id,
             "fecha": _fmt_date(a.endTime),
             "hora": _fmt_time(a.endTime),
-            "auditoria": audits_by_attempt.get(a.id),
             "es_actual": es_actual,
         })
 
@@ -497,58 +430,25 @@ def get_student_evolucion(student_id, org_id, conv_id=None):
     }
 
 
-def get_solicitar_auditoria_ctx(attempt_id, student_id, org_id):
-    """Contexto del formulario de auditoría. Devuelve dict con `existing` flag."""
-    attempt = _attempt_owned(attempt_id, student_id, org_id)
-    if not attempt:
-        return None
-    if _audit_for_attempt(attempt.id, org_id):
-        return {"existing": True}
-
-    student = User.query.get(student_id)
-    conv = Convocatoria.query.get(attempt.convocatoriaId) if attempt.convocatoriaId else None
-    enrollments = _enrollments_ordered(conv.id, org_id) if conv else []
-    plaza = _plaza_for(enrollments, student_id)
-
-    return {
-        "existing": False,
-        "candidato": {"id": student.id, "nombre": student.name, "plaza": plaza},
-        "ruta": {"id": attempt.routeId or "—", "label": attempt.routeId or "—"},
-        "attempt_id": attempt.id,
-        "nota_info": {
-            "nota": attempt.score or 0.0,
-            "data_quality": _dq_label(attempt.dataQuality),
-            "fecha": _fmt_date(attempt.endTime),
-            "hora": _fmt_time(attempt.endTime),
-        },
-    }
 
 
-def submit_audit_request(attempt_id, student_id, org_id, reason):
-    """Crea una AuditRequest. Levanta ValueError si no es propio o reason corta."""
-    attempt = _attempt_owned(attempt_id, student_id, org_id)
-    if not attempt:
-        raise ValueError("Intento no encontrado.")
-    if not reason or len(reason.strip()) < 30:
-        raise ValueError(
-            f"La razón debe tener al menos 30 caracteres. Llevas {len((reason or '').strip())}."
+def get_active_enrollments_summary(student_id, org_id):
+    """Lista resumida de convocatorias activas del alumno, ordenada por inscripción desc."""
+    enrollments = (
+        Enrollment.query
+        .join(Convocatoria, Enrollment.convocatoriaId == Convocatoria.id)
+        .filter(
+            Enrollment.studentId == student_id,
+            Enrollment.organizationId == org_id,
+            Enrollment.status == EnrollmentStatus.ACTIVE,
         )
-
-    existing = AuditRequest.query.filter_by(
-        originalAttemptId=attempt_id,
-        organizationId=org_id,
-    ).first()
-    if existing:
-        raise ValueError("Ya solicitaste una auditoría para este intento.")
-
-    ar = AuditRequest(
-        organizationId=org_id,
-        originalAttemptId=attempt_id,
-        enrollmentId=attempt.enrollmentId,
-        requestedBy=student_id,
-        reason=reason.strip(),
-        status=AuditStatus.PENDING,
+        .order_by(Enrollment.enrolledAt.desc())
+        .all()
     )
-    db.session.add(ar)
-    db.session.commit()
-    return ar
+    return [
+        {"conv_id": e.convocatoriaId, "nombre": e.convocatoria.name}
+        for e in enrollments
+        if e.convocatoria
+    ]
+
+

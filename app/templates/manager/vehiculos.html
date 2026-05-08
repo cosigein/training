@@ -1,0 +1,65 @@
+{% extends "manager/layout.html" %}
+{% block title %}Vehículos — CMadrid Training{% endblock %}
+
+{% block content %}
+
+<div class="mgr-page-header">
+    <div>
+        <h1 class="mgr-page-title">Vehículos</h1>
+        <p class="mgr-page-subtitle">Mapeo de vehículos con Webfleet. El objectno identifica el vehículo en la API de Webfleet.connect.</p>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="mgr-alert mgr-alert--{{ category }}" style="margin-bottom:12px;">{{ message }}</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<div class="mgr-conv-list">
+    {% for v in vehicles %}
+    <div class="mgr-conv-row mgr-conv-row--compact">
+        <div class="mgr-conv-row__main">
+            <div class="mgr-conv-row__title">
+                <strong>{{ v.name }}</strong>
+                <span style="color:#475569;">{{ v.licensePlate }}</span>
+                <span class="mgr-tag mgr-tag--blue" style="font-size:11px;">{{ v.type.value }}</span>
+            </div>
+            <span class="mgr-conv-row__desc">
+                {% if v.webfleetObjectNo %}
+                <i class="ph ph-link" style="color:#16a34a;"></i>
+                Webfleet objectno: <strong>{{ v.webfleetObjectNo }}</strong>
+                {% else %}
+                <i class="ph ph-link-break" style="color:#dc2626;"></i>
+                Sin mapeo Webfleet — los intentos de este vehículo no sincronizarán GPS.
+                {% endif %}
+            </span>
+        </div>
+
+        <div class="mgr-conv-row__actions">
+            <form method="POST"
+                  action="{{ url_for('manager.vehicle_set_webfleet', vehicle_id=v.id) }}"
+                  style="display:flex; gap:8px; align-items:center;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="text"
+                       name="webfleet_objectno"
+                       value="{{ v.webfleetObjectNo or '' }}"
+                       placeholder="ej: DOBACK023"
+                       style="padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; width:160px;">
+                <button type="submit" class="mgr-action-btn mgr-action-btn--secondary">
+                    <i class="ph ph-floppy-disk"></i> Guardar
+                </button>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div style="padding:32px; text-align:center; color:#94a3b8;">
+        <i class="ph ph-truck" style="font-size:32px;"></i>
+        <p>No hay vehículos registrados en la organización.</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends "manager/layout.html" %}
+{% block title %}Nueva convocatoria — CMadrid Training{% endblock %}
+
+{% block content %}
+
+<a href="{{ url_for('manager.convocatorias') }}" class="mgr-action-btn mgr-action-btn--secondary" style="margin-bottom:12px;">
+    <i class="ph ph-arrow-left"></i> Volver a convocatorias
+</a>
+
+<div class="mgr-page-header">
+    <div>
+        <h1 class="mgr-page-title">Nueva convocatoria</h1>
+        <p class="mgr-page-subtitle">Alta de un proceso de selección con su ruta principal y criterios de evaluación</p>
+    </div>
+</div>
+
+<div class="mgr-card" style="max-width:760px;">
+    <form method="POST"
+          action="{{ url_for('manager.convocatoria_nueva') }}"
+          style="display:flex; flex-direction:column; gap:14px; padding:8px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div>
+            <label class="mgr-label" for="name">Nombre de la convocatoria</label>
+            <input id="name" name="name" type="text" required
+                   placeholder="p.ej. Promoción 2026 — Cuerpo de Bomberos"
+                   value="{{ form.name or '' }}"
+                   style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+        </div>
+
+        <div>
+            <label class="mgr-label" for="description">Descripción (opcional)</label>
+            <textarea id="description" name="description" rows="2"
+                      style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">{{ form.description or '' }}</textarea>
+        </div>
+
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:14px;">
+            <div>
+                <label class="mgr-label" for="routePrincipal">Ruta principal</label>
+                {% if rutas_disponibles %}
+                <select id="routePrincipal" name="routePrincipal" required
+                        style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+                    <option value="">— elegir ruta —</option>
+                    {% for r in rutas_disponibles %}
+                    <option value="{{ r.code }}"
+                        {% if form.routePrincipal == r.code %}selected{% endif %}>
+                        {{ r.code }} · {{ r.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <small style="color:#64748b;">
+                    ¿No está la ruta que necesitás?
+                    <a href="{{ url_for('manager.rutas_nueva') }}" target="_blank">Crear ruta nueva</a>.
+                </small>
+                {% else %}
+                <div class="mgr-alert mgr-alert--info">
+                    <i class="ph ph-info"></i>
+                    No hay rutas activas en el catálogo.
+                    <a href="{{ url_for('manager.rutas_nueva') }}">Crea la primera</a> antes de continuar.
+                </div>
+                {% endif %}
+            </div>
+            <div>
+                <label class="mgr-label" for="plazas">Plazas</label>
+                <input id="plazas" name="plazas" type="number" min="1" required
+                       value="{{ form.plazas or '' }}"
+                       style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+            </div>
+            <div>
+                <label class="mgr-label" for="umbralMin">Nota mínima APTO</label>
+                <input id="umbralMin" name="umbralMin" type="number" min="0" max="10" step="0.1"
+                       value="{{ form.umbralMin or '5.0' }}"
+                       style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+            </div>
+        </div>
+
+        <details style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px;">
+            <summary style="cursor:pointer; font-weight:600; color:#475569;">
+                Versionado de criterios (avanzado)
+            </summary>
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-top:12px;">
+                <div>
+                    <label class="mgr-label" for="criteriaVersion">Criteria</label>
+                    <input id="criteriaVersion" name="criteriaVersion" type="text"
+                           value="{{ form.criteriaVersion or 'v1.0' }}"
+                           style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:8px;">
+                </div>
+                <div>
+                    <label class="mgr-label" for="normalizerVersion">Normalizer</label>
+                    <input id="normalizerVersion" name="normalizerVersion" type="text"
+                           value="{{ form.normalizerVersion or 'v1.0' }}"
+                           style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:8px;">
+                </div>
+                <div>
+                    <label class="mgr-label" for="detectorVersion">Detector</label>
+                    <input id="detectorVersion" name="detectorVersion" type="text"
+                           value="{{ form.detectorVersion or 'v1.0' }}"
+                           style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:8px;">
+                </div>
+            </div>
+        </details>
+
+        <div style="display:flex; gap:10px; margin-top:6px;">
+            <button type="submit" class="mgr-action-btn mgr-action-btn--primary">
+                <i class="ph ph-check"></i> Crear convocatoria
+            </button>
+            <a href="{{ url_for('manager.convocatorias') }}" class="mgr-action-btn mgr-action-btn--secondary">
+                Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

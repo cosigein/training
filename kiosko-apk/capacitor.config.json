@@ -1,0 +1,13 @@
+{
+  "appId": "com.cmadrid.kiosko",
+  "appName": "CMadrid Kiosko",
+  "webDir": "www",
+  "server": {
+    "url": "http://72.61.163.21:4000/kiosko/",
+    "cleartext": true
+  },
+  "android": {
+    "backgroundColor": "#03080f",
+    "allowMixedContent": true
+  }
+}

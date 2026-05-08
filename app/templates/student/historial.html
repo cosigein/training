@@ -2,10 +2,21 @@
 
 {% block content %}
 
+        <div class="alu-back-bar">
+            <a href="{{ url_for('student.dashboard') }}" class="alu-back-btn" aria-label="Volver a la página principal">
+                <i class="ph ph-arrow-left" aria-hidden="true"></i> Volver al inicio
+            </a>
+            <span class="alu-breadcrumb" aria-label="Ubicación actual">
+                <span>Inicio</span>
+                <span class="alu-breadcrumb__sep">›</span>
+                <strong>Historial</strong>
+            </span>
+        </div>
+
         <div>
             <h1 class="alu-welcome__title">Historial de intentos</h1>
             <p class="alu-welcome__sub">
-                {{ convocatoria.nombre }} · todos tus recorridos registrados
+                {{ convocatoria.nombre }} · todos sus recorridos registrados
             </p>
         </div>
 
@@ -26,16 +37,13 @@
                             <th>Circuito</th>
                             <th>Nota</th>
                             <th>Estado</th>
-                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for intento in intentos %}
                         <tr data-testid="student-historial-row-{{ loop.index }}"
-                            {% if intento.es_actual %}
                             class="alu-hist-row--clickable"
-                            data-href="{{ url_for('student.intento', attempt_id=intento.attempt_id) }}"
-                            {% endif %}>
+                            data-href="{{ url_for('student.intento', attempt_id=intento.attempt_id) }}">
                             <td style="white-space:nowrap;">
                                 {% if intento.fecha %}
                                 <div style="font-size:13px; font-weight:600; color:#334155;">{{ intento.fecha[:5] }}</div>
@@ -64,12 +72,6 @@
                                     </span>
                                 {% endif %}
                             </td>
-                            <td style="text-align:right;">
-                                <a href="{{ url_for('student.intento', attempt_id=intento.attempt_id) }}"
-                                   class="alu-ruta-btn">
-                                    <i class="ph ph-eye"></i> Ver
-                                </a>
-                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -81,16 +83,12 @@
         <div class="alu-card">
             <div class="alu-card__body" style="padding:48px 20px; text-align:center;">
                 <i class="ph ph-clock" style="font-size:40px; color:#cbd5e1; display:block; margin-bottom:12px;"></i>
-                <div style="font-size:15px; font-weight:600; color:#64748b;">Aún no tenés intentos registrados</div>
-                <div style="font-size:13px; color:#94a3b8; margin-top:6px;">Tu primer intento aparecerá aquí después de completar tu primer circuito.</div>
+                <div style="font-size:15px; font-weight:600; color:#64748b;">Aún no tiene intentos registrados</div>
+                <div style="font-size:13px; color:#94a3b8; margin-top:6px;">El primer intento aparecerá aquí después de completar el primer circuito.</div>
             </div>
         </div>
         {% endif %}
 
-        <a href="{{ url_for('student.dashboard') }}"
-           class="alu-ruta-btn" style="align-self:flex-start;">
-            <i class="ph ph-arrow-left"></i> Volver a mis resultados
-        </a>
         <p class="alu-disclaimer">
             Resultados provisionales. No tienen efecto jurídico hasta el cierre oficial de la convocatoria.
         </p>

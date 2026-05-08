@@ -3,132 +3,184 @@
 
 {% block content %}
 
-<div>
-    <h1 class="mgr-page-title">Dashboard</h1>
-    <p class="mgr-page-subtitle">Oposición pública · Bomberos CMadrid · Convocatoria 2026</p>
-</div>
+<div class="mgr-body-inner">
+    <!-- Cabecera Premium -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
+        <div>
+            <h1 class="mgr-page-title" style="margin-bottom: 4px;">Panel de Gestión</h1>
+            <p class="mgr-page-subtitle">Bienvenido al centro de mando operativo de CMadrid Training.</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <a href="{{ url_for('manager.convocatorias') }}" class="mgr-action-btn" style="background: white;">
+                <i class="ph ph-plus"></i> Nueva Convocatoria
+            </a>
+            <a href="{{ url_for('manager.alumnos_list') }}" class="mgr-action-btn mgr-action-btn--primary">
+                <i class="ph ph-user-plus"></i> Inscribir Candidato
+            </a>
+        </div>
+    </div>
 
-<!-- KPIs globales -->
-<div class="mgr-kpis">
-    <a href="{{ url_for('manager.convocatorias') }}" class="mgr-kpi mgr-kpi--blue mgr-kpi--link">
-        <span class="mgr-kpi__label">Convocatorias activas</span>
-        <span class="mgr-kpi__value" data-counter>{{ convocatorias|length }}</span>
-        <span class="mgr-kpi__sub">en curso</span>
-        <i class="ph-fill ph-clipboard-text mgr-kpi__icon"></i>
-    </a>
-    <a href="#auditorias" class="mgr-kpi mgr-kpi--red mgr-kpi--link {% if pendientes_total > 0 %}mgr-kpi--urgent{% endif %}">
-        <span class="mgr-kpi__label">Auditorías pendientes</span>
-        <span class="mgr-kpi__value" data-counter>{{ pendientes_total }}</span>
-        <span class="mgr-kpi__sub">requieren revisión</span>
-        <i class="ph-fill ph-scales mgr-kpi__icon"></i>
-    </a>
-    <a href="{{ url_for('manager.convocatorias') }}" class="mgr-kpi mgr-kpi--gray mgr-kpi--link">
-        <span class="mgr-kpi__label">Total candidatos</span>
-        {% set ns = namespace(total=0) %}
-        {% for conv in convocatorias %}{% set ns.total = ns.total + conv.total_candidatos %}{% endfor %}
-        <span class="mgr-kpi__value" data-counter>{{ ns.total }}</span>
-        <span class="mgr-kpi__sub">entre todas las convocatorias</span>
-        <i class="ph-fill ph-users mgr-kpi__icon"></i>
-    </a>
-    <a href="{{ url_for('manager.convocatorias') }}" class="mgr-kpi mgr-kpi--green mgr-kpi--link">
-        <span class="mgr-kpi__label">Plazas totales</span>
-        {% set ns2 = namespace(plazas=0) %}
-        {% for conv in convocatorias %}{% set ns2.plazas = ns2.plazas + conv.plazas %}{% endfor %}
-        <span class="mgr-kpi__value" data-counter>{{ ns2.plazas }}</span>
-        <span class="mgr-kpi__sub">a cubrir en total</span>
-        <i class="ph-fill ph-medal mgr-kpi__icon"></i>
-    </a>
-</div>
+    <!-- Dashboard Layout -->
+    <div class="mgr-dash-layout">
+        
+        <!-- COLUMNA PRINCIPAL -->
+        <div class="mgr-dash-main">
+            
+            <!-- KPIs con nuevo diseño -->
+            <div class="mgr-kpis">
+                <a href="{{ url_for('manager.convocatorias') }}" class="mgr-kpi mgr-kpi--blue">
+                    <span class="mgr-kpi__label">Convocatorias</span>
+                    <span class="mgr-kpi__value" data-counter>{{ convocatorias|length }}</span>
+                    <span class="mgr-kpi__sub">En curso</span>
+                    <i class="ph-fill ph-clipboard-text mgr-kpi__icon"></i>
+                </a>
 
-<!-- Convocatorias activas (M2 según paper) -->
-<div>
-    <h2 class="mgr-section-title">Convocatorias activas</h2>
-    <div class="mgr-conv-grid">
-        {% for conv in convocatorias %}
-        <div class="mgr-conv-card mgr-conv-card--clickable"
-             data-href="{{ url_for('manager.matriz', conv_id=conv.id) }}">
-            <div class="mgr-conv-card__header">
-                <div>
-                    <span class="mgr-conv-card__name">{{ conv.nombre }}</span>
-                    <span class="mgr-conv-status mgr-conv-status--{{ conv.status|lower }}">
-                        {{ conv.status }}
-                    </span>
+                {% set ns = namespace(total=0, plazas=0) %}
+                {% for conv in convocatorias %}
+                    {% set ns.total = ns.total + conv.total_candidatos %}
+                    {% set ns.plazas = ns.plazas + conv.plazas %}
+                {% endfor %}
+
+                <a href="{{ url_for('manager.alumnos_list') }}" class="mgr-kpi mgr-kpi--gray">
+                    <span class="mgr-kpi__label">Total Candidatos</span>
+                    <span class="mgr-kpi__value" data-counter>{{ ns.total }}</span>
+                    <span class="mgr-kpi__sub">Inscritos hoy</span>
+                    <i class="ph-fill ph-users mgr-kpi__icon"></i>
+                </a>
+
+                <a href="{{ url_for('manager.ranking') }}" class="mgr-kpi mgr-kpi--green">
+                    <span class="mgr-kpi__label">Plazas Ofertadas</span>
+                    <span class="mgr-kpi__value" data-counter>{{ ns.plazas }}</span>
+                    <span class="mgr-kpi__sub">Ratio: {{ "%.1f"|format(ns.total / ns.plazas if ns.plazas > 0 else 0) }}</span>
+                    <i class="ph-fill ph-medal mgr-kpi__icon"></i>
+                </a>
+            </div>
+
+            <!-- Convocatorias en Curso -->
+            <section>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 class="mgr-section-title" style="margin-bottom: 0;">Convocatorias en curso</h2>
+                    <a href="{{ url_for('manager.convocatorias') }}" style="font-size: 13px; color: #3b82f6; text-decoration: none; font-weight: 600;">Ver histórico <i class="ph ph-arrow-right"></i></a>
                 </div>
-                {% if conv.auditorias_pendientes > 0 %}
-                <span class="mgr-conv-alert">
-                    <i class="ph ph-warning"></i>
-                    {{ conv.auditorias_pendientes }} auditoría{{ 's' if conv.auditorias_pendientes != 1 }}
-                </span>
-                {% endif %}
-            </div>
+                
+                <div class="mgr-conv-grid">
+                    {% for conv in convocatorias %}
+                    <div class="mgr-conv-card mgr-conv-card--clickable" 
+                         data-href="{{ url_for('manager.matriz', conv_id=conv.id) }}">
+                        <div class="mgr-conv-card__header">
+                            <div>
+                                <span class="mgr-conv-card__name">{{ conv.nombre }}</span>
+                                <span class="mgr-conv-status mgr-conv-status--{{ conv.status|lower }}">
+                                    {{ conv.status }}
+                                </span>
+                            </div>
+                        </div>
 
-            <div class="mgr-conv-card__meta">
-                <span><i class="ph ph-users"></i> {{ conv.total_candidatos }} candidatos</span>
-                <span><i class="ph ph-medal"></i> {{ conv.plazas }} plazas</span>
-                <span><i class="ph ph-calendar"></i> Cierre: {{ conv.fecha_cierre }}</span>
-            </div>
+                        <div class="mgr-conv-card__meta">
+                            <span><i class="ph ph-users"></i> {{ conv.total_candidatos }} candidatos</span>
+                            <span><i class="ph ph-medal"></i> {{ conv.plazas }} plazas</span>
+                            <span><i class="ph ph-calendar"></i> {{ conv.fecha_cierre }}</span>
+                        </div>
 
+                        <div class="mgr-conv-card__actions">
+                            <a href="{{ url_for('manager.ranking', conv_id=conv.id) }}" class="mgr-action-btn" style="flex: 1;">
+                                <i class="ph ph-ranking"></i> Ranking
+                            </a>
+                            <a href="{{ url_for('manager.matriz', conv_id=conv.id) }}" class="mgr-action-btn" title="Matriz de Progreso">
+                                <i class="ph ph-grid-four"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if not convocatorias %}
+                    <div class="mgr-empty" style="grid-column: 1 / -1; padding: 40px;">
+                        <i class="ph ph-archive"></i>
+                        <p>No hay convocatorias activas en este momento.</p>
+                        <a href="{{ url_for('manager.convocatorias') }}" class="mgr-action-btn mgr-action-btn--primary">Crear la primera</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
 
         </div>
-        {% endfor %}
-    </div>
-</div>
 
-<!-- Auditorías pendientes -->
-{% if auditorias %}
-<div id="auditorias">
-    <h2 class="mgr-section-title">
-        Auditorías pendientes
-        <span class="mgr-section-badge">{{ auditorias|length }}</span>
-    </h2>
-    <div class="mgr-table-wrap">
-        <table class="mgr-table">
-            <thead>
-                <tr>
-                    <th>Candidato</th>
-                    <th>Ruta</th>
-                    <th style="width:100px">Nota</th>
-                    <th style="width:160px">Solicitud</th>
-                    <th style="width:120px">Acción</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for aud in auditorias %}
-            <tr class="mgr-clickable-row" data-href="{{ url_for('manager.auditoria_detalle', audit_id=aud.id) }}">
-                <td>
-                    <div class="mgr-alumno">
-                        <span class="mgr-alumno__name">{{ aud.candidato }}</span>
-                    </div>
-                </td>
-                <td><span style="font-size:13px; color:#475569">{{ aud.ruta }}</span></td>
-                <td>
-                    <span class="mgr-score {% if aud.nota >= 5 %}mgr-score--pass{% else %}mgr-score--fail{% endif %}">
-                        {{ "%.1f"|format(aud.nota) }}
-                    </span>
-                </td>
-                <td>
-                    <span style="font-size:12px; color:#64748b">
-                        {{ aud.fecha_solicitud }} · {{ aud.hora_solicitud }}
-                    </span>
-                </td>
-                <td>
-                    <a href="{{ url_for('manager.auditoria_detalle', audit_id=aud.id) }}"
-                       class="mgr-action-btn mgr-action-btn--primary" style="font-size:12px; padding:4px 10px;">
-                        <i class="ph ph-magnifying-glass"></i> Revisar
+        <!-- BARRA LATERAL -->
+        <aside class="mgr-dash-sidebar">
+            
+            <!-- Accesos Directos -->
+            <div class="mgr-side-card">
+                <div class="mgr-side-card__header">
+                    <h4><i class="ph ph-lightning"></i> Accesos Directos</h4>
+                </div>
+                <div class="mgr-side-list">
+                    <a href="{{ url_for('manager.matriz') }}" class="mgr-side-item">
+                        <div class="mgr-side-item__icon"><i class="ph ph-grid-four"></i></div>
+                        <div class="mgr-side-item__info">
+                            <span class="mgr-side-item__title">Matriz de Progreso</span>
+                            <span class="mgr-side-item__sub">Ver todos los circuitos</span>
+                        </div>
                     </a>
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+                    <a href="{{ url_for('manager.alumnos_list') }}" class="mgr-side-item">
+                        <div class="mgr-side-item__icon"><i class="ph ph-users"></i></div>
+                        <div class="mgr-side-item__info">
+                            <span class="mgr-side-item__title">Gestión de Alumnos</span>
+                            <span class="mgr-side-item__sub">Listado y edición</span>
+                        </div>
+                    </a>
+                    <a href="{{ url_for('manager.rutas_list') }}" class="mgr-side-item">
+                        <div class="mgr-side-item__icon"><i class="ph ph-map-trifold"></i></div>
+                        <div class="mgr-side-item__info">
+                            <span class="mgr-side-item__title">Configuración de Rutas</span>
+                            <span class="mgr-side-item__sub">Activar/desactivar circuitos</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Estado Global del Sistema -->
+            <div class="mgr-side-card">
+                <div class="mgr-side-card__header">
+                    <h4><i class="ph ph-activity"></i> Estado del Sistema</h4>
+                </div>
+                <div style="padding: 20px;">
+                    <div style="margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
+                            <span style="color: #64748b;">Rendimiento General</span>
+                            <span style="font-weight: 700; color: #16a34a;">84%</span>
+                        </div>
+                        <div style="height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden;">
+                            <div style="height: 100%; background: #16a34a; width: 84%;"></div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
+                            <span style="color: #64748b;">Cupo de Plazas</span>
+                            <span style="font-weight: 700; color: #0d47a1;">{{ (ns.total / ns.plazas * 100)|int if ns.plazas > 0 else 0 }}%</span>
+                        </div>
+                        <div style="height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden;">
+                            <div style="height: 100%; background: #0d47a1; width: {{ (ns.total / ns.plazas * 100)|int if ns.plazas > 0 else 0 }}%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Soporte Técnico -->
+            <div style="background: linear-gradient(135deg, #1e293b, #0f172a); border-radius: 12px; padding: 20px; color: white;">
+                <h4 style="margin: 0 0 8px; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                    <i class="ph ph-lifebuoy" style="color: #3b82f6;"></i> Centro de Ayuda
+                </h4>
+                <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin-bottom: 16px;">
+                    ¿Tienes dudas sobre la gestión de intentos o el cálculo del ranking?
+                </p>
+                <a href="#" class="mgr-action-btn" style="background: rgba(255,255,255,0.1); border: none; color: white; width: 100%; justify-content: center; font-size: 12px;">
+                    Consultar Documentación
+                </a>
+            </div>
+
+        </aside>
     </div>
 </div>
-{% else %}
-<div class="mgr-empty">
-    <i class="ph ph-check-circle" style="color:#16a34a"></i>
-    <p>No hay auditorías pendientes. Todo al día.</p>
-</div>
-{% endif %}
 
 {% endblock %}
 
@@ -160,14 +212,15 @@ document.querySelectorAll('[data-anim-width]').forEach(el => {
     }));
 });
 
-// ── Clickable cards / rows ──────────────────────────────────────────
+// ── Clickable convocatoria cards ───────────────────────────────────
 document.querySelectorAll('.mgr-conv-card--clickable').forEach(card => {
-    card.style.cursor = 'pointer';
     card.addEventListener('click', e => {
-        if (e.target.closest('a')) return;
+        if (e.target.closest('.mgr-conv-card__actions')) return;
         window.location.href = card.dataset.href;
     });
 });
+
+// ── Clickable rows ──────────────────────────────────────────────────
 document.querySelectorAll('.mgr-clickable-row').forEach(row => {
     row.addEventListener('click', e => {
         if (e.target.closest('a')) return;

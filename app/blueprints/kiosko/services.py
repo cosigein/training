@@ -44,7 +44,43 @@ def _resolve_active_conv(org_id):
     )
 
 
-def resolve_enrollment_by_plaza(plaza_str):
+def resolve_enrollment_by_rfid(rfid_code):
+    """Mapea un código RFID al Enrollment activo del alumno en cualquier
+    convocatoria OPEN. Devuelve (enrollment, convocatoria, organization) o None."""
+    if not rfid_code:
+        return None
+    org = _resolve_org()
+    if not org:
+        return None
+
+    card = (
+        RfidCard.query
+        .filter_by(uid=rfid_code.strip(), organizationId=org.id, active=True)
+        .filter(RfidCard.revokedAt.is_(None))
+        .first()
+    )
+    if not card or not card.assignedTo:
+        return None
+
+    enrollment = (
+        Enrollment.query
+        .join(Convocatoria, Enrollment.convocatoriaId == Convocatoria.id)
+        .filter(
+            Enrollment.studentId == card.assignedTo,
+            Enrollment.organizationId == org.id,
+            Enrollment.status != EnrollmentStatus.INVALIDATED,
+            Convocatoria.status == ConvocatoriaStatus.OPEN,
+        )
+        .order_by(Convocatoria.openedAt.desc())
+        .first()
+    )
+    if not enrollment:
+        return None
+
+    return enrollment, enrollment.convocatoria, org
+
+
+def resolve_enrollment_by_plaza(plaza_str, conv_id=None):
     """Mapea un nº de plaza tipeado al Enrollment correspondiente.
     El nº de plaza es el orden de inscripción dentro de la convocatoria activa.
     Devuelve (enrollment, convocatoria, organization) o None si no se resuelve."""
@@ -53,9 +89,15 @@ def resolve_enrollment_by_plaza(plaza_str):
     org = _resolve_org()
     if not org:
         return None
-    conv = _resolve_active_conv(org.id)
+    
+    if conv_id:
+        conv = Convocatoria.query.filter_by(id=conv_id, organizationId=org.id).first()
+    else:
+        conv = _resolve_active_conv(org.id)
+        
     if not conv:
         return None
+        
     enrollments = (
         Enrollment.query
         .filter_by(convocatoriaId=conv.id, organizationId=org.id)
@@ -70,6 +112,51 @@ def resolve_enrollment_by_plaza(plaza_str):
     if idx < 0 or idx >= len(enrollments):
         return None
     return enrollments[idx], conv, org
+
+
+def get_plaza_for_student(student_id):
+    """Devuelve el nº de plaza (como string) para un estudiante dado en una convocatoria abierta.
+    Se usa para el redireccionamiento post-login RFID al portal del kiosko."""
+    if not student_id:
+        return None
+    org = _resolve_org()
+    if not org:
+        return None
+    
+    # Buscamos una inscripción activa del alumno en la convocatoria OPEN más reciente
+    enrollment = (
+        Enrollment.query
+        .join(Convocatoria, Enrollment.convocatoriaId == Convocatoria.id)
+        .filter(
+            Enrollment.studentId == student_id,
+            Enrollment.organizationId == org.id,
+            Enrollment.status == EnrollmentStatus.ACTIVE,
+            Convocatoria.status == ConvocatoriaStatus.OPEN
+        )
+        .order_by(Convocatoria.openedAt.desc())
+        .first()
+    )
+
+    if not enrollment:
+        return None
+
+    conv = enrollment.convocatoria
+
+    # Calcular su posición (plaza) en la lista ordenada de esa convocatoria
+    enrollments = (
+        Enrollment.query
+        .filter_by(convocatoriaId=conv.id, organizationId=org.id)
+        .filter(Enrollment.status != EnrollmentStatus.INVALIDATED)
+        .order_by(Enrollment.enrolledAt)
+        .all()
+    )
+
+    for idx, e in enumerate(enrollments):
+        if e.id == enrollment.id:
+            return str(idx + 1), conv.id
+
+    return None, None
+
 
 
 def resolve_attempt_view(attempt_id):
