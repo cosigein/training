@@ -27,8 +27,12 @@ from app.models.session import GpsMeasurement
 
 @kiosko_bp.route("/")
 def index():
-    """El kiosko ya no tiene login propio; redirige al login principal."""
-    return redirect(url_for("auth.login"))
+    return redirect(url_for("kiosko.login"))
+
+
+@kiosko_bp.route("/login")
+def login():
+    return render_template("kiosko/login.html")
 
 
 @kiosko_bp.route("/entrar", methods=["POST"])
