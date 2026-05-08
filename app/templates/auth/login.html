@@ -644,26 +644,40 @@
         btn.classList.add('btn-loading');
     });
 
-    // RFID simulation
-    function simulateRfid(uid) {
-        const zone = document.getElementById('btn-rfid');
-        const icon = zone.querySelector('.rfid-icon-wrap i');
-        const title = zone.querySelector('.rfid-title');
-        const sub = zone.querySelector('.rfid-sub');
-        const pulse = zone.querySelector('.rfid-pulse');
-        
-        document.getElementById('rfid-uid-input').value = uid;
-        
-        zone.classList.add('rfid-zone--loading');
-        icon.className = 'ph ph-arrows-clockwise spin';
-        title.textContent = 'Leyendo tarjeta...';
-        sub.textContent = 'Por favor, no retire su tarjeta';
-        
-        // Simular tiempo de lectura
-        setTimeout(() => {
-            document.getElementById('rfid-form').submit();
-        }, 800);
-    }
+    // ── Lector RFID (ESP32 HID Bluetooth) ────────────────────────────
+    // Solo actúa cuando ningún input está enfocado — así no interfiere
+    // con el admin escribiendo email/contraseña.
+    var rfidBuffer = '';
+    var rfidTimer  = null;
+
+    document.addEventListener('keydown', function (e) {
+        var active = document.activeElement;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+
+        if (rfidTimer) { clearTimeout(rfidTimer); rfidTimer = null; }
+
+        if (e.key === 'Enter') {
+            var raw = rfidBuffer.trim();
+            rfidBuffer = '';
+            if (raw.length > 0) {
+                e.preventDefault();
+                var zone  = document.getElementById('btn-rfid');
+                var icon  = zone.querySelector('.rfid-icon-wrap i');
+                var title = zone.querySelector('.rfid-title');
+                var sub   = zone.querySelector('.rfid-sub');
+                zone.classList.add('rfid-zone--loading');
+                icon.className   = 'ph ph-arrows-clockwise spin';
+                title.textContent = 'Leyendo tarjeta…';
+                sub.textContent   = 'Por favor, no retire su tarjeta';
+                window.location.href = '/kiosko/rfid?code=' + encodeURIComponent(raw);
+            }
+            return;
+        }
+
+        if (e.key.length === 1) { rfidBuffer += e.key; }
+        rfidTimer = setTimeout(function () { rfidBuffer = ''; }, 500);
+    });
+    // ─────────────────────────────────────────────────────────────────
 </script>
 
 </body>
