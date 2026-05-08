@@ -1612,7 +1612,7 @@ a.mgr-kpi--link:hover {
     position: absolute;
 		top: 0;
 		left: 0;
-		width: 100vw;
+		width: 100%;
 		height: 100vh;
 		z-index: 1000;
 }
@@ -1728,6 +1728,7 @@ a.mgr-kpi--link:hover {
   top: 0; 
   right: 0; 
   z-index: 10;
+  border-radius: 5px;
 }
 
 .mgr-edit-profile-name-input {
