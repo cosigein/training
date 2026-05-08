@@ -465,39 +465,32 @@ def parse_sensor_files(
     attempt_id: str,
     org_id: str,
     session_number: int,
-    gps_content: str,
     stability_content: str,
-    rotativo_content: str,
+    gps_content: Optional[str] = None,
+    rotativo_content: Optional[str] = None,
 ) -> ParseResult:
     """
-    Parsea los 3 archivos del sensor Doback Elite filtrando solo los bloques
+    Parsea los archivos del sensor Doback Elite filtrando solo los bloques
     cuya cabecera contiene `Sesión:{session_number}`. Persiste las mediciones
-    en el Attempt indicado. Los tres archivos son obligatorios.
+    en el Attempt indicado.
+
+    V1: solo el archivo de ESTABILIDAD es obligatorio (lo introduce el manager
+    por la UI). GPS y ROTATIVO son opcionales — vendrán de la integración
+    con Webfleet cuando esté disponible.
 
     Idempotente: elimina mediciones previas del attempt antes de insertar.
 
-    Args:
-        attempt_id:        ID del Attempt destino.
-        org_id:            ID de la organización.
-        session_number:    número de sesión a importar.
-        gps_content:       contenido del TXT de GPS.
-        stability_content: contenido del TXT de ESTABILIDAD.
-        rotativo_content:  contenido del TXT de ROTATIVO.
-
-    Returns:
-        ParseResult con estadísticas del parsing.
-
     Raises:
         ValueError: si el attempt no existe, ya está cerrado, o no se
-                    encontró la sesión solicitada en ningún archivo.
+                    encontró la sesión solicitada en ningún archivo provisto.
     """
     attempt = Attempt.query.get(attempt_id)
     if not attempt:
         raise ValueError(f"Attempt {attempt_id} no encontrado")
     if attempt.closedAt:
         raise ValueError("Attempt ya cerrado — no se pueden ingresar datos")
-    if not gps_content or not stability_content or not rotativo_content:
-        raise ValueError("Se requieren los 3 archivos: GPS, ESTABILIDAD y ROTATIVO")
+    if not stability_content:
+        raise ValueError("Se requiere el archivo de ESTABILIDAD")
 
     result = ParseResult(attempt_id=attempt_id)
 

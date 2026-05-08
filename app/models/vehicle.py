@@ -71,6 +71,9 @@ class Vehicle(db.Model):
     type = db.Column(db.Enum(VehicleType), nullable=False)
     status = db.Column(db.Enum(VehicleStatus), default=VehicleStatus.ACTIVE)
     active = db.Column(db.Boolean, default=True)
+    # Mapeo a Webfleet (D-WF-001). Cuando se setea, los Attempts del vehículo
+    # se sincronizan con la API de Webfleet.connect (show_tracks).
+    webfleetObjectNo = db.Column(db.String, unique=True, nullable=True, index=True)
     createdAt = db.Column(db.DateTime, default=datetime.utcnow)
     updatedAt = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

@@ -90,8 +90,12 @@
             </div>
             <div style="padding:8px 4px 4px;">
                 <p style="color:#475569; font-size:14px; margin:0 0 14px;">
-                    Sube los tres archivos <code>.txt</code> del Doback Elite (estabilidad, GPS y rotativo).
-                    En el siguiente paso elegirás a qué <strong>sesión</strong> corresponde este intento.
+                    Sube el archivo <code>.txt</code> de <strong>estabilidad</strong> generado por
+                    el Doback Elite. En el siguiente paso elegirás a qué <strong>sesión</strong> corresponde este intento.
+                </p>
+                <p style="color:#94a3b8; font-size:12px; margin:0 0 14px;">
+                    Los datos de GPS y rotativo se obtendrán automáticamente desde Webfleet
+                    cuando la integración esté disponible.
                 </p>
 
                 <form method="POST"
@@ -105,22 +109,6 @@
                             <i class="ph ph-activity"></i> Archivo de ESTABILIDAD <span style="color:#dc2626">*</span>
                         </span>
                         <input type="file" name="stability_file" accept=".txt" required
-                               style="padding:10px; border:1px dashed #cbd5e1; border-radius:8px; background:#f8fafc;">
-                    </label>
-
-                    <label style="display:flex; flex-direction:column; gap:4px;">
-                        <span style="font-size:13px; font-weight:600; color:#334155;">
-                            <i class="ph ph-map-pin"></i> Archivo de GPS <span style="color:#dc2626">*</span>
-                        </span>
-                        <input type="file" name="gps_file" accept=".txt" required
-                               style="padding:10px; border:1px dashed #cbd5e1; border-radius:8px; background:#f8fafc;">
-                    </label>
-
-                    <label style="display:flex; flex-direction:column; gap:4px;">
-                        <span style="font-size:13px; font-weight:600; color:#334155;">
-                            <i class="ph ph-arrows-clockwise"></i> Archivo de ROTATIVO <span style="color:#dc2626">*</span>
-                        </span>
-                        <input type="file" name="rotativo_file" accept=".txt" required
                                style="padding:10px; border:1px dashed #cbd5e1; border-radius:8px; background:#f8fafc;">
                     </label>
 
@@ -249,6 +237,35 @@
                 </div>
             </div>
 
+
+            <div style="margin: 16px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+                <h4 style="margin:0 0 8px; font-size:13px; color:#334155;">
+                    <i class="ph ph-cloud-arrow-down"></i> Datos GPS desde Webfleet
+                </h4>
+                {% if webfleet_synced_at %}
+                <p style="color:#475569; font-size:12px; margin:0 0 8px;">
+                    Última sincronización: {{ webfleet_synced_at.strftime('%d/%m/%Y %H:%M') }}
+                    {% if webfleet_sync_source == 'mock' %}
+                    <span style="color:#92400e; background:#fef3c7; padding:1px 6px; border-radius:4px; font-size:11px;">
+                        modo demo
+                    </span>
+                    {% endif %}
+                </p>
+                {% else %}
+                <p style="color:#64748b; font-size:12px; margin:0 0 8px;">
+                    Aún no se han importado los datos GPS del recorrido desde Webfleet.
+                </p>
+                {% endif %}
+                <form method="POST"
+                      action="{{ url_for('manager.import_webfleet', attempt_id=attempt_id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit"
+                            style="width:100%; padding:8px; border:1px solid #cbd5e1; background:#fff; color:#0d47a1; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">
+                        <i class="ph ph-cloud-arrow-down"></i>
+                        {% if webfleet_synced_at %}Volver a sincronizar{% else %}Importar GPS desde Webfleet{% endif %}
+                    </button>
+                </form>
+            </div>
 
             {% if not is_invalidated %}
             <div style="margin: 16px; padding-top: 12px; border-top: 1px solid #e2e8f0;">

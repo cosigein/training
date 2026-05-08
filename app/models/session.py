@@ -84,6 +84,11 @@ class Attempt(db.Model):
     invalidatedBy = db.Column(db.String, db.ForeignKey("User.id", ondelete="SET NULL"))
     invalidatedReason = db.Column(db.String)
 
+    # Webfleet sync (D-WF-001). Si webfleetSyncedAt está poblado, los
+    # GpsMeasurements del Attempt provienen de la API. Re-sync sobreescribe.
+    webfleetSyncedAt = db.Column(db.DateTime)
+    webfleetSyncSource = db.Column(db.String)  # 'manual' | 'periodic' | 'mock'
+
     # Audit trail
     auditLog = db.Column(JSONB, default=list)
 

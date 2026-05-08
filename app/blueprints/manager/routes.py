@@ -221,14 +221,19 @@ def intento_detalle(attempt_id):
         can_score=can_score,
         is_invalidated=is_invalidated,
         invalidated_reason=attempt.invalidatedReason if is_invalidated else None,
+        webfleet_synced_at=attempt.webfleetSyncedAt if attempt else None,
+        webfleet_sync_source=attempt.webfleetSyncSource if attempt else None,
     )
 
 
 @manager_bp.route("/intento/<attempt_id>/upload-sensor", methods=["POST"])
 @require_role(["MANAGER", "ADMIN"])
 def upload_sensor_data(attempt_id):
-    """Paso 1 del wizard: recibe los 3 archivos del Doback Elite, los guarda en
-    /tmp y redirige al paso 2 (selección de sesión)."""
+    """Paso 1 del wizard: recibe el TXT de ESTABILIDAD del Doback Elite, lo guarda
+    en /tmp y redirige al paso 2 (selección de sesión).
+
+    GPS y ROTATIVO no se cargan por aquí — vendrán de la integración con Webfleet.
+    """
     from app.services.pipeline.sensor_parser import extract_sessions
     from .upload_storage import create_upload, UploadStorageError
 
@@ -243,34 +248,20 @@ def upload_sensor_data(attempt_id):
         flash("Este intento ya está cerrado.", "warning")
         return redirect(redirect_url)
 
-    def _read_file(field_name, label):
-        f = request.files.get(field_name)
-        if not f or not f.filename:
-            return None, f"El archivo de {label} es obligatorio."
-        if not f.filename.lower().endswith(".txt"):
-            return None, f"El archivo de {label} debe ser .txt."
-        return f.read(), None
-
-    stab, err = _read_file("stability_file", "ESTABILIDAD")
-    if err:
-        flash(err, "danger")
+    f = request.files.get("stability_file")
+    if not f or not f.filename:
+        flash("El archivo de ESTABILIDAD es obligatorio.", "danger")
         return redirect(redirect_url)
-    gps, err = _read_file("gps_file", "GPS")
-    if err:
-        flash(err, "danger")
+    if not f.filename.lower().endswith(".txt"):
+        flash("El archivo de ESTABILIDAD debe ser .txt.", "danger")
         return redirect(redirect_url)
-    rot, err = _read_file("rotativo_file", "ROTATIVO")
-    if err:
-        flash(err, "danger")
-        return redirect(redirect_url)
+    stab = f.read()
 
     try:
         upload_id = create_upload(
             org_id=org_id,
             attempt_id=attempt_id,
             stability_bytes=stab,
-            gps_bytes=gps,
-            rotativo_bytes=rot,
         )
     except UploadStorageError as exc:
         flash(str(exc), "danger")
@@ -278,9 +269,7 @@ def upload_sensor_data(attempt_id):
 
     # Validamos que haya al menos una sesión detectable antes de redirigir
     sessions_preview = extract_sessions(
-        gps_content=gps.decode("utf-8", errors="replace"),
         stability_content=stab.decode("utf-8", errors="replace"),
-        rotativo_content=rot.decode("utf-8", errors="replace"),
     )
     if not sessions_preview:
         from .upload_storage import delete_upload
@@ -413,6 +402,32 @@ def invalidar_intento(attempt_id):
         return redirect(url_for("manager.intento_detalle", attempt_id=attempt_id))
 
     flash("Intento invalidado. Ya no aparece en el ranking.", "success")
+    return redirect(url_for("manager.intento_detalle", attempt_id=attempt_id))
+
+
+@manager_bp.route("/intento/<attempt_id>/import-webfleet", methods=["POST"])
+@require_role(["MANAGER", "ADMIN"])
+def import_webfleet(attempt_id):
+    """Sincroniza los GpsMeasurement del intento desde Webfleet (manual)."""
+    from app.services.webfleet import sync_attempt_gps, WebfleetSyncError
+
+    org_id = _get_org_id()
+    actor_id = get_jwt_identity()
+
+    attempt = Attempt.query.filter_by(id=attempt_id, organizationId=org_id).first()
+    if not attempt:
+        abort(404)
+
+    try:
+        result = sync_attempt_gps(attempt_id, actor_id=actor_id, source="manual")
+        suffix = " (modo demo)" if result["was_mock"] else ""
+        flash(
+            f"Webfleet: {result['rows_inserted']} puntos GPS importados{suffix}.",
+            "success",
+        )
+    except WebfleetSyncError as exc:
+        flash(f"Error al sincronizar con Webfleet: {exc}", "danger")
+
     return redirect(url_for("manager.intento_detalle", attempt_id=attempt_id))
 
 
