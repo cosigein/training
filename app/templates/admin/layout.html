@@ -56,6 +56,11 @@
                 <i class="ph ph-users-three"></i>
                 <span>Usuarios</span>
             </a>
+            <a href="{{ url_for('admin.rfid_cards') }}"
+               class="adm-nav__btn {% if active_page == 'rfid' %}active{% endif %}">
+                <i class="ph ph-identification-card"></i>
+                <span>RFID</span>
+            </a>
             <a href="{{ url_for('admin.cierre') }}"
                class="adm-nav__btn adm-nav__btn--critical {% if active_page == 'cierre' %}active{% endif %}">
                 <i class="ph ph-lock"></i>
