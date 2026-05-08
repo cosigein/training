@@ -55,6 +55,9 @@
                         <td style="color: #64748b; font-size: 12px;">{{ conv.cierre }}</td>
                         <td style="text-align: right;">
                             <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                                <a href="{{ url_for('admin.get_convocatoria_detail', conv_id=conv.id) }}" class="adm-btn adm-btn--sm adm-btn--secondary">
+                                    <i class="ph ph-users"></i> Ver alumnos
+                                </a>
                                 {% if conv.status in ['OPEN', 'CLOSING'] %}
                                 <a href="{{ url_for('admin.cierre') }}" class="adm-btn adm-btn--sm">
                                     <i class="ph ph-lock"></i> Cerrar
