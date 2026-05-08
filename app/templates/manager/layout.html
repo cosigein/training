@@ -1,87 +1,126 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Training | CMadrid{% endblock %}</title>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>{% block title %}Training | CMadrid{% endblock %}</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/manager.css') }}">
+		<link
+			rel="stylesheet"
+			href="{{ url_for('static', filename='css/tokens.css') }}"
+		/>
+		<link
+			rel="stylesheet"
+			href="{{ url_for('static', filename='css/reset.css') }}"
+		/>
+		<link
+			rel="stylesheet"
+			href="{{ url_for('static', filename='css/manager.css') }}"
+		/>
 
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <script src="https://unpkg.com/htmx.org@1.9.10" defer></script>
+		<script src="https://unpkg.com/@phosphor-icons/web"></script>
+		<script src="https://unpkg.com/htmx.org@1.9.10" defer></script>
 
-    {% block extra_css %}{% endblock %}
-</head>
-<body>
+		{% block extra_css %}{% endblock %}
+	</head>
+	<body>
+		<div class="mgr-root">
+			<header class="mgr-header">
+				<div class="mgr-header__left">
+					<a href="{{ url_for('manager.dashboard') }}" class="mgr-logo">
+						<div class="mgr-logo__icon">CM</div>
+						<span class="mgr-logo__text">CMadrid <span>Training</span></span>
+					</a>
+				</div>
 
-<div class="mgr-root">
+				<nav class="mgr-nav">
+					<a
+						href="{{ url_for('manager.dashboard') }}"
+						class="mgr-nav__btn {% if active_page == 'dashboard' %}active{% endif %}"
+					>
+						<i class="ph ph-squares-four"></i>
+						<span>Inicio</span>
+					</a>
+					<a
+						href="{{ url_for('manager.convocatorias') }}"
+						class="mgr-nav__btn {% if active_page == 'convocatorias' %}active{% endif %}"
+					>
+						<i class="ph ph-clipboard-text"></i>
+						<span>Convocatorias</span>
+					</a>
+					<a
+						href="{{ url_for('manager.matriz') }}"
+						class="mgr-nav__btn {% if active_page == 'matriz' %}active{% endif %}"
+					>
+						<i class="ph ph-grid-nine"></i>
+						<span>Candidatos</span>
+					</a>
+					<a
+						href="{{ url_for('manager.ranking') }}"
+						class="mgr-nav__btn {% if active_page == 'ranking' %}active{% endif %}"
+					>
+						<i class="ph ph-trophy"></i>
+						<span>Ranking</span>
+					</a>
+					<a
+						href="{{ url_for('manager.auditoria_list') }}"
+						class="mgr-nav__btn {% if active_page == 'auditorias' %}active{% endif %}"
+					>
+						<i class="ph ph-magnifying-glass"></i>
+						<span>Auditorías</span>
+						{% if auditorias_count is defined and auditorias_count > 0 %}
+						<span class="mgr-nav-badge">{{ auditorias_count }}</span>
+						{% endif %}
+					</a>
+				</nav>
 
-    <header class="mgr-header">
-        <div class="mgr-header__left">
-            <a href="{{ url_for('manager.dashboard') }}" class="mgr-logo">
-                <div class="mgr-logo__icon">CM</div>
-                <span class="mgr-logo__text">CMadrid <span>Training</span></span>
-            </a>
-
-        </div>
-
-        <nav class="mgr-nav">
-            <a href="{{ url_for('manager.dashboard') }}"
-               class="mgr-nav__btn {% if active_page == 'dashboard' %}active{% endif %}">
-                <i class="ph ph-squares-four"></i>
-                <span>Inicio</span>
-            </a>
-            <a href="{{ url_for('manager.convocatorias') }}"
-               class="mgr-nav__btn {% if active_page == 'convocatorias' %}active{% endif %}">
-                <i class="ph ph-clipboard-text"></i>
-                <span>Convocatorias</span>
-            </a>
-            <a href="{{ url_for('manager.matriz') }}"
-               class="mgr-nav__btn {% if active_page == 'matriz' %}active{% endif %}">
-                <i class="ph ph-grid-nine"></i>
-                <span>Candidatos</span>
-            </a>
-            <a href="{{ url_for('manager.ranking') }}"
-               class="mgr-nav__btn {% if active_page == 'ranking' %}active{% endif %}">
-                <i class="ph ph-trophy"></i>
-                <span>Ranking</span>
-            </a>
-            <a href="{{ url_for('manager.auditoria_list') }}"
-               class="mgr-nav__btn {% if active_page == 'auditorias' %}active{% endif %}">
-                <i class="ph ph-magnifying-glass"></i>
-                <span>Auditorías</span>
-                {% if auditorias_count is defined and auditorias_count > 0 %}
-                <span class="mgr-nav-badge">{{ auditorias_count }}</span>
-                {% endif %}
-            </a>
-        </nav>
-
-        <div class="mgr-header__right">
-            <div class="mgr-user-chip">
-                <div class="mgr-user-chip__avatar">
-                    {{ current_user.name[0] }}{{ current_user.name.split()[1][0] if current_user.name.split()|length > 1 else '' }}
-                </div>
-                <span class="mgr-user-chip__name">{{ current_user.name.split()[0] }}</span>
+				<div class="mgr-header__right">
+					<div class="mgr-user-chip" id="mgrChip" style="cursor: pointer">
+            {% if not current_user.picture %}
+						<div class="mgr-user-chip__avatar">
+							{{ current_user.name[0] }}{{ current_user.name.split()[1][0] if
+							current_user.name.split()|length > 1 else '' }}
+						</div>
+            {% else %}
+            <div class="mgr-user-chip__avatar">
+              <img src="{{ url_for('static', filename='uploads/' ~ current_user.picture) if current_user.picture else '' }}" style="width: 25px; height: 25px; object-fit: fill; border-radius: 50%; background: #e5e7eb; display: block;" />
             </div>
-            <a href="{{ url_for('auth.logout') }}" class="mgr-logout-btn" title="Cerrar sesión">
-                <i class="ph ph-sign-out"></i>
-            </a>
-        </div>
-    </header>
+            {% endif %}
+						<div id="mgrModal" class="mgr-modal">
+							<div class="mgr-modal-div">
+								<h3 class="mgr-modal-username">{{ current_user.name }}</h3>
+								<hr />
+								<a href="{{ url_for('manager.edit_profile') }}" class="mgr-modal-profile"><i class="ph ph-user"></i>Profile</a>
+                <!-- Option for settings -->
+								<!-- <hr />
+								<a href="#" class="mgr-modal-settings"><i class="ph ph-gear"></i>Settings</a>
+								<hr /> -->
+								<a href="{{ url_for('auth.logout') }}" title="Cerrar sesión" class="mgr-modal-log-out"><i class="ph ph-sign-out"></i>Log out</a>
+							</div>
+						</div>
 
-    <main class="mgr-body">
-        {% block content %}{% endblock %}
-    </main>
+						<span class="mgr-user-chip__name"
+							>{{ current_user.name.split()[0] }}</span
+						>
+					</div>
+					<a
+						href="{{ url_for('auth.logout') }}"
+						class="mgr-logout-btn"
+						title="Cerrar sesión"
+					>
+						<i class="ph ph-sign-out"></i>
+					</a>
+				</div>
+			</header>
 
-</div>
+			<main class="mgr-body">{% block content %}{% endblock %}</main>
+		</div>
 
-<script src="{{ url_for('static', filename='js/manager.js') }}"></script>
-{% block extra_js %}{% endblock %}
-
-</body>
+		<script src="{{ url_for('static', filename='js/manager.js') }}"></script>
+		{% block extra_js %}{% endblock %}
+	</body>
 </html>
+

@@ -67,6 +67,7 @@ class User(db.Model, UserMixin):
     id = db.Column(db.String, primary_key=True, server_default=text("gen_random_uuid()"))
     email = db.Column(db.String, unique=True, nullable=False)
     name = db.Column(db.String, nullable=False)
+    picture = db.Column(db.String, nullable=True)
     password = db.Column(db.String, nullable=False)
     organizationId = db.Column(db.String, db.ForeignKey("Organization.id", ondelete="RESTRICT"))
     role = db.Column(db.Enum(UserRole), default=UserRole.VIEWER)

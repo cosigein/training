@@ -471,3 +471,32 @@ def auditoria_create():
     except AuditRequestError as exc:
         return jsonify({"message": str(exc)}), 422
     return jsonify(ar), 201
+
+@manager_bp.route("/perfil", methods=["GET", "POST"])
+@require_role(["MANAGER", "ADMIN"])
+def edit_profile():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if request.method == "POST":
+        new_name = request.form.get("name", "").strip()
+        file = request.files.get("picture")
+        if file and file.filename:
+            import os
+            from werkzeug.utils import secure_filename
+            # Remove old picture if it exists
+            if user.picture:
+                old_path = os.path.join("app", "static", "uploads", user.picture)
+                if os.path.exists(old_path):
+                    os.remove(old_path)
+            filename = f"user_{user.id}_{int(datetime.utcnow().timestamp())}_{secure_filename(file.filename)}"
+            upload_path = os.path.join("app", "static", "uploads", filename)
+            file.save(upload_path)
+            user.picture = filename
+        if new_name:
+            user.name = new_name
+            db.session.commit()
+            flash("Perfil actualizado correctamente.", "success")
+            return redirect(url_for("manager.edit_profile"))
+        else:
+            flash("El nombre no puede estar vacío.", "danger")
+    return render_template("manager/perfil.html", user=user)

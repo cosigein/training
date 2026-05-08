@@ -1526,3 +1526,188 @@ a.mgr-kpi--link:hover {
     margin-top: 3px;
 }
 
+/* Manager user modal div */
+
+.mgr-modal {
+		display: none;
+    position: absolute;
+		top: 0;
+		left: 0;
+		width: 100vw;
+		height: 100vh;
+		z-index: 1000;
+}
+
+.mgr-modal-div {
+		background: #fff;
+		margin: 5% auto;
+		padding-top: 1.5rem;
+		padding-bottom: 1.5rem;
+		padding-left: 1rem;
+		padding-right: 1rem;
+		width: 300px;
+		border-radius: 8px;
+		position: absolute;
+		top: 0%;
+		right: 2%;
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+		display: flex;
+		flex-direction: column;
+		font-size: 118%;
+}
+
+/* Animate opening and closing the modal */
+
+@keyframes mgr-modal-slide-down {
+  0% {
+    opacity: 0;
+    transform: translateY(-40px)
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0)
+  }
+}
+
+@keyframes mgr-modal-slide-up {
+  0% {
+    opacity: 1;
+    transform: translateY(0)
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-40px)
+  }
+}
+
+.mgr-modal-div--open {
+  animation: mgr-modal-slide-down 0.35s cubic-bezier(.4, 0, .2, 1) forwards;
+}
+
+.mgr-modal-div--close {
+  animation: mgr-modal-slide-up 0.35s cubic-bezier(.4, 0, .2, 1) forwards;
+}
+
+/* Modal options */
+
+.mgr-modal-profile, .mgr-modal-settings {
+		color: rgba(0, 0, 0, 0.4);
+		padding: 5px;
+}
+
+.mgr-modal-profile:hover, .mgr-modal-settings:hover {
+		color: rgba(0, 0, 0, 1);
+		background-color: rgb(245, 245, 245);
+		border-radius: 8px;
+}
+
+.mgr-modal-log-out {
+		color: rgba(255, 0, 0, 0.4);
+		padding: 5px;
+}
+
+.mgr-modal-log-out:hover {
+		color: rgba(255, 0, 0, 1);
+		background-color: rgba(255, 0, 0, 0.1);
+		border-radius: 8px;
+}
+
+.mgr-modal-username {
+	padding: 5px
+}
+
+/* Manager edit profile view */
+
+.mgr-edit-profile-div {
+  position: relative; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  min-height: 70vh; 
+  width: 100%;
+}
+
+.mgr-edit-profile-form {
+  min-width: 50%; 
+  min-height: 500px; 
+  display: flex; 
+  flex-direction: column; 
+  justify-content: flex-start; 
+  gap: 20px; 
+  padding: 2%; 
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08); 
+  border: 1px solid #e3e8ef;
+}
+
+.mgr-edit-profile-header {
+  position: relative; 
+  width: 100%;
+}
+
+.mgr-edit-profile-back-btn {
+  position: absolute; 
+  top: 0; 
+  right: 0; 
+  z-index: 10;
+}
+
+.mgr-edit-profile-name-input {
+  width: 200px;
+  margin-left: 10px;
+}
+
+.mgr-edit-profile-submit-btn {
+  width: 150px; 
+  border-radius: 5px;
+}
+
+.mgr-edit-profile-picture-btn {
+  padding-left: 20px;
+  padding-right: 20px;
+  border-radius: 5px;
+}
+
+.mgr-edit-profile-header-text {
+  color: #0d47a1;
+}
+
+.mgr-edit-profile-picture-div {
+  position: relative; 
+  width: 150px; 
+  height: 150px;
+}
+
+.mgr-edit-profile-picture-frame {
+  width: 158px; 
+  height: 158px; 
+  border: 1.5px solid #d1d5db; 
+  border-radius: 50%; 
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04); 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  background: #0d47a1;
+}
+
+.mgr-edit-profile-picture-preview {
+  width: 150px; 
+  height: 150px; 
+  object-fit: fill; 
+  border-radius: 50%; 
+  background: #e5e7eb; 
+  display: block;
+}
+
+.mgr-edit-profile-picture-preview-text {
+  position: absolute; 
+  top: 50%; 
+  left: 50%; 
+  transform: translate(-50%, -50%); 
+  color: #888;
+}
+
+.mgr-edit-profile-picture-btn-div {
+  display: flex; 
+  flex-direction: row; 
+  align-items: center;
+}
