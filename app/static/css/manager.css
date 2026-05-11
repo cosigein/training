@@ -125,6 +125,7 @@
     border-radius: 8px;
     background: #f8fafc;
     border: 1.5px solid #e2e8f0;
+    cursor: pointer;
 }
 
 .mgr-user-chip__avatar {
@@ -1605,34 +1606,46 @@ a.mgr-kpi--link:hover {
     margin-top: 3px;
 }
 
-/* Manager user modal div */
 
+/* Manager user modal div — style guide compliant, non-breaking */
 .mgr-modal {
-		display: none;
+    display: none;
     position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100vh;
-		z-index: 1000;
+    top: 56px;
+    right: 24px;
+    z-index: 1000;
 }
 
 .mgr-modal-div {
-		background: #fff;
-		margin: 5% auto;
-		padding-top: 1.5rem;
-		padding-bottom: 1.5rem;
-		padding-left: 1rem;
-		padding-right: 1rem;
-		width: 300px;
-		border-radius: 8px;
-		position: absolute;
-		top: 0%;
-		right: 2%;
-		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-		display: flex;
-		flex-direction: column;
-		font-size: 118%;
+    background: #fff;
+    margin: 0;
+    padding: 24px;
+    width: 320px;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    display: flex;
+    flex-direction: column;
+    font-size: 1rem;
+    gap: 16px;
+}
+
+.mgr-user-chip-picture-frame {
+    width: 28px;
+    height: 28px;
+    object-fit: cover;
+    border-radius: 50%;
+    background: #e5e7eb;
+    display: block;
+}
+
+.mgr-modal-picture-frame {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Animate opening and closing the modal */
@@ -1669,134 +1682,172 @@ a.mgr-kpi--link:hover {
 
 /* Modal options */
 
+
 .mgr-modal-profile, .mgr-modal-settings {
-		color: rgba(0, 0, 0, 0.4);
-		padding: 5px;
+    color: var(--color-muted, rgba(0,0,0,0.4));
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 100ms;
 }
-
 .mgr-modal-profile:hover, .mgr-modal-settings:hover {
-		color: rgba(0, 0, 0, 1);
-		background-color: rgb(245, 245, 245);
-		border-radius: 8px;
+    color: var(--color-text, #1e293b);
+    background-color: #f5f5f5;
 }
-
 .mgr-modal-log-out {
-		color: rgba(255, 0, 0, 0.4);
-		padding: 5px;
+    color: rgba(220,38,38,0.7);
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 100ms;
 }
-
 .mgr-modal-log-out:hover {
-		color: rgba(255, 0, 0, 1);
-		background-color: rgba(255, 0, 0, 0.1);
-		border-radius: 8px;
+    color: #dc2626;
+    background-color: #fee2e2;
 }
-
 .mgr-modal-username {
-	padding: 5px
+    padding: 5px 0 0 0;
+    font-size: 1.1em;
+    font-weight: 700;
+    color: #1e293b;
+    text-align: left;
 }
 
 /* Manager edit profile view */
 
-.mgr-edit-profile-div {
-  position: relative; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  min-height: 70vh; 
-  width: 100%;
-}
 
+.mgr-edit-profile-div {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 70vh;
+    width: 100%;
+}
 .mgr-edit-profile-form {
-  min-width: 50%; 
-  min-height: 500px; 
-  display: flex; 
-  flex-direction: column; 
-  justify-content: flex-start; 
-  gap: 20px; 
-  padding: 2%; 
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08); 
-  border: 1px solid #e3e8ef;
+    min-width: 600px;
+    min-height: 420px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 20px;
+    padding: 32px 28px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
 }
 
 /* Edit profile header */
 
 .mgr-edit-profile-header {
-  position: relative; 
-  width: 100%;
+    position: relative;
+    width: 100%;
+    margin-bottom: 18px;
 }
-
 .mgr-edit-profile-header-text {
-  color: #0d47a1;
+    color: #0d47a1;
+    font-size: 1.2em;
+    font-weight: 700;
+}
+.mgr-edit-profile-back-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 10;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #0d47a1;
+    border: none;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 120ms;
 }
 
-.mgr-edit-profile-back-btn {
-  position: absolute; 
-  top: 0; 
-  right: 0; 
-  z-index: 10;
-  border-radius: 5px;
+.mgr-edit-profile-back-btn:hover {
+    background: #e3e8ef;
 }
 
 /* Edit profile inputs */
 
 .mgr-edit-profile-name-input {
-  width: 200px;
-  margin-left: 10px;
+    width: 220px;
+    margin-left: 10px;
+    padding: 7px 12px;
+    border-radius: 6px;
+    border: 1.5px solid #e2e8f0;
+    font-size: 15px;
 }
-
 .mgr-edit-profile-submit-btn {
-  width: 150px; 
-  border-radius: 5px;
+    width: 160px;
+    border-radius: 6px;
+    background: #0d47a1;
+    color: #fff;
+    border: none;
+    padding: 10px 0;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 120ms;
 }
-
+.mgr-edit-profile-submit-btn:hover {
+    background: #1565c0;
+}
 .mgr-edit-profile-picture-btn-div {
-  display: flex; 
-  flex-direction: row; 
-  align-items: center;
-
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+}
+.mgr-edit-profile-picture-btn {
+    padding: 7px 18px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #0d47a1;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 120ms;
 }
 
-.mgr-edit-profile-picture-btn {
-  padding-left: 20px;
-  padding-right: 20px;
-  border-radius: 5px;
+.mgr-edit-profile-picture-btn:hover {
+    background: #e3e8ef;
 }
 
 /* Profile picture */
 
 .mgr-edit-profile-picture-div {
-  position: relative; 
-  width: 150px; 
-  height: 150px;
+    position: relative;
+    width: 150px;
+    height: 150px;
 }
-
 .mgr-edit-profile-picture-frame {
-  width: 158px; 
-  height: 158px; 
-  border: 1.5px solid #d1d5db; 
-  border-radius: 50%; 
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04); 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  background: #0d47a1;
+    width: 158px;
+    height: 158px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0d47a1;
 }
-
 .mgr-edit-profile-picture-preview {
-  width: 150px; 
-  height: 150px; 
-  object-fit: fill; 
-  border-radius: 50%; 
-  background: #e5e7eb; 
-  display: block;
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 50%;
+    background: #e5e7eb;
+    display: block;
 }
-
 .mgr-edit-profile-picture-preview-text {
-  position: absolute; 
-  top: 50%; 
-  left: 50%; 
-  transform: translate(-50%, -50%); 
-  color: #888;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #888;
+    font-size: 13px;
 }
 
 /* ── Data Quality badge (matriz) ──────────────────────────────────────────── */

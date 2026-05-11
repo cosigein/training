@@ -47,11 +47,32 @@
 
         <div class="alu-header__right">
             {% if candidato %}
-            <div class="alu-user-chip" aria-label="Usuario: {{ candidato.nombre }}">
+            <div class="alu-user-chip" id="aluChip" aria-label="Usuario: {{ candidato.nombre }}">
+                {% if not current_user.picture %}
                 <div class="alu-user-chip__avatar" aria-hidden="true">
                     {{ candidato.nombre[0] }}{{ candidato.nombre.split()[1][0] if candidato.nombre.split()|length > 1 else '' }}
                 </div>
+                {% else %}
+                <div class="alu-user-chip__avatar">
+                  <img class="alu-user-chip-picture-frame" src="{{ url_for('static', filename='uploads/' ~ current_user.picture) if current_user.picture else '' }}" />
+                </div>
+                {% endif %}
                 <span class="alu-user-chip__name">{{ candidato.nombre.split()[0] }}</span>
+                <div id="aluModal" class="alu-modal">
+                  <div class="alu-modal-div">
+                    {% if current_user.picture %}
+                    <img class="alu-modal-picture-frame" src="{{ url_for('static', filename='uploads/' ~ current_user.picture) if current_user.picture else '' }}" />
+                    {% endif %}
+                    <h3 class="alu-modal-username">{{ candidato.nombre }}</h3>
+                    <hr />
+                    <a href="{{ url_for('student.edit_profile') }}" class="alu-modal-profile"><i class="ph ph-user"></i>Perfil</a>
+                    <!-- Option for settings -->
+                    <!-- <hr />
+                    <a href="#" class="alu-modal-settings"><i class="ph ph-gear"></i>Settings</a>
+                    <hr /> -->
+                    <a href="{{ url_for('auth.logout') }}" title="Cerrar sesión" class="alu-modal-log-out"><i class="ph ph-sign-out"></i>Salir</a>
+                  </div>
+                </div>
             </div>
             {% endif %}
             <a href="{{ url_for('auth.logout') }}" class="alu-logout-btn" aria-label="Cerrar sesión y salir">
@@ -85,7 +106,30 @@
 
 </div>
 
-{% block extra_js %}{% endblock %}
+{% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById("aluModal");
+    const chip = document.getElementById("aluChip");
+
+    chip.onclick = function () {
+      if (modal.style.display === "block") {
+        modal.classList.remove("alu-modal-div--open");
+        modal.classList.add("alu-modal-div--close");
+
+        modal.addEventListener("animationend", function handler() {
+          modal.classList.remove("alu-modal-div--close");
+          modal.style.display = "none";
+          modal.removeEventListener("animationend", handler);
+        });
+      } else {
+        modal.style.display = "block";
+        modal.classList.add("alu-modal-div--open");
+      }
+    };
+  });
+</script>
+{% endblock %}
 
 </body>
 </html>
