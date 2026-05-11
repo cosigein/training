@@ -83,6 +83,7 @@ def create_app(config_name=None):
             content_security_policy=csp,
             force_https=False,
             strict_transport_security=True,
+            session_cookie_secure=app.config.get("SESSION_COOKIE_SECURE", True),
         )
     babel.init_app(app)
     init_loguru(app)
