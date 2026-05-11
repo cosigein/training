@@ -78,6 +78,8 @@ class StagingConfig(BaseConfig):
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
     JWT_COOKIE_SECURE = False
     JWT_COOKIE_CSRF_PROTECT = True
+    SESSION_COOKIE_SECURE = False
+    SESSION_COOKIE_SAMESITE = "Lax"
 
 config = {
     "development": DevelopmentConfig,
