@@ -72,9 +72,17 @@ class ProductionConfig(BaseConfig):
     JWT_COOKIE_SECURE = True
     PREFERRED_URL_SCHEME = "https"
 
+class StagingConfig(BaseConfig):
+    """Producción real pero sin HTTPS — VPS con HTTP directo en :4000."""
+    DEBUG = False
+    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
+    JWT_COOKIE_SECURE = False
+    JWT_COOKIE_CSRF_PROTECT = True
+
 config = {
     "development": DevelopmentConfig,
     "testing": TestingConfig,
     "production": ProductionConfig,
+    "staging": StagingConfig,
     "default": DevelopmentConfig
 }
