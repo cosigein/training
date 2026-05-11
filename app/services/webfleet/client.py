@@ -77,10 +77,12 @@ def _build_basic_auth_params() -> tuple[dict, tuple[str, str]]:
     cfg = current_app.config
     account  = cfg["WEBFLEET_ACCOUNT"]
     username = cfg["WEBFLEET_USERNAME"]
+    password = cfg["WEBFLEET_PASSWORD"]
     apikey   = cfg["WEBFLEET_APIKEY"]
-    # account va en URL params, BasicAuth lleva username:apikey
-    params = {"account": account, "lang": "es", "outputformat": "json"}
-    auth   = (username, apikey)
+    # BasicAuth: "account:username" como user, password como pass
+    # apikey va en URL params como identificador adicional de la integración
+    params = {"apikey": apikey, "lang": "es", "outputformat": "json"}
+    auth   = (f"{account}:{username}", password)
     return params, auth
 
 
