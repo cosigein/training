@@ -76,10 +76,9 @@ def _build_basic_auth_params() -> tuple[dict, tuple[str, str]]:
     """
     cfg = current_app.config
     account  = cfg["WEBFLEET_ACCOUNT"]
-    username = cfg["WEBFLEET_USERNAME"]   # sin quote — BasicAuth lo maneja httpx
     apikey   = cfg["WEBFLEET_APIKEY"]
     params = {"lang": "es", "outputformat": "json"}
-    auth   = (f"{account}/{username}", apikey)
+    auth   = (account, apikey)
     return params, auth
 
 
