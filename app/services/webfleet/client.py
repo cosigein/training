@@ -66,6 +66,23 @@ def _build_auth_params() -> dict:
     }
 
 
+def _build_basic_auth_params() -> tuple[dict, tuple[str, str]]:
+    """Credenciales para endpoints que requieren BasicAuth (error 1180).
+
+    Los endpoints Extern más nuevos de Webfleet rechazan las credenciales
+    por query string y exigen HTTP Basic Auth.
+    Formato: Authorization: Basic base64(account/username:apikey)
+    Los params de idioma/formato siguen en la URL.
+    """
+    cfg = current_app.config
+    account  = cfg["WEBFLEET_ACCOUNT"]
+    username = cfg["WEBFLEET_USERNAME"]   # sin quote — BasicAuth lo maneja httpx
+    apikey   = cfg["WEBFLEET_APIKEY"]
+    params = {"lang": "es", "outputformat": "json"}
+    auth   = (f"{account}/{username}", apikey)
+    return params, auth
+
+
 def show_tracks(
     object_no: str,
     range_from: datetime,
@@ -200,13 +217,13 @@ def show_object_report(
 
     cfg = current_app.config
     base_url = cfg["WEBFLEET_BASE_URL"]
-    params = _build_auth_params()
+    params, auth = _build_basic_auth_params()
     params["action"] = "showObjectReportExtern"
     if object_no:
         params["objectno"] = object_no
 
     try:
-        with httpx.Client(timeout=timeout_s) as client:
+        with httpx.Client(timeout=timeout_s, auth=auth) as client:
             resp = client.get(base_url, params=params)
     except httpx.RequestError as exc:
         _circuit_breaker.record_failure()
