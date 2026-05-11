@@ -3,71 +3,92 @@
 
 {% block content %}
 
-<div class="mgr-back-bar">
+<!-- Header compacto -->
+<div class="mgr-back-bar" style="margin-bottom:10px">
     <a href="{{ url_for('manager.dashboard') }}" class="mgr-btn-back">
         <i class="ph ph-arrow-left"></i> Volver al inicio
     </a>
     <span class="mgr-breadcrumb">
         <span>Inicio</span>
         <span class="mgr-breadcrumb__sep">›</span>
-        <span>Ranking de clasificación</span>
+        <span>Ranking</span>
     </span>
 </div>
 
-<div class="mgr-page-header">
-    <div>
-        <h1 class="mgr-page-title" style="display:flex; align-items:center; gap:12px;">
-            Ranking de clasificación
-            <select class="mgr-conv-selector" onchange="window.location.href='?conv_id=' + this.value">
-                {% for c in convocatorias %}
-                <option value="{{ c.id }}" {% if c.id == convocatoria.id %}selected{% endif %}>
-                    {{ c.nombre }}
-                </option>
-                {% endfor %}
-            </select>
-        </h1>
-        <p class="mgr-page-subtitle">
-            {{ total_candidatos }} candidatos · Plazas: {{ plazas }} · Última actualización: {{ convocatoria.ultima_actualizacion }}
-        </p>
+<div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+    <h1 class="mgr-page-title" style="margin:0; font-size:18px; flex-shrink:0">Ranking</h1>
+
+    <select class="mgr-conv-selector" style="margin:0"
+            onchange="if(this.value) window.location.href='?conv_id=' + this.value">
+        <option value="">— Seleccionar convocatoria —</option>
+        {% for c in convocatorias %}
+        <option value="{{ c.id }}" {% if convocatoria and c.id == convocatoria.id %}selected{% endif %}>
+            {{ c.nombre }}
+        </option>
+        {% endfor %}
+    </select>
+
+    {% if convocatoria %}
+    <!-- Stats inline — solo cuando hay convocatoria seleccionada -->
+    <div style="display:flex; align-items:center; gap:0; margin-left:8px; background:#f1f5f9; border-radius:8px; overflow:hidden; border:1px solid #e2e8f0; flex-shrink:0">
+        <div style="padding:6px 16px; border-right:1px solid #e2e8f0; text-align:center">
+            <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.4px; font-weight:600">Aspirantes</div>
+            <div style="font-size:18px; font-weight:700; color:#1e3a5f; line-height:1.2">{{ total_candidatos }}</div>
+        </div>
+        <div style="padding:6px 16px; border-right:1px solid #e2e8f0; text-align:center">
+            <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.4px; font-weight:600">Plazas</div>
+            <div style="font-size:18px; font-weight:700; color:#16a34a; line-height:1.2">{{ plazas }}</div>
+        </div>
+        <div style="padding:6px 16px; border-right:1px solid #e2e8f0; text-align:center">
+            <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.4px; font-weight:600">Corte</div>
+            <div style="font-size:18px; font-weight:700; color:#334155; line-height:1.2">{{ "%.1f"|format(nota_corte) if nota_corte else "—" }}</div>
+        </div>
+        <div style="padding:6px 16px; text-align:center">
+            <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.4px; font-weight:600">Fuera</div>
+            <div style="font-size:18px; font-weight:700; color:{% if [total_candidatos - plazas, 0]|max > 0 %}#dc2626{% else %}#64748b{% endif %}; line-height:1.2">{{ [total_candidatos - plazas, 0]|max }}</div>
+        </div>
     </div>
-    <span class="mgr-estado-badge mgr-estado-badge--provisional">
-        <i class="ph ph-clock"></i>
-        PROVISIONAL
+    <span class="mgr-estado-badge mgr-estado-badge--provisional" style="margin-left:auto; flex-shrink:0">
+        <i class="ph ph-clock"></i> PROVISIONAL
     </span>
+    {% endif %}
 </div>
 
-<!-- KPIs -->
-<div class="mgr-kpis">
-    <div class="mgr-kpi mgr-kpi--blue">
-        <span class="mgr-kpi__label">Total aspirantes</span>
-        <span class="mgr-kpi__value">{{ total_candidatos }}</span>
-        <span class="mgr-kpi__sub">en evaluación</span>
+{% if not convocatoria %}
+<!-- Estado vacío: pedir selección -->
+<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 24px; text-align:center;">
+    <div style="width:72px; height:72px; border-radius:50%; background:#eff6ff; display:flex; align-items:center; justify-content:center; margin-bottom:20px;">
+        <i class="ph ph-ranking" style="font-size:32px; color:#0d47a1;"></i>
     </div>
-    <div class="mgr-kpi mgr-kpi--green">
-        <span class="mgr-kpi__label">Plazas convocadas</span>
-        <span class="mgr-kpi__value">{{ plazas }}</span>
-        <span class="mgr-kpi__sub">a cubrir</span>
+    <h2 style="margin:0 0 8px; font-size:18px; font-weight:700; color:#1e293b;">Selecciona una convocatoria</h2>
+    <p style="margin:0 0 24px; font-size:14px; color:#64748b; max-width:380px;">
+        Elige la convocatoria en el selector superior para ver el ranking de aspirantes.
+    </p>
+    {% if convocatorias %}
+    <div style="display:flex; flex-direction:column; gap:10px; width:100%; max-width:360px;">
+        {% for c in convocatorias %}
+        <a href="?conv_id={{ c.id }}"
+           style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:white; border:1.5px solid #e2e8f0; border-radius:10px; text-decoration:none; color:#1e293b; font-weight:600; font-size:14px; transition:border-color .15s;"
+           onmouseover="this.style.borderColor='#0d47a1'" onmouseout="this.style.borderColor='#e2e8f0'">
+            <span><i class="ph ph-clipboard-text" style="color:#0d47a1; margin-right:8px;"></i>{{ c.nombre }}</span>
+            <i class="ph ph-arrow-right" style="color:#94a3b8;"></i>
+        </a>
+        {% endfor %}
     </div>
-    <div class="mgr-kpi mgr-kpi--gray">
-        <span class="mgr-kpi__label">Nota de corte</span>
-        <span class="mgr-kpi__value">{{ "%.1f"|format(nota_corte) if nota_corte else "—" }}</span>
-        <span class="mgr-kpi__sub">última plaza cubierta</span>
-    </div>
-    <div class="mgr-kpi mgr-kpi--red">
-        <span class="mgr-kpi__label">Fuera del corte</span>
-        <span class="mgr-kpi__value">{{ [total_candidatos - plazas, 0]|max }}</span>
-        <span class="mgr-kpi__sub">por debajo del corte actual</span>
-    </div>
+    {% else %}
+    <p style="font-size:13px; color:#94a3b8;">No hay convocatorias disponibles.</p>
+    {% endif %}
 </div>
 
-<!-- Filtros -->
-<div class="mgr-toolbar">
+{% else %}
+<!-- Filtros + tabla -->
+<div style="display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap">
     <span data-filter-rank="all" class="mgr-pill active">Todos</span>
     <span data-filter-rank="dentro" class="mgr-pill">Dentro del corte</span>
     <span data-filter-rank="fuera" class="mgr-pill">Fuera del corte</span>
+    <span style="margin-left:auto; font-size:11px; color:#94a3b8">Actualización: {{ convocatoria.ultima_actualizacion }}</span>
 </div>
 
-<!-- Tabla ranking -->
 <div class="mgr-ranking">
     <table class="mgr-rank-table">
         <thead>
@@ -121,7 +142,6 @@
                 </span>
             </td>
 
-
             <td style="text-align:center">
                 {% if entry.dentro_del_corte %}
                 <span class="mgr-corte-chip mgr-corte-chip--dentro">
@@ -150,10 +170,10 @@
     </table>
 </div>
 
-<p style="font-size:11px; color:#94a3b8; text-align:right; margin-top:8px">
-    Ranking provisional. Se actualiza diariamente a las 06:00 AM.
-    El resultado definitivo se emite al cierre de la convocatoria.
+<p style="font-size:11px; color:#94a3b8; text-align:right; margin-top:6px">
+    Provisional · actualización diaria 06:00 AM · resultado definitivo al cierre de convocatoria
 </p>
+{% endif %}
 
 
 {% endblock %}

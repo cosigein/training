@@ -4,7 +4,7 @@ Servicio de datos para el portal Manager: ranking, matriz, detalle de alumno/int
 from app.extensions import db
 from app.models.training import (
     Convocatoria, Enrollment, EnrollmentStatus,
-    AttemptEvent
+    AttemptEvent, AuditRequest, AuditStatus,
 )
 from app.models.session import Attempt, AttemptStatus
 from app.models.auth import User

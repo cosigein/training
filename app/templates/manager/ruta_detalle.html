@@ -1,0 +1,228 @@
+{% extends "manager/layout.html" %}
+{% block title %}{{ route.code }} — CMadrid Training{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
+{% endblock %}
+
+{% block content %}
+
+<div class="mgr-back-bar">
+    <a href="javascript:history.back()" class="mgr-btn-back">
+        <i class="ph ph-arrow-left"></i> Volver
+    </a>
+    <a href="{{ url_for('manager.dashboard') }}" class="mgr-btn-back">
+        <i class="ph ph-house"></i> Inicio
+    </a>
+    <span class="mgr-breadcrumb">
+        <span>Inicio</span>
+        <span class="mgr-breadcrumb__sep">›</span>
+        <a href="{{ url_for('manager.rutas_list') }}" style="color:#64748b; text-decoration:none;">Rutas</a>
+        <span class="mgr-breadcrumb__sep">›</span>
+        <span style="font-weight:600; color:#1e293b;">{{ route.code }}</span>
+    </span>
+</div>
+
+<!-- Compact header -->
+<div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+    <div style="flex:1; min-width:0;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <h1 style="margin:0; font-size:18px; font-weight:800; color:#0f172a;">{{ route.name }}</h1>
+            <span class="mgr-tag mgr-tag--blue">{{ route.code }}</span>
+            {% if not route.active %}
+            <span class="mgr-conv-status mgr-conv-status--closed">INACTIVA</span>
+            {% else %}
+            <span class="mgr-conv-status mgr-conv-status--open">ACTIVA</span>
+            {% endif %}
+        </div>
+        {% if route.description %}
+        <p style="margin:2px 0 0; font-size:12px; color:#94a3b8;">{{ route.description }}</p>
+        {% endif %}
+    </div>
+
+    <!-- Stats inline -->
+    <div style="display:flex; gap:16px; align-items:center; flex-shrink:0;">
+        {% if route.distanceKm %}
+        <div style="text-align:center;">
+            <div style="font-size:16px; font-weight:800; color:#0d47a1;">{{ "%.1f"|format(route.distanceKm) }} km</div>
+            <div style="font-size:10px; color:#94a3b8; text-transform:uppercase;">Distancia</div>
+        </div>
+        {% endif %}
+        {% if route.durationMin %}
+        <div style="text-align:center;">
+            <div style="font-size:16px; font-weight:800; color:#334155;">{{ route.durationMin }} min</div>
+            <div style="font-size:10px; color:#94a3b8; text-transform:uppercase;">Duración</div>
+        </div>
+        {% endif %}
+        <div style="text-align:center;">
+            <div style="font-size:16px; font-weight:800; color:#334155;">{{ total }}</div>
+            <div style="font-size:10px; color:#94a3b8; text-transform:uppercase;">Intentos</div>
+        </div>
+        <div style="text-align:center;">
+            <div style="font-size:16px; font-weight:800; color:{% if nota_media >= 5 %}#16a34a{% else %}#dc2626{% endif %};">{{ "%.2f"|format(nota_media) }}</div>
+            <div style="font-size:10px; color:#94a3b8; text-transform:uppercase;">Media</div>
+        </div>
+    </div>
+
+    <!-- Acción -->
+    <form method="POST" action="{{ url_for('manager.rutas_toggle', route_id=route.id) }}"
+          onsubmit="return confirm('¿{{ 'Desactivar' if route.active else 'Activar' }} la ruta {{ route.code }}?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="mgr-action-btn {% if route.active %}mgr-action-btn--secondary{% else %}mgr-action-btn--primary{% endif %}">
+            {% if route.active %}<i class="ph ph-pause"></i> Desactivar{% else %}<i class="ph ph-play"></i> Activar{% endif %}
+        </button>
+    </form>
+</div>
+
+<!-- MAP HERO -->
+<div class="mgr-card mgr-card--map" style="margin-bottom:20px; overflow:hidden;">
+    <div class="mgr-card__header">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <i class="ph ph-map-pin-line" style="color:#3b82f6;"></i>
+            <h3 style="margin:0; font-size:14px;">Trazado del recorrido</h3>
+        </div>
+        <div id="map-source-label" class="mgr-tag mgr-tag--gray" style="font-size:11px;">
+            Cargando…
+        </div>
+    </div>
+    <div class="mgr-map-container" id="mgr-map" style="height: calc(100vh - 180px); min-height: 420px;">
+        <div class="mgr-map-placeholder" id="mgr-map-placeholder">
+            <i class="ph ph-compass ph-spin"></i>
+            <span id="mgr-map-msg">Cargando recorrido…</span>
+        </div>
+    </div>
+</div>
+
+<!-- DETALLES -->
+<div style="padding-bottom:32px;">
+
+    <!-- Tabla de intentos -->
+    <div class="mgr-card">
+        <div class="mgr-card__header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <i class="ph ph-list-checks" style="color:#0d47a1;"></i>
+                <h3 style="margin:0; font-size:14px;">Intentos completados en esta ruta</h3>
+            </div>
+            <span style="font-size:12px; color:#64748b;">{{ total }} registros · {{ aptos }} aptos</span>
+        </div>
+
+        {% if rows %}
+        <table class="mgr-table" style="width:100%;">
+            <thead>
+                <tr>
+                    <th>Candidato</th>
+                    <th>Fecha</th>
+                    <th style="text-align:center;">Nota</th>
+                    <th style="text-align:center;">Resultado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr class="mgr-clickable-row"
+                    data-href="{{ url_for('manager.intento_detalle', attempt_id=row.attempt_id) }}"
+                    style="cursor:pointer;">
+                    <td style="font-weight:600; color:#1e293b;">{{ row.nombre }}</td>
+                    <td style="color:#64748b; font-size:13px;">{{ row.fecha }}</td>
+                    <td style="text-align:center;">
+                        <span style="font-size:16px; font-weight:800; color:{% if row.nota is not none and row.nota >= 5 %}#16a34a{% else %}#dc2626{% endif %};">
+                            {{ "%.2f"|format(row.nota) if row.nota is not none else "—" }}
+                        </span>
+                    </td>
+                    <td style="text-align:center;">
+                        {% if row.nota is not none %}
+                        <span class="mgr-tag {% if row.nota >= 5 %}mgr-tag--green{% else %}mgr-tag--red{% endif %}">
+                            {{ "APTO" if row.nota >= 5 else "NO APTO" }}
+                        </span>
+                        {% else %}
+                        <span class="mgr-tag mgr-tag--gray">Sin nota</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:right;">
+                        <i class="ph ph-caret-right" style="color:#cbd5e1;"></i>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="mgr-empty" style="padding:40px;">
+            <i class="ph ph-clipboard-text"></i>
+            <p>Aún no hay intentos completados en esta ruta.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// Clickable rows
+document.querySelectorAll('.mgr-clickable-row').forEach(row => {
+    row.addEventListener('click', () => { window.location.href = row.dataset.href; });
+});
+
+// GPS map
+(function () {
+    var GPS_URL = '{{ url_for("manager.ruta_gps", route_id=route.id) }}';
+    var placeholder = document.getElementById('mgr-map-placeholder');
+    var mapMsg     = document.getElementById('mgr-map-msg');
+    var sourceLabel = document.getElementById('map-source-label');
+
+    var map = L.map('mgr-map', {
+        zoomControl: true,
+        scrollWheelZoom: true,
+        attributionControl: false,
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+    }).addTo(map);
+
+    fetch(GPS_URL)
+        .then(r => r.json())
+        .then(data => {
+            var points = data.points || [];
+
+            if (points.length === 0) {
+                if (mapMsg) mapMsg.textContent = 'Sin datos GPS para esta ruta todavía';
+                if (sourceLabel) { sourceLabel.textContent = 'Sin datos'; }
+                map.setView([40.4168, -3.7038], 13);
+                return;
+            }
+
+            if (placeholder) placeholder.style.display = 'none';
+            if (sourceLabel) {
+                sourceLabel.textContent = data.attempt_id ? 'Intento más reciente' : 'GPS';
+                sourceLabel.className = 'mgr-tag mgr-tag--blue';
+            }
+
+            var latlngs = points.map(p => [p.lat, p.lng]);
+
+            var polyline = L.polyline(latlngs, {
+                color: '#0d47a1',
+                weight: 4,
+                opacity: 0.85,
+            }).addTo(map);
+
+            L.circleMarker(latlngs[0], {
+                radius: 8, color: '#fff', weight: 2,
+                fillColor: '#16a34a', fillOpacity: 1,
+            }).bindTooltip('Inicio', { permanent: false }).addTo(map);
+
+            L.circleMarker(latlngs[latlngs.length - 1], {
+                radius: 8, color: '#fff', weight: 2,
+                fillColor: '#dc2626', fillOpacity: 1,
+            }).bindTooltip('Fin', { permanent: false }).addTo(map);
+
+            map.fitBounds(polyline.getBounds(), { padding: [24, 24] });
+        })
+        .catch(() => {
+            if (mapMsg) mapMsg.textContent = 'No se pudo cargar el recorrido';
+        });
+}());
+</script>
+{% endblock %}

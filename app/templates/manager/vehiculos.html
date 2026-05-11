@@ -3,6 +3,17 @@
 
 {% block content %}
 
+<div class="mgr-back-bar">
+    <a href="{{ url_for('manager.dashboard') }}" class="mgr-btn-back">
+        <i class="ph ph-arrow-left"></i> Volver al inicio
+    </a>
+    <span class="mgr-breadcrumb">
+        <span>Inicio</span>
+        <span class="mgr-breadcrumb__sep">›</span>
+        <span>Vehículos</span>
+    </span>
+</div>
+
 <div class="mgr-page-header">
     <div>
         <h1 class="mgr-page-title">Vehículos</h1>

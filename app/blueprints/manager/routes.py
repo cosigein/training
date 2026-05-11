@@ -2,18 +2,19 @@
 
 Lee de la BD real (queries SQLAlchemy) vía `ranking_service`.
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import render_template, request, abort, redirect, url_for, flash, jsonify
 
 from app.extensions import db
 from app.models.auth import User
-from app.models.session import Attempt, AttemptStatus
+from app.models.session import Attempt, AttemptStatus, GpsMeasurement
 from app.models.vehicle import Vehicle
 from app.models.auth import UserRole
 from app.models.training import (
     Convocatoria, ConvocatoriaStatus,
     Enrollment, EnrollmentStatus,
     TrainingAuditLog, AuditAction,
+    Route,
 )
 from app.blueprints.admin.convocatoria_service import (
     ConvocatoriaService, ConvocatoriaError,
@@ -67,10 +68,91 @@ def _load_convocatorias_dicts():
 @require_role(["MANAGER", "ADMIN"])
 def dashboard():
     convocatorias = _load_convocatorias_dicts()
+    org_id = _get_org_id()
+    now = datetime.utcnow()
+    hoy = now.date()
+    semana = hoy - timedelta(days=6)
+
+    rutas_hoy = Attempt.query.filter(
+        Attempt.organizationId == org_id,
+        Attempt.status == AttemptStatus.CLOSED,
+        db.func.date(Attempt.closedAt) == hoy,
+    ).count()
+    rutas_semana = Attempt.query.filter(
+        Attempt.organizationId == org_id,
+        Attempt.status == AttemptStatus.CLOSED,
+        Attempt.closedAt >= datetime.combine(semana, datetime.min.time()),
+    ).count()
+
+    # ── Actividad reciente: últimos 8 intentos cerrados ──────────────────
+    recent_raw = (
+        Attempt.query
+        .filter_by(organizationId=org_id, status=AttemptStatus.CLOSED)
+        .order_by(Attempt.closedAt.desc())
+        .limit(8)
+        .all()
+    )
+    student_ids = list({a.studentId for a in recent_raw if a.studentId})
+    students_map = {u.id: u for u in User.query.filter(User.id.in_(student_ids)).all()} if student_ids else {}
+
+    def _hace(dt):
+        if not dt:
+            return "—"
+        delta = now - dt
+        if delta.days >= 1:
+            return f"hace {delta.days}d"
+        hours = delta.seconds // 3600
+        if hours >= 1:
+            return f"hace {hours}h"
+        return f"hace {delta.seconds // 60} min"
+
+    actividad_reciente = [
+        {
+            "attempt_id": a.id,
+            "alumno_id": a.studentId,
+            "nombre": students_map[a.studentId].name if a.studentId in students_map else "—",
+            "ruta": a.routeId or "—",
+            "nota": a.score,
+            "hace": _hace(a.closedAt),
+        }
+        for a in recent_raw
+    ]
+
+    # ── Sin intentos: inscritos en convocatorias activas sin ningún cierre ─
+    active_conv_ids = [c["id"] for c in convocatorias]
+    if active_conv_ids:
+        enrollments_pendientes = (
+            Enrollment.query
+            .filter(
+                Enrollment.organizationId == org_id,
+                Enrollment.convocatoriaId.in_(active_conv_ids),
+                Enrollment.status == EnrollmentStatus.ACTIVE,
+                Enrollment.attemptsCount == 0,
+            )
+            .limit(10)
+            .all()
+        )
+        pend_ids = list({e.studentId for e in enrollments_pendientes if e.studentId})
+        pend_map = {u.id: u for u in User.query.filter(User.id.in_(pend_ids)).all()} if pend_ids else {}
+        sin_intentos = [
+            {
+                "alumno_id": e.studentId,
+                "nombre": pend_map[e.studentId].name if e.studentId in pend_map else "—",
+                "conv": e.convocatoria.name if e.convocatoria else "—",
+            }
+            for e in enrollments_pendientes
+        ]
+    else:
+        sin_intentos = []
+
     return render_template(
         "manager/dashboard.html",
         active_page="dashboard",
         convocatorias=convocatorias,
+        rutas_hoy=rutas_hoy,
+        rutas_semana=rutas_semana,
+        actividad_reciente=actividad_reciente,
+        sin_intentos=sin_intentos,
     )
 
 
@@ -89,12 +171,14 @@ def convocatorias():
 @require_role(["MANAGER", "ADMIN"])
 def ranking():
     org_id = _get_org_id()
-    conv_id = _resolve_conv_id(org_id)
+    conv_id = request.args.get("conv_id")
+    todas = get_convocatorias(org_id)
+
     if not conv_id:
         return render_template(
             "manager/ranking.html",
             active_page="ranking",
-            convocatorias=[],
+            convocatorias=todas,
             convocatoria=None,
             ranking=[],
             plazas=0,
@@ -112,7 +196,7 @@ def ranking():
     return render_template(
         "manager/ranking.html",
         active_page="ranking",
-        convocatorias=get_convocatorias(org_id),
+        convocatorias=todas,
         convocatoria=conv_dict,
         ranking=entries,
         plazas=plazas,
@@ -278,7 +362,7 @@ def upload_sensor_data(attempt_id):
     if not sessions_preview:
         from .upload_storage import delete_upload
         delete_upload(upload_id)
-        flash("No se detectó ninguna 'Sesión:N' en los archivos. Verificá el formato.", "warning")
+        flash("No se detectó ninguna 'Sesión:N' en los archivos. Verifica el formato.", "warning")
         return redirect(redirect_url)
 
     return redirect(url_for(
@@ -765,6 +849,84 @@ def rutas_toggle(route_id):
     return redirect(url_for("manager.rutas_list"))
 
 
+@manager_bp.route("/rutas/<route_id>")
+@require_role(["MANAGER", "ADMIN"])
+def ruta_detalle(route_id):
+    org_id = _get_org_id()
+    route = Route.query.filter_by(id=route_id, organizationId=org_id).first_or_404()
+
+    attempts = (
+        Attempt.query
+        .filter_by(organizationId=org_id, routeId=route.code)
+        .filter(Attempt.status == AttemptStatus.CLOSED)
+        .order_by(Attempt.closedAt.desc())
+        .all()
+    )
+
+    # Enriquecer cada attempt con el nombre del alumno
+    student_ids = list({a.studentId for a in attempts if a.studentId})
+    students_map = {u.id: u for u in User.query.filter(User.id.in_(student_ids)).all()} if student_ids else {}
+
+    rows = []
+    for a in attempts:
+        alumno = students_map.get(a.studentId)
+        rows.append({
+            "attempt_id": a.id,
+            "nombre": alumno.name if alumno else "—",
+            "alumno_id": a.studentId,
+            "nota": a.score,
+            "fecha": a.closedAt.strftime("%d/%m/%Y") if a.closedAt else "—",
+        })
+
+    total = len(rows)
+    aptos = sum(1 for r in rows if r["nota"] is not None and r["nota"] >= 5)
+    nota_media = round(sum(r["nota"] for r in rows if r["nota"] is not None) / total, 2) if total else 0
+
+    return render_template(
+        "manager/ruta_detalle.html",
+        active_page="rutas",
+        route=route,
+        rows=rows,
+        total=total,
+        aptos=aptos,
+        nota_media=nota_media,
+    )
+
+
+@manager_bp.route("/rutas/<route_id>/gps")
+@require_role(["MANAGER", "ADMIN"])
+def ruta_gps(route_id):
+    org_id = _get_org_id()
+    route = Route.query.filter_by(id=route_id, organizationId=org_id).first_or_404()
+
+    # GPS del intento cerrado más reciente en esta ruta
+    attempt = (
+        Attempt.query
+        .filter_by(organizationId=org_id, routeId=route.code, status=AttemptStatus.CLOSED)
+        .order_by(Attempt.closedAt.desc())
+        .first()
+    )
+
+    if not attempt:
+        return jsonify({"points": [], "attempt_id": None})
+
+    points = (
+        GpsMeasurement.query
+        .filter_by(attemptId=attempt.id, organizationId=org_id)
+        .order_by(GpsMeasurement.timestamp.asc())
+        .with_entities(GpsMeasurement.latitude, GpsMeasurement.longitude, GpsMeasurement.speed)
+        .all()
+    )
+
+    step = max(1, len(points) // 500)
+    sampled = points[::step]
+
+    return jsonify({
+        "points": [{"lat": p.latitude, "lng": p.longitude, "speed": p.speed} for p in sampled],
+        "attempt_id": attempt.id,
+    })
+
+
 @manager_bp.route("/alumno/<student_id>/intento/abrir", methods=["POST"])
 @require_role(["MANAGER", "ADMIN"])
 def abrir_intento(student_id):
@@ -789,7 +951,7 @@ def abrir_intento(student_id):
         flash(str(exc), "danger")
         return redirect(url_for("manager.alumno_detalle", candidato_id=student_id))
 
-    flash("Intento abierto. Subí ahora el archivo del sensor.", "success")
+    flash("Intento abierto. Sube ahora el archivo del sensor.", "success")
     return redirect(url_for("manager.intento_detalle", attempt_id=attempt.id))
 
 

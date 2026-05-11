@@ -3,6 +3,17 @@
 
 {% block content %}
 
+<div class="mgr-back-bar">
+    <a href="{{ url_for('manager.dashboard') }}" class="mgr-btn-back">
+        <i class="ph ph-arrow-left"></i> Volver al inicio
+    </a>
+    <span class="mgr-breadcrumb">
+        <span>Inicio</span>
+        <span class="mgr-breadcrumb__sep">›</span>
+        <span>Alumnos</span>
+    </span>
+</div>
+
 <div class="mgr-page-header">
     <div>
         <h1 class="mgr-page-title">Alumnos</h1>
@@ -13,21 +24,61 @@
     </a>
 </div>
 
-<div class="mgr-conv-list">
+<div style="display:flex; flex-direction:column; gap:8px;">
     {% for a in alumnos %}
-    <div class="mgr-conv-row mgr-conv-row--compact">
-        <div class="mgr-conv-row__main">
-            <div class="mgr-conv-row__title">
-                <strong>{{ a.name }}</strong>
-                <span class="mgr-text-mono-muted">{{ a.email }}</span>
+    {% set ns = namespace(intentos=0) %}
+    {% for e in a.enrollments %}{% set ns.intentos = ns.intentos + e.attemptsCount %}{% endfor %}
+    {% set parts = a.name.split() %}
+    {% set initials = (parts[0][0] ~ parts[-1][0]) | upper if parts|length > 1 else parts[0][0]|upper %}
+
+    <div class="mgr-clickable-row"
+         data-href="{{ url_for('manager.alumno_detalle', candidato_id=a.id) }}"
+         style="display:flex; align-items:center; gap:16px; background:white; border:1px solid #e2e8f0; border-radius:12px; padding:14px 20px; cursor:pointer; transition:box-shadow .15s, border-color .15s;"
+         onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,.08)'; this.style.borderColor='#bfdbfe';"
+         onmouseout="this.style.boxShadow='none'; this.style.borderColor='#e2e8f0';">
+
+        <!-- Avatar -->
+        <div style="width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,#eff6ff,#dbeafe); color:#1d4ed8; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; flex-shrink:0; border:2px solid #bfdbfe; letter-spacing:.5px;">
+            {{ initials }}
+        </div>
+
+        <!-- Nombre + email -->
+        <div style="flex:1; min-width:0;">
+            <div style="font-weight:700; color:#1e293b; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                {{ a.name }}
+            </div>
+            <div style="font-size:12px; color:#94a3b8; font-family:monospace; margin-top:1px;">
+                {{ a.email }}
             </div>
         </div>
-        <div class="mgr-conv-row__actions">
-            <a href="{{ url_for('manager.alumno_detalle', candidato_id=a.id) }}"
-               class="mgr-action-btn mgr-action-btn--secondary">
-                Ver perfil <i class="ph ph-caret-right"></i>
-            </a>
+
+        <!-- Stats -->
+        <div style="display:flex; gap:24px; align-items:center; flex-shrink:0;">
+            <div style="text-align:center;">
+                <div style="font-size:18px; font-weight:800; color:#0d47a1; line-height:1;">{{ a.enrollments|length }}</div>
+                <div style="font-size:10px; color:#94a3b8; text-transform:uppercase; letter-spacing:.4px; margin-top:2px;">Inscrip.</div>
+            </div>
+            <div style="width:1px; height:28px; background:#e2e8f0;"></div>
+            <div style="text-align:center;">
+                <div style="font-size:18px; font-weight:800; color:#334155; line-height:1;">{{ ns.intentos }}</div>
+                <div style="font-size:10px; color:#94a3b8; text-transform:uppercase; letter-spacing:.4px; margin-top:2px;">Intentos</div>
+            </div>
         </div>
+
+        <!-- Último acceso + estado -->
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0; min-width:110px;">
+            <span class="mgr-tag {% if a.status == 'ACTIVE' %}mgr-tag--green{% else %}mgr-tag--gray{% endif %}">
+                {{ 'Activo' if a.status == 'ACTIVE' else a.status | lower | capitalize }}
+            </span>
+            <span style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:4px;">
+                <i class="ph ph-clock" style="font-size:12px;"></i>
+                {{ a.lastLoginAt.strftime('%d/%m/%Y') if a.lastLoginAt else 'Sin acceso' }}
+            </span>
+        </div>
+
+        <!-- Chevron -->
+        <i class="ph ph-caret-right" style="color:#cbd5e1; font-size:16px; flex-shrink:0;"></i>
+
     </div>
     {% else %}
     <div class="mgr-empty">
@@ -36,5 +87,15 @@
     </div>
     {% endfor %}
 </div>
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.mgr-clickable-row').forEach(row => {
+    row.addEventListener('click', () => {
+        window.location.href = row.dataset.href;
+    });
+});
+</script>
+{% endblock %}
 
 {% endblock %}
