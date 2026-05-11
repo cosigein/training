@@ -42,6 +42,11 @@
                         {{ v.name }}
                     </div>
                     <div style="font-size:11px; color:#64748b;">{{ v.licensePlate }}</div>
+                    {% if v.dobackIdentifier %}
+                    <div style="font-size:11px; color:#0369a1; margin-top:1px;">
+                        <i class="ph ph-cpu"></i> {{ v.dobackIdentifier }}
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -113,6 +118,22 @@
             </button>
         </form>
         {% endif %}
+
+        <!-- Doback identifier — siempre visible, en todas las cards -->
+        <form method="POST" action="{{ url_for('manager.vehicle_set_doback', vehicle_id=v.id) }}"
+              style="display:flex; gap:6px; align-items:center; margin-top:10px; border-top:1px solid #f1f5f9; padding-top:10px;"
+              onclick="event.stopPropagation()">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <i class="ph ph-cpu" style="color:#94a3b8; font-size:14px; flex-shrink:0;"></i>
+            <input type="text" name="doback_identifier"
+                   value="{{ v.dobackIdentifier or '' }}"
+                   placeholder="ID Doback (ej: n023)"
+                   style="flex:1; padding:4px 8px; border:1px solid #e2e8f0; border-radius:6px; font-size:12px;">
+            <button type="submit" class="mgr-action-btn mgr-action-btn--secondary" style="padding:4px 8px; font-size:12px;">
+                <i class="ph ph-floppy-disk"></i>
+            </button>
+        </form>
+
     </div>
     {% else %}
     <div style="grid-column:1/-1; text-align:center; padding:48px; color:#94a3b8;">

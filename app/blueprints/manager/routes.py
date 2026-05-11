@@ -854,6 +854,38 @@ def vehicle_set_webfleet(vehicle_id):
 
     return redirect(url_for("manager.vehiculos_list"))
 
+
+@manager_bp.route("/vehiculos/<vehicle_id>/set-doback", methods=["POST"])
+@require_role(["MANAGER", "ADMIN"])
+def vehicle_set_doback(vehicle_id):
+    """Asigna (o borra) el identificador de Doback Elite a un vehículo."""
+    org_id = _get_org_id()
+    vehicle = Vehicle.query.filter_by(id=vehicle_id, organizationId=org_id).first()
+    if not vehicle:
+        abort(404)
+
+    doback_id = (request.form.get("doback_identifier") or "").strip() or None
+
+    if doback_id:
+        existing = Vehicle.query.filter(
+            Vehicle.dobackIdentifier == doback_id,
+            Vehicle.id != vehicle_id,
+        ).first()
+        if existing:
+            flash(f"El identificador '{doback_id}' ya está asignado al vehículo {existing.name}.", "danger")
+            return redirect(url_for("manager.vehiculos_list"))
+
+    vehicle.dobackIdentifier = doback_id
+    db.session.commit()
+
+    if doback_id:
+        flash(f"Vehículo '{vehicle.name}' mapeado a Doback '{doback_id}'.", "success")
+    else:
+        flash(f"Identificador Doback eliminado para '{vehicle.name}'.", "info")
+
+    return redirect(url_for("manager.vehiculos_list"))
+
+
 # Edit profile
 
 @manager_bp.route("/perfil", methods=["GET", "POST"])

@@ -74,6 +74,9 @@ class Vehicle(db.Model):
     # Mapeo a Webfleet (D-WF-001). Cuando se setea, los Attempts del vehículo
     # se sincronizan con la API de Webfleet.connect (show_tracks).
     webfleetObjectNo = db.Column(db.String, unique=True, nullable=True, index=True)
+    # Identificador del dispositivo Doback Elite instalado en el vehículo (ej: "n023").
+    # Se setea manualmente desde la UI de Manager → Vehículos.
+    dobackIdentifier = db.Column(db.String(20), nullable=True, index=True)
     # Datos en vivo de Webfleet — se actualizan cada 10 min por el worker.
     webfleetData     = db.Column(JSONB, nullable=True)   # snapshot completo del showObjectReport
     webfleetLastSeen = db.Column(db.DateTime, nullable=True)  # cuándo lo vio Webfleet por última vez
