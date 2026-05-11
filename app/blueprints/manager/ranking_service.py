@@ -120,25 +120,6 @@ def get_ranking(conv_id, org_id):
         scores = [a.score for a in scored]
         nota_media = sum(scores) / len(scores) if scores else 0.0
 
-        audit_req = AuditRequest.query.filter(
-            AuditRequest.organizationId == org_id,
-            AuditRequest.requestedBy == enrollment.studentId,
-            AuditRequest.status.in_([AuditStatus.PENDING, AuditStatus.REVIEWING]),
-        ).first()
-
-        audit_data = None
-        if audit_req:
-            att = audit_req.original_attempt
-            audit_data = {
-                "id": audit_req.id,
-                "reason": audit_req.reason,
-                "fecha": audit_req.createdAt.strftime("%d/%m/%Y") if audit_req.createdAt else "—",
-                "hora": audit_req.createdAt.strftime("%H:%M") if audit_req.createdAt else "—",
-                "attempt_id": audit_req.originalAttemptId,
-                "ruta": (_slots_for_enrollment(att.enrollmentId).get(att.id, "—")
-                         if att and att.enrollmentId else "—"),
-            }
-
         entries.append({
             "nota_media": nota_media,
             "rutas_completadas": len(scored),
