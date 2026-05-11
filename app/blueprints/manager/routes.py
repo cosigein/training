@@ -831,37 +831,6 @@ def vehiculos_sync():
     return redirect(url_for("manager.vehiculos_list"))
 
 
-@manager_bp.route("/vehiculos/<vehicle_id>/set-webfleet", methods=["POST"])
-@require_role(["MANAGER", "ADMIN"])
-def vehicle_set_webfleet(vehicle_id):
-    """Asigna el objectno de Webfleet a un vehículo de la organización."""
-    org_id = _get_org_id()
-    vehicle = Vehicle.query.filter_by(id=vehicle_id, organizationId=org_id).first()
-    if not vehicle:
-        abort(404)
-
-    objectno = (request.form.get("webfleet_objectno") or "").strip() or None
-
-    if objectno:
-        existing = Vehicle.query.filter(
-            Vehicle.webfleetObjectNo == objectno,
-            Vehicle.id != vehicle_id,
-        ).first()
-        if existing:
-            flash(f"El objectno '{objectno}' ya está asignado al vehículo {existing.name}.", "danger")
-            return redirect(url_for("manager.vehiculos_list"))
-
-    vehicle.webfleetObjectNo = objectno
-    db.session.commit()
-
-    if objectno:
-        flash(f"Vehículo '{vehicle.name}' mapeado a Webfleet objectno '{objectno}'.", "success")
-    else:
-        flash(f"Mapeado de Webfleet eliminado para '{vehicle.name}'.", "info")
-
-    return redirect(url_for("manager.vehiculos_list"))
-
-
 @manager_bp.route("/vehiculos/<vehicle_id>/set-doback", methods=["POST"])
 @require_role(["MANAGER", "ADMIN"])
 def vehicle_set_doback(vehicle_id):

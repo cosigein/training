@@ -105,18 +105,11 @@
         </div>
 
         {% else %}
-        <!-- Sin objectno: form de mapeo -->
-        <form method="POST" action="{{ url_for('manager.vehicle_set_webfleet', vehicle_id=v.id) }}"
-              style="display:flex; gap:6px; align-items:center; margin-top:4px;"
-              onclick="event.stopPropagation()">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="text" name="webfleet_objectno"
-                   placeholder="objectno Webfleet"
-                   style="flex:1; padding:6px 8px; border:1px solid #e2e8f0; border-radius:6px; font-size:12px;">
-            <button type="submit" class="mgr-action-btn mgr-action-btn--secondary" style="padding:6px 10px; font-size:12px;">
-                <i class="ph ph-link"></i>
-            </button>
-        </form>
+        <!-- Sin objectno: pendiente de sync con Webfleet -->
+        <div style="font-size:12px; color:#94a3b8; text-align:center; padding:8px 0;">
+            <i class="ph ph-arrows-clockwise" style="font-size:20px; display:block; margin-bottom:4px;"></i>
+            Pendiente de sincronización con Webfleet
+        </div>
         {% endif %}
 
         <!-- Doback identifier — siempre visible, en todas las cards -->
