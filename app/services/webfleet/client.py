@@ -75,11 +75,13 @@ def _build_basic_auth_params() -> tuple[dict, tuple[str, str]]:
     Los params de idioma/formato siguen en la URL.
     """
     cfg = current_app.config
+    account  = cfg["WEBFLEET_ACCOUNT"]
     username = cfg["WEBFLEET_USERNAME"]
     password = cfg["WEBFLEET_PASSWORD"]
     apikey   = cfg["WEBFLEET_APIKEY"]
-    # Webfleet BasicAuth estándar: username:password + apikey en URL
-    params = {"apikey": apikey, "lang": "es", "outputformat": "json"}
+    # account + apikey en URL params, username:password en BasicAuth
+    # (error 1180 = no meter username/password en URL, no que account no pueda estar)
+    params = {"account": account, "apikey": apikey, "lang": "es", "outputformat": "json"}
     auth   = (username, password)
     return params, auth
 
