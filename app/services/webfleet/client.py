@@ -75,9 +75,11 @@ def _build_basic_auth_params() -> tuple[dict, tuple[str, str]]:
     Los params de idioma/formato siguen en la URL.
     """
     cfg = current_app.config
+    account  = cfg["WEBFLEET_ACCOUNT"]
     username = cfg["WEBFLEET_USERNAME"]
     apikey   = cfg["WEBFLEET_APIKEY"]
-    params = {"lang": "es", "outputformat": "json"}
+    # account va en URL params, BasicAuth lleva username:apikey
+    params = {"account": account, "lang": "es", "outputformat": "json"}
     auth   = (username, apikey)
     return params, auth
 
