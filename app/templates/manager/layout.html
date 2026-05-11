@@ -76,17 +76,16 @@
         </nav>
 
 				<div class="mgr-header__right">
-					<div class="mgr-user-chip" id="mgrChip" style="cursor: pointer">
-            {% if not current_user.is_authenticated %}
-						<div class="mgr-user-chip__avatar">?</div>
-            {% elif not current_user.picture %}
+					{% if current_user.is_authenticated %}
+				<div class="mgr-user-chip" id="mgrChip" style="cursor: pointer">
+            {% if not current_user.picture %}
 						<div class="mgr-user-chip__avatar">
 							{{ current_user.name[0] }}{{ current_user.name.split()[1][0] if
 							current_user.name.split()|length > 1 else '' }}
 						</div>
             {% else %}
             <div class="mgr-user-chip__avatar">
-              <img src="{{ url_for('static', filename='uploads/' ~ current_user.picture) if current_user.picture else '' }}" style="width: 25px; height: 25px; object-fit: fill; border-radius: 50%; background: #e5e7eb; display: block;" />
+              <img src="{{ url_for('static', filename='uploads/' ~ current_user.picture) }}" style="width: 25px; height: 25px; object-fit: fill; border-radius: 50%; background: #e5e7eb; display: block;" />
             </div>
             {% endif %}
 						<div id="mgrModal" class="mgr-modal">
@@ -106,6 +105,7 @@
 							>{{ current_user.name.split()[0] }}</span
 						>
 					</div>
+				{% endif %}
 					<a
 						href="{{ url_for('auth.logout') }}"
 						class="mgr-logout-btn"
