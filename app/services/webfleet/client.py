@@ -201,7 +201,7 @@ def show_object_report(
     cfg = current_app.config
     base_url = cfg["WEBFLEET_BASE_URL"]
     params = _build_auth_params()
-    params["action"] = "showObjectReport"
+    params["action"] = "showObjectReportExtern"
     if object_no:
         params["objectno"] = object_no
 
@@ -254,8 +254,44 @@ def show_object_report(
             code=f"api_{err.get('errorCode')}",
         )
 
-    logger.info("showObjectReport: %d vehículos recibidos", len(data))
-    return data
+    logger.info("showObjectReportExtern: {} vehículos recibidos", len(data))
+    return [_normalize_object_report(row) for row in data]
+
+
+def _normalize_object_report(row: dict) -> dict:
+    """Normaliza los campos de showObjectReportExtern al esquema interno.
+
+    showObjectReportExtern usa nombres distintos a los que asumía el código
+    original (latitude vs pos_latitude, ignition vs ignition_state, etc.).
+    Devuelve un dict con los nombres canónicos internos para que vehicles.py
+    y la UI no necesiten saber qué versión del endpoint se usó.
+    """
+    def _f(key, *aliases):
+        for k in (key, *aliases):
+            v = row.get(k)
+            if v is not None:
+                return v
+        return None
+
+    return {
+        "objectno":        _f("objectno"),
+        "objectname":      _f("objectname"),
+        "objectclassname": _f("objectclassname"),
+        "pos_latitude":    _f("latitude", "latitude_mdeg"),
+        "pos_longitude":   _f("longitude", "longitude_mdeg"),
+        "pos_altitude":    _f("altitude", "pos_altitude"),
+        "pos_time":        _f("pos_time"),
+        "pos_speed":       _f("speed", "pos_speed"),
+        "pos_course":      _f("course", "pos_course"),
+        "pos_text":        _f("postext", "pos_text", "postext_short"),
+        "driver_name":     _f("drivername", "driver_name", "driver"),
+        "driver_no":       _f("driverno", "driver_no"),
+        "ignition_state":  _f("ignition", "ignition_state"),
+        "vehicle_state":   _f("status", "vehicle_state"),
+        "odometer_value":  _f("odometer", "odometer_value"),
+        "msg_time":        _f("msg_time", "receivetime"),
+        **{k: v for k, v in row.items()},  # preservar campos extra sin sobrescribir
+    }
 
 
 def show_digital_events(
