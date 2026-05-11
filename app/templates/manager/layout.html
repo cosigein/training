@@ -77,7 +77,9 @@
 
 				<div class="mgr-header__right">
 					<div class="mgr-user-chip" id="mgrChip" style="cursor: pointer">
-            {% if not current_user.picture %}
+            {% if not current_user.is_authenticated %}
+						<div class="mgr-user-chip__avatar">?</div>
+            {% elif not current_user.picture %}
 						<div class="mgr-user-chip__avatar">
 							{{ current_user.name[0] }}{{ current_user.name.split()[1][0] if
 							current_user.name.split()|length > 1 else '' }}
