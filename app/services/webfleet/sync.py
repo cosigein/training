@@ -189,7 +189,10 @@ def sync_attempt_rotativo(
     source: str = "manual",
 ) -> dict:
     """
-    Sincroniza los RotativoMeasurement del attempt desde Webfleet (showIOActivities).
+    Sincroniza los RotativoMeasurement del attempt desde Webfleet (showIOReportExtern).
+
+    showIOReportExtern requiere el permiso "Digital I/O report" en el API key.
+    Si no está disponible, el cliente hace fallback a mock automáticamente.
 
     Mismo contrato que `sync_attempt_gps`: idempotente, usa circuit breaker y
     rate limiter, funciona en modo mock sin credenciales.
@@ -225,7 +228,8 @@ def sync_attempt_rotativo(
 
     inserted = 0
     for r in raw_rows:
-        raw_ts = r.get("msg_time") or r.get("pos_time", "")
+        # showIOReportExtern usa pos_time; mock y showIOActivities usan msg_time.
+        raw_ts = r.get("pos_time") or r.get("msg_time") or r.get("recvtime", "")
         ts = None
         for fmt in ("%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"):
             try:
@@ -236,14 +240,21 @@ def sync_attempt_rotativo(
         if ts is None:
             continue
 
-        input_val = str(r.get("input_value", "0"))
-        state = "1" if input_val in ("1", "true", "on", "ON") else "0"
+        # showIOReportExtern expone las entradas como io_1, io_2... o input_value.
+        # Canal 1 = rotativo por convención de CMadrid.
+        input_val = str(
+            r.get("io_1")
+            or r.get("input_1")
+            or r.get("input_value")
+            or "0"
+        )
+        state = "1" if input_val.strip() in ("1", "true", "on", "ON", "active") else "0"
         db.session.add(RotativoMeasurement(
             attemptId=attempt_id,
             organizationId=attempt.organizationId,
             timestamp=ts,
             state=state,
-            key=int(r.get("input_no", 1)),
+            key=1,
         ))
         inserted += 1
 

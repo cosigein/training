@@ -169,9 +169,10 @@ def show_digital_events(
     timeout_s: float = 15.0,
 ) -> list[dict]:
     """
-    Pide activaciones de entradas digitales del vehículo (ej: rotativo de emergencia).
+    Pide el historial de entradas digitales del vehículo (ej: rotativo de emergencia).
 
-    En modo real llama a `showIOActivities` de Webfleet.connect.
+    En modo real llama a `showIOReportExtern` de Webfleet.connect.
+    Requiere el permiso "Digital I/O report" habilitado en el API key.
     En mock genera eventos sintéticos ON/OFF.
 
     Args:
@@ -197,12 +198,13 @@ def show_digital_events(
     cfg = current_app.config
     base_url = cfg["WEBFLEET_BASE_URL"]
     params = _build_auth_params()
-    params["action"] = "showIOActivities"
+    # showIOReportExtern es el endpoint estándar de Webfleet para historial de
+    # entradas digitales. Requiere permiso "Digital I/O report" en el API key.
+    params["action"] = "showIOReportExtern"
     params["objectno"] = object_no
     params["range_pattern"] = "ud"
     params["rangefrom_string"] = range_from.strftime("%Y-%m-%d %H:%M:%S")
     params["rangeto_string"] = range_to.strftime("%Y-%m-%d %H:%M:%S")
-    params["inputno"] = str(input_no)
 
     try:
         with httpx.Client(timeout=timeout_s) as client:
@@ -220,8 +222,8 @@ def show_digital_events(
         raise WebfleetError("Webfleet 401 — verificar credenciales", http_status=401, code="auth_failed")
 
     if resp.status_code == 404 or resp.status_code == 400:
-        # showIOActivities puede no estar disponible en todas las cuentas — degradar a mock.
-        logger.warning("Webfleet showIOActivities no disponible (%s) — fallback a mock", resp.status_code)
+        # showIOReportExtern no disponible (permiso no habilitado en el API key) — mock.
+        logger.warning("Webfleet showIOReportExtern no disponible (%s) — fallback a mock", resp.status_code)
         return mock.show_digital_events(object_no, range_from, range_to)
 
     if resp.status_code >= 400:
