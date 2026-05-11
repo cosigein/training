@@ -11,6 +11,7 @@ es False o faltan credenciales.
 from __future__ import annotations
 
 import math
+import random
 from datetime import datetime, timedelta
 
 # Centroide aproximado base de bomberos de CMadrid (Vallecas) — punto inicial
@@ -64,6 +65,59 @@ def show_tracks(object_no: str, range_from: datetime, range_to: datetime) -> lis
             "course": (seed + i * 11) % 360,
             "objectno": object_no,
             "_mock": True,
+        })
+    return rows
+
+
+def show_object_report(object_no: str = None) -> list[dict]:
+    """
+    Genera un snapshot de estado de vehículos sintético.
+
+    Si object_no está dado, devuelve solo ese vehículo.
+    Si no, devuelve todos los vehículos de la BD que tengan webfleetObjectNo.
+
+    Campos generados según el contrato de showObjectReport real de Webfleet.
+    """
+    from flask import current_app
+    from app.models.vehicle import Vehicle
+
+    try:
+        org_id = None
+        vehicles_db = Vehicle.query.filter(Vehicle.webfleetObjectNo.isnot(None)).all()
+        if object_no:
+            vehicles_db = [v for v in vehicles_db if v.webfleetObjectNo == object_no]
+    except Exception:
+        vehicles_db = []
+
+    now = datetime.utcnow()
+    rows = []
+    for v in vehicles_db:
+        seed = sum(ord(c) for c in (v.webfleetObjectNo or "MOCK"))
+        rng = random.Random(seed + int(now.timestamp() // 600))  # cambia cada 10 min
+
+        lat = _BASE_LAT + rng.uniform(-0.05, 0.05)
+        lon = _BASE_LON + rng.uniform(-0.05, 0.05)
+        speed = rng.choice([0, 0, 15, 30, 45, 60])
+        ignition = 1 if speed > 0 else rng.choice([0, 1])
+
+        rows.append({
+            "objectno":        v.webfleetObjectNo,
+            "objectname":      v.name,
+            "objectclassname": v.type.value if v.type else "FIRE_TRUCK",
+            "pos_latitude":    round(lat, 6),
+            "pos_longitude":   round(lon, 6),
+            "pos_altitude":    round(rng.uniform(600, 700), 1),
+            "pos_time":        now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "pos_speed":       speed,
+            "pos_course":      rng.randint(0, 359),
+            "pos_text":        "Ctra. de Valencia, Madrid (demo)",
+            "driver_name":     rng.choice(["Sin conductor", "Conductor A", "Conductor B"]),
+            "driver_no":       "",
+            "ignition_state":  ignition,
+            "vehicle_state":   "active" if ignition else "inactive",
+            "odometer_value":  round(12000 + seed * 3.7, 0),
+            "msg_time":        now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "_mock":           True,
         })
     return rows
 

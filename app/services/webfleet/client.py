@@ -161,6 +161,83 @@ def show_tracks(
     return data
 
 
+def show_object_report(
+    object_no: Optional[str] = None,
+    timeout_s: float = 15.0,
+) -> list[dict]:
+    """
+    Devuelve el estado actual de todos los vehículos de la cuenta (o uno concreto).
+
+    Campos relevantes del response de Webfleet (showObjectReport):
+        objectno          — identificador único del vehículo
+        objectname        — nombre / matrícula
+        objectclassname   — clase (ej: "Camión")
+        pos_latitude      — latitud actual (degrees × 1e-6 o float)
+        pos_longitude     — longitud actual
+        pos_time          — timestamp última posición
+        pos_speed         — velocidad actual (km/h)
+        pos_course        — rumbo (0-359)
+        pos_text          — dirección textual de la posición actual
+        driver_name       — conductor asignado
+        driver_no         — ID del conductor
+        ignition_state    — 0=apagado, 1=encendido
+        vehicle_state     — active / inactive / alarm
+        odometer_value    — odómetro (km)
+        pos_altitude      — altitud (m)
+        msg_time          — timestamp último mensaje recibido
+
+    En modo mock genera datos sintéticos para cada vehículo de la BD de la org.
+    """
+    if not _is_real_mode():
+        logger.info("Webfleet client en modo MOCK para showObjectReport")
+        return mock.show_object_report(object_no)
+
+    if not _circuit_breaker.allow_request():
+        raise WebfleetError("Webfleet circuit breaker OPEN", code="circuit_open")
+
+    if not _rate_limiter.try_acquire():
+        raise WebfleetError("Cuota diaria de Webfleet agotada", code="rate_limit")
+
+    cfg = current_app.config
+    base_url = cfg["WEBFLEET_BASE_URL"]
+    params = _build_auth_params()
+    params["action"] = "showObjectReport"
+    if object_no:
+        params["objectno"] = object_no
+
+    try:
+        with httpx.Client(timeout=timeout_s) as client:
+            resp = client.get(base_url, params=params)
+    except httpx.RequestError as exc:
+        _circuit_breaker.record_failure()
+        raise WebfleetError(f"Webfleet network error: {exc}", code="network") from exc
+
+    if resp.status_code >= 500:
+        _circuit_breaker.record_failure()
+        raise WebfleetError(f"Webfleet server error {resp.status_code}", http_status=resp.status_code, code="server_error")
+
+    if resp.status_code == 401:
+        _circuit_breaker.record_failure()
+        raise WebfleetError("Webfleet 401 — verificar credenciales", http_status=401, code="auth_failed")
+
+    if resp.status_code >= 400:
+        raise WebfleetError(f"Webfleet client error {resp.status_code}: {resp.text[:200]}", http_status=resp.status_code, code="client_error")
+
+    _circuit_breaker.record_success()
+
+    try:
+        data = resp.json()
+    except ValueError as exc:
+        raise WebfleetError("Webfleet response no es JSON válido", code="bad_response") from exc
+
+    if isinstance(data, dict):
+        data = data.get("data", data.get("rows", []))
+    if not isinstance(data, list):
+        return []
+
+    return data
+
+
 def show_digital_events(
     object_no: str,
     range_from: datetime,

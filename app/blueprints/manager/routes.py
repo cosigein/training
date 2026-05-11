@@ -798,7 +798,7 @@ def abrir_intento(student_id):
 @manager_bp.route("/vehiculos")
 @require_role(["MANAGER", "ADMIN"])
 def vehiculos_list():
-    """Lista los vehículos de la organización con opción de mapear Webfleet objectno."""
+    """Lista los vehículos de la organización con datos en vivo de Webfleet."""
     org_id = _get_org_id()
     vehicles = Vehicle.query.filter_by(organizationId=org_id).order_by(Vehicle.name.asc()).all()
     return render_template(
@@ -806,6 +806,22 @@ def vehiculos_list():
         active_page="vehiculos",
         vehicles=vehicles,
     )
+
+
+@manager_bp.route("/vehiculos/sync", methods=["POST"])
+@require_role(["MANAGER", "ADMIN"])
+def vehiculos_sync():
+    """Fuerza una sincronización inmediata de la flota con Webfleet."""
+    from app.services.webfleet import sync_vehicles_from_webfleet
+    org_id = _get_org_id()
+    result = sync_vehicles_from_webfleet(org_id)
+    flash(
+        f"Webfleet: {result['updated']} actualizados · "
+        f"{result['created']} nuevos · "
+        f"{result['disappeared']} desaparecidos.",
+        "success",
+    )
+    return redirect(url_for("manager.vehiculos_list"))
 
 
 @manager_bp.route("/vehiculos/<vehicle_id>/set-webfleet", methods=["POST"])

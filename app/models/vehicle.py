@@ -74,6 +74,10 @@ class Vehicle(db.Model):
     # Mapeo a Webfleet (D-WF-001). Cuando se setea, los Attempts del vehículo
     # se sincronizan con la API de Webfleet.connect (show_tracks).
     webfleetObjectNo = db.Column(db.String, unique=True, nullable=True, index=True)
+    # Datos en vivo de Webfleet — se actualizan cada 10 min por el worker.
+    webfleetData     = db.Column(JSONB, nullable=True)   # snapshot completo del showObjectReport
+    webfleetLastSeen = db.Column(db.DateTime, nullable=True)  # cuándo lo vio Webfleet por última vez
+    webfleetVisible  = db.Column(db.Boolean, default=True, nullable=False)  # False = desaparecido de Webfleet
     createdAt = db.Column(db.DateTime, default=datetime.utcnow)
     updatedAt = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
