@@ -230,7 +230,7 @@ def show_object_report(
     except ValueError as exc:
         raise WebfleetError("Webfleet response no es JSON válido", code="bad_response") from exc
 
-    logger.debug("showObjectReport raw (type=%s): %s", type(data).__name__, str(data)[:800])
+    logger.info("showObjectReport raw (type={}): {}", type(data).__name__, str(data)[:800])
 
     # Webfleet devuelve HTTP 200 incluso para errores de API.
     if isinstance(data, dict):

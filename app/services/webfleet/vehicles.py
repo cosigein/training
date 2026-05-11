@@ -55,7 +55,7 @@ def sync_vehicles_from_webfleet(org_id: str) -> dict:
     try:
         raw = show_object_report()
     except WebfleetError as exc:
-        logger.error("sync_vehicles_from_webfleet: Webfleet error — %s", exc)
+        logger.error("sync_vehicles_from_webfleet: Webfleet error — {}", exc)
         return {"updated": 0, "created": 0, "disappeared": 0, "errors": 1}
 
     now = datetime.utcnow()
