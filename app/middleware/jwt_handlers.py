@@ -24,7 +24,7 @@ def init_jwt_handlers(jwt):
     def _expired(jwt_header, jwt_payload):
         if _wants_json():
             return jsonify({"message": "Token expirado", "error": "token_expired"}), 401
-        flash("Tu sesión ha expirado. Iniciá sesión de nuevo.", "warning")
+        flash("Tu sesión ha expirado. Inicia sesión de nuevo.", "warning")
         response = redirect(url_for('auth.login'))
         unset_jwt_cookies(response)
         return response
@@ -33,7 +33,7 @@ def init_jwt_handlers(jwt):
     def _invalid(reason):
         if _wants_json():
             return jsonify({"message": "Token inválido", "error": "token_invalid", "reason": reason}), 401
-        flash("Tu sesión es inválida. Iniciá sesión de nuevo.", "warning")
+        flash("Tu sesión es inválida. Inicia sesión de nuevo.", "warning")
         response = redirect(url_for('auth.login'))
         unset_jwt_cookies(response)
         return response

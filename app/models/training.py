@@ -444,3 +444,42 @@ class GdprForgetRequest(db.Model):
 
     student = db.relationship("User", foreign_keys=[studentId])
     approver = db.relationship("User", foreign_keys=[approvedBy])
+
+
+# AuditRequest — solicitud de auditoría de intento por parte de un alumno
+# ─────────────────────────────────────────────────────────────────────────────
+
+class AuditStatus(Enum):
+    PENDING    = "PENDING"
+    REVIEWING  = "REVIEWING"
+    CONFIRMED  = "CONFIRMED"
+    REEVALUATED = "REEVALUATED"
+    REJECTED   = "REJECTED"
+
+
+class AuditRequest(db.Model):
+    __tablename__ = "AuditRequest"
+
+    id               = db.Column(db.String, primary_key=True, server_default=text("gen_random_uuid()"))
+    organizationId   = db.Column(db.String, db.ForeignKey("Organization.id", ondelete="CASCADE"), nullable=False)
+    originalAttemptId = db.Column(db.String, db.ForeignKey("Attempt.id", ondelete="SET NULL"))
+    enrollmentId     = db.Column(db.String, db.ForeignKey("Enrollment.id", ondelete="SET NULL"))
+    requestedBy      = db.Column(db.String, db.ForeignKey("User.id", ondelete="SET NULL"))
+    reason           = db.Column(db.Text, nullable=False)
+    status           = db.Column(db.Enum(AuditStatus), default=AuditStatus.PENDING, nullable=False)
+    reviewedBy       = db.Column(db.String, db.ForeignKey("User.id", ondelete="SET NULL"))
+    reviewedAt       = db.Column(db.DateTime)
+    resolution       = db.Column(db.Text)
+    filedAfterClose  = db.Column(db.Boolean)
+    createdAt        = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updatedAt        = db.Column(db.DateTime, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        db.Index("ix_auditrequest_attempt",    "originalAttemptId"),
+        db.Index("ix_auditrequest_enrollment", "enrollmentId"),
+        db.Index("ix_auditrequest_org_status", "organizationId", "status"),
+    )
+
+    original_attempt = db.relationship("Attempt",    foreign_keys=[originalAttemptId])
+    requester        = db.relationship("User",       foreign_keys=[requestedBy])
+    reviewer         = db.relationship("User",       foreign_keys=[reviewedBy])

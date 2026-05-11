@@ -76,7 +76,8 @@
         </nav>
 
 				<div class="mgr-header__right">
-					<div class="mgr-user-chip" id="mgrChip">
+					{% if current_user.is_authenticated %}
+				<div class="mgr-user-chip" id="mgrChip">
             {% if not current_user.picture %}
 						<div class="mgr-user-chip__avatar">
 							{{ current_user.name[0] }}{{ current_user.name.split()[1][0] if
@@ -107,6 +108,7 @@
 							>{{ current_user.name.split()[0] }}</span
 						>
 					</div>
+				{% endif %}
 					<a
 						href="{{ url_for('auth.logout') }}"
 						class="mgr-logout-btn"

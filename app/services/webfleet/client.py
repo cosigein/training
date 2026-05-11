@@ -66,6 +66,26 @@ def _build_auth_params() -> dict:
     }
 
 
+def _build_basic_auth_params() -> tuple[dict, tuple[str, str]]:
+    """Credenciales para endpoints que requieren BasicAuth (error 1180).
+
+    Los endpoints Extern más nuevos de Webfleet rechazan las credenciales
+    por query string y exigen HTTP Basic Auth.
+    Formato: Authorization: Basic base64(account/username:apikey)
+    Los params de idioma/formato siguen en la URL.
+    """
+    cfg = current_app.config
+    account  = cfg["WEBFLEET_ACCOUNT"]
+    username = cfg["WEBFLEET_USERNAME"]
+    password = cfg["WEBFLEET_PASSWORD"]
+    apikey   = cfg["WEBFLEET_APIKEY"]
+    # account + apikey en URL params, username:password en BasicAuth
+    # (error 1180 = no meter username/password en URL, no que account no pueda estar)
+    params = {"account": account, "apikey": apikey, "lang": "es", "outputformat": "json"}
+    auth   = (username, password)
+    return params, auth
+
+
 def show_tracks(
     object_no: str,
     range_from: datetime,
@@ -159,6 +179,139 @@ def show_tracks(
         return []
 
     return data
+
+
+def show_object_report(
+    object_no: Optional[str] = None,
+    timeout_s: float = 15.0,
+) -> list[dict]:
+    """
+    Devuelve el estado actual de todos los vehículos de la cuenta (o uno concreto).
+
+    Campos relevantes del response de Webfleet (showObjectReport):
+        objectno          — identificador único del vehículo
+        objectname        — nombre / matrícula
+        objectclassname   — clase (ej: "Camión")
+        pos_latitude      — latitud actual (degrees × 1e-6 o float)
+        pos_longitude     — longitud actual
+        pos_time          — timestamp última posición
+        pos_speed         — velocidad actual (km/h)
+        pos_course        — rumbo (0-359)
+        pos_text          — dirección textual de la posición actual
+        driver_name       — conductor asignado
+        driver_no         — ID del conductor
+        ignition_state    — 0=apagado, 1=encendido
+        vehicle_state     — active / inactive / alarm
+        odometer_value    — odómetro (km)
+        pos_altitude      — altitud (m)
+        msg_time          — timestamp último mensaje recibido
+
+    En modo mock genera datos sintéticos para cada vehículo de la BD de la org.
+    """
+    if not _is_real_mode():
+        logger.info("Webfleet client en modo MOCK para showObjectReport")
+        return mock.show_object_report(object_no)
+
+    if not _circuit_breaker.allow_request():
+        raise WebfleetError("Webfleet circuit breaker OPEN", code="circuit_open")
+
+    if not _rate_limiter.try_acquire():
+        raise WebfleetError("Cuota diaria de Webfleet agotada", code="rate_limit")
+
+    cfg = current_app.config
+    base_url = cfg["WEBFLEET_BASE_URL"]
+    params, auth = _build_basic_auth_params()
+    params["action"] = "showObjectReportExtern"
+    if object_no:
+        params["objectno"] = object_no
+
+    try:
+        with httpx.Client(timeout=timeout_s, auth=auth) as client:
+            resp = client.get(base_url, params=params)
+    except httpx.RequestError as exc:
+        _circuit_breaker.record_failure()
+        raise WebfleetError(f"Webfleet network error: {exc}", code="network") from exc
+
+    if resp.status_code >= 500:
+        _circuit_breaker.record_failure()
+        raise WebfleetError(f"Webfleet server error {resp.status_code}", http_status=resp.status_code, code="server_error")
+
+    if resp.status_code == 401:
+        _circuit_breaker.record_failure()
+        raise WebfleetError("Webfleet 401 — verificar credenciales", http_status=401, code="auth_failed")
+
+    if resp.status_code >= 400:
+        raise WebfleetError(f"Webfleet client error {resp.status_code}: {resp.text[:200]}", http_status=resp.status_code, code="client_error")
+
+    _circuit_breaker.record_success()
+
+    try:
+        data = resp.json()
+    except ValueError as exc:
+        raise WebfleetError("Webfleet response no es JSON válido", code="bad_response") from exc
+
+    logger.info("showObjectReport raw (type={}): {}", type(data).__name__, str(data)[:800])
+
+    # Webfleet devuelve HTTP 200 incluso para errores de API.
+    if isinstance(data, dict):
+        err_code = data.get("errorCode") or data.get("errorcode")
+        err_msg  = data.get("errorMsg")  or data.get("errormsg") or data.get("errorDescription", "")
+        if err_code:
+            raise WebfleetError(
+                f"Webfleet API error {err_code}: {err_msg}",
+                code=f"api_{err_code}",
+            )
+        data = data.get("data", data.get("rows", data.get("objects", [])))
+
+    if not isinstance(data, list):
+        logger.warning("showObjectReport: respuesta inesperada (no lista): %s", str(data)[:200])
+        return []
+
+    if data and isinstance(data[0], dict) and data[0].get("errorCode"):
+        err = data[0]
+        raise WebfleetError(
+            f"Webfleet API error {err.get('errorCode')}: {err.get('errorMsg', '')}",
+            code=f"api_{err.get('errorCode')}",
+        )
+
+    logger.info("showObjectReportExtern: {} vehículos recibidos", len(data))
+    return [_normalize_object_report(row) for row in data]
+
+
+def _normalize_object_report(row: dict) -> dict:
+    """Normaliza los campos de showObjectReportExtern al esquema interno.
+
+    showObjectReportExtern usa nombres distintos a los que asumía el código
+    original (latitude vs pos_latitude, ignition vs ignition_state, etc.).
+    Devuelve un dict con los nombres canónicos internos para que vehicles.py
+    y la UI no necesiten saber qué versión del endpoint se usó.
+    """
+    def _f(key, *aliases):
+        for k in (key, *aliases):
+            v = row.get(k)
+            if v is not None:
+                return v
+        return None
+
+    return {
+        "objectno":        _f("objectno"),
+        "objectname":      _f("objectname"),
+        "objectclassname": _f("objectclassname"),
+        "pos_latitude":    _f("latitude", "latitude_mdeg"),
+        "pos_longitude":   _f("longitude", "longitude_mdeg"),
+        "pos_altitude":    _f("altitude", "pos_altitude"),
+        "pos_time":        _f("pos_time"),
+        "pos_speed":       _f("speed", "pos_speed"),
+        "pos_course":      _f("course", "pos_course"),
+        "pos_text":        _f("postext", "pos_text", "postext_short"),
+        "driver_name":     _f("drivername", "driver_name", "driver"),
+        "driver_no":       _f("driverno", "driver_no"),
+        "ignition_state":  _f("ignition", "ignition_state"),
+        "vehicle_state":   _f("status", "vehicle_state"),
+        "odometer_value":  _f("odometer", "odometer_value"),
+        "msg_time":        _f("msg_time", "receivetime"),
+        **{k: v for k, v in row.items()},  # preservar campos extra sin sobrescribir
+    }
 
 
 def show_digital_events(

@@ -18,11 +18,14 @@ from flask import current_app
 from loguru import logger
 from sqlalchemy import exists
 
+from app.extensions import db
 from app.models.session import Attempt, AttemptStatus, StabilityMeasurement, GpsMeasurement
+from app.models.vehicle import Vehicle
 from app.services.webfleet import (
     sync_attempt_gps,
     sync_attempt_rotativo,
     check_and_autoclose,
+    sync_vehicles_from_webfleet,
     WebfleetSyncError,
 )
 
@@ -96,3 +99,36 @@ def webfleet_sync_recent():
         "autoclosed": autoclosed,
         "errors": errors,
     }
+
+
+@shared_task(name="training.sync_vehicles")
+def sync_vehicles_periodic():
+    """
+    Actualiza la flota desde Webfleet cada 10 minutos.
+
+    - Registra vehículos nuevos descubiertos en Webfleet.
+    - Actualiza datos en vivo (posición, velocidad, estado, odómetro…).
+    - Marca como invisibles los que han desaparecido de la cuenta.
+
+    Solo procesa orgs que tienen al menos un vehículo con webfleetObjectNo.
+    """
+    org_ids = (
+        db.session.query(Vehicle.organizationId)
+        .filter(Vehicle.webfleetObjectNo.isnot(None))
+        .distinct()
+        .all()
+    )
+    org_ids = [r[0] for r in org_ids]
+
+    if not org_ids:
+        logger.info("sync_vehicles: ninguna org con vehículos Webfleet mapeados")
+        return {"orgs": 0}
+
+    totals = {"updated": 0, "created": 0, "disappeared": 0}
+    for org_id in org_ids:
+        result = sync_vehicles_from_webfleet(org_id)
+        for k in totals:
+            totals[k] += result.get(k, 0)
+
+    logger.info("sync_vehicles done: %s", totals)
+    return {"orgs": len(org_ids), **totals}

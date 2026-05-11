@@ -23,4 +23,9 @@ BEAT_SCHEDULE = {
         "task": "training.webfleet_sync_recent",
         "schedule": crontab(minute="*/10"),
     },
+    # Actualización de flota en vivo desde Webfleet — posición, estado, odómetro…
+    "webfleet-sync-vehicles": {
+        "task": "training.sync_vehicles",
+        "schedule": crontab(minute="*/10"),
+    },
 }

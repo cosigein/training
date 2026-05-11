@@ -274,4 +274,4 @@ def sync_attempt_rotativo(
 
 # * Nota: idealmente el enum `AuditAction` tendría `WEBFLEET_SYNCED`. Por
 # ahora se reusa SCORE_CALCULATED — el campo `delta.webfleet_sync=True`
-# distingue. Cuando agreguemos enum, hacer migración + cambiar acá.
+# distingue. Cuando agreguemos enum, hacer migración + cambiar aquí.

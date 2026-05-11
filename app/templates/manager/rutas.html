@@ -3,6 +3,17 @@
 
 {% block content %}
 
+<div class="mgr-back-bar">
+    <a href="{{ url_for('manager.dashboard') }}" class="mgr-btn-back">
+        <i class="ph ph-arrow-left"></i> Volver al inicio
+    </a>
+    <span class="mgr-breadcrumb">
+        <span>Inicio</span>
+        <span class="mgr-breadcrumb__sep">›</span>
+        <span>Rutas</span>
+    </span>
+</div>
+
 <div class="mgr-page-header">
     <div>
         <h1 class="mgr-page-title">Rutas</h1>
@@ -15,7 +26,9 @@
 
 <div class="mgr-conv-list">
     {% for r in rutas %}
-    <div class="mgr-conv-row mgr-conv-row--compact">
+    <div class="mgr-conv-row mgr-conv-row--compact mgr-clickable-row"
+         data-href="{{ url_for('manager.ruta_detalle', route_id=r.id) }}"
+         style="cursor:pointer;">
         <div class="mgr-conv-row__main">
             <div class="mgr-conv-row__title">
                 <strong>{{ r.code }}</strong>
@@ -66,4 +79,15 @@
     {% endfor %}
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.mgr-clickable-row').forEach(row => {
+    row.addEventListener('click', e => {
+        if (e.target.closest('form, button')) return;
+        window.location.href = row.dataset.href;
+    });
+});
+</script>
 {% endblock %}

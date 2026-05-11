@@ -181,6 +181,7 @@
         }
         .flash-item.danger  { background: #fef2f2; color: #991b1b; border: 1.5px solid #fecaca; }
         .flash-item.success { background: #f0fdf4; color: #166534; border: 1.5px solid #bbf7d0; }
+        .flash-item.warning { background: #fef2f2; color: #991b1b; border: 1.5px solid #fecaca; }
         .flash-item i { font-size: 18px; }
 
         /* ── FORM ────────────────────────────────────────────── */
@@ -681,11 +682,12 @@
 
             {# ── MODO NORMAL: email + contraseña ── #}
             {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
+            {% set session_msgs = messages | selectattr('0', 'equalto', 'warning') | list %}
+            {% if session_msgs %}
             <ul class="flash-list">
-                {% for category, message in messages %}
-                <li class="flash-item {{ category }}">
-                    {% if category == 'danger' %}<i class="ph ph-warning-circle"></i>{% else %}<i class="ph ph-check-circle"></i>{% endif %}
+                {% for category, message in session_msgs %}
+                <li class="flash-item warning">
+                    <i class="ph ph-warning-circle"></i>
                     {{ message }}
                 </li>
                 {% endfor %}

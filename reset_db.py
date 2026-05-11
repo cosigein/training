@@ -3,9 +3,10 @@
 Pasos:
   1. DROP DATABASE + CREATE DATABASE (conexión a 'postgres')
   2. CREATE EXTENSION pgcrypto, postgis (necesarias para gen_random_uuid() y geofences)
-  3. flask db upgrade  (aplica todas las migraciones Alembic)
-  4. setup_db seed     (org CMadrid + usuarios base)
-  5. seed_demo seed    (vehículo, convocatorias, alumnos, attempts)
+  3. db.create_all()  (crea tablas directamente desde los modelos SQLAlchemy)
+  4. flask db stamp head  (marca alembic_version al head para que migraciones futuras funcionen)
+  5. setup_db seed     (org CMadrid + usuarios base)
+  6. seed_demo seed    (vehículo, convocatorias, alumnos, attempts)
 
 Uso:
     python reset_db.py
@@ -13,7 +14,6 @@ Uso:
 """
 import argparse
 import os
-import subprocess
 import sys
 
 import psycopg2
@@ -81,18 +81,86 @@ def create_extensions(db_url: str):
     conn.close()
 
 
-# ─── Paso 3: migraciones ─────────────────────────────────────────────────────
+# ─── Paso 3: crear tablas desde modelos ──────────────────────────────────────
 
-def run_migrations():
-    print("\n[3/4] Aplicando migraciones Alembic (flask db upgrade)…")
-    result = subprocess.run(
-        [sys.executable, "-m", "flask", "db", "upgrade"],
-        env={**os.environ, "FLASK_APP": "wsgi.py"},
+def _find_head_revision() -> str:
+    """Devuelve el revision ID del head actual sin usar Alembic.
+
+    Busca el archivo .py en migrations/versions/ cuyo `revision`
+    no aparece como `down_revision` de ningún otro archivo.
+    """
+    import re
+    versions_dir = os.path.join(os.path.dirname(__file__), "migrations", "versions")
+    revisions: dict[str, str] = {}   # revision_id -> filename
+    down_revisions: set[str] = set()
+
+    for fname in os.listdir(versions_dir):
+        if not fname.endswith(".py") or fname.startswith("__"):
+            continue
+        path = os.path.join(versions_dir, fname)
+        content = open(path).read()
+        rev_m = re.search(r"^revision\s*=\s*['\"]([a-f0-9]+)['\"]", content, re.MULTILINE)
+        down_m = re.search(r"^down_revision\s*=\s*(.+)$", content, re.MULTILINE)
+        if not rev_m:
+            continue
+        rev_id = rev_m.group(1)
+        revisions[rev_id] = fname
+        if down_m:
+            raw = down_m.group(1).strip()
+            # puede ser string, None, o tuple
+            found = re.findall(r"['\"]([a-f0-9]+)['\"]", raw)
+            down_revisions.update(found)
+
+    heads = [rid for rid in revisions if rid not in down_revisions]
+    if len(heads) == 1:
+        return heads[0]
+    if len(heads) > 1:
+        # Múltiples heads — tomar el último por nombre de archivo (timestamp)
+        return sorted(heads, key=lambda r: revisions[r])[-1]
+    raise RuntimeError("No se encontró ningún head en migrations/versions/")
+
+
+def _stamp_version_direct(db_url: str, revision: str):
+    """Escribe alembic_version directamente con psycopg2, sin cargar Alembic."""
+    conn = psycopg2.connect(db_url)
+    conn.autocommit = True
+    cur = conn.cursor()
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS alembic_version "
+        "(version_num VARCHAR(32) NOT NULL, "
+        "CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num))"
     )
-    if result.returncode != 0:
-        print("ERROR: flask db upgrade falló. Abortando.")
-        sys.exit(result.returncode)
-    print("      Migraciones aplicadas.")
+    cur.execute("DELETE FROM alembic_version")
+    cur.execute("INSERT INTO alembic_version VALUES (%s)", (revision,))
+    cur.close()
+    conn.close()
+
+
+def create_tables(db_url: str):
+    """Crea todas las tablas directamente desde los modelos SQLAlchemy.
+
+    Más robusto que `flask db upgrade` para un reset: no depende del estado
+    de la cadena de migraciones. Escribe alembic_version directo a la BD
+    para que `flask db migrate` funcione correctamente en el futuro.
+    """
+    print("\n[3/4] Creando tablas desde modelos SQLAlchemy (db.create_all)…")
+    from app import create_app
+    from app.extensions import db
+
+    # Importar todos los modelos para que SQLAlchemy los registre en metadata
+    import app.models.auth          # noqa: F401
+    import app.models.vehicle       # noqa: F401
+    import app.models.session       # noqa: F401
+    import app.models.training      # noqa: F401
+
+    app = create_app()
+    with app.app_context():
+        db.create_all()
+    print("      Tablas creadas.")
+
+    head = _find_head_revision()
+    _stamp_version_direct(db_url, head)
+    print(f"      ✓ alembic_version = {head}")
 
 
 # ─── Paso 4-5: seeds ─────────────────────────────────────────────────────────
@@ -137,7 +205,7 @@ def main():
 
     drop_and_create(db_url)
     create_extensions(db_url)
-    run_migrations()
+    create_tables(db_url)
     run_setup_seed()
 
     if not args.no_demo:

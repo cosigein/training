@@ -18,6 +18,7 @@ from .sync import (
     check_and_autoclose,
     WebfleetSyncError,
 )
+from .vehicles import sync_vehicles_from_webfleet
 
 __all__ = [
     "sync_attempt_gps",
@@ -25,4 +26,5 @@ __all__ = [
     "get_attempt_data_status",
     "check_and_autoclose",
     "WebfleetSyncError",
+    "sync_vehicles_from_webfleet",
 ]

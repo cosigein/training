@@ -77,6 +77,7 @@ MOCK_USUARIOS = [
 # ─────────────────────────────────────────────────────────────────────────────
 
 @admin_bp.route("/dashboard", endpoint="dashboard", methods=["GET"])
+@require_role(["ADMIN", "SUPER_ADMIN"])
 def admin_dashboard():
     return render_template("admin/dashboard.html",
         current_user=MockUser(),
@@ -86,6 +87,7 @@ def admin_dashboard():
     )
 
 @admin_bp.route("/matriz", endpoint="matriz", methods=["GET"])
+@require_role(["ADMIN", "SUPER_ADMIN"])
 def admin_matriz():
     return render_template("admin/matriz.html",
         current_user=MockUser(),
@@ -94,6 +96,7 @@ def admin_matriz():
     )
 
 @admin_bp.route("/simulador", endpoint="simulador", methods=["GET"])
+@require_role(["ADMIN", "SUPER_ADMIN"])
 def admin_simulador():
     return render_template("admin/simulador.html",
         current_user=MockUser(),
@@ -103,6 +106,7 @@ def admin_simulador():
 
 @admin_bp.route("/cierre", endpoint="cierre", methods=["GET"])
 @admin_bp.route("/cierre/<string:conv_id>", endpoint="cierre_detail", methods=["GET"])
+@require_role(["ADMIN", "SUPER_ADMIN"])
 def admin_cierre(conv_id=None):
     return render_template("admin/cierre.html",
         current_user=MockUser(),
@@ -112,6 +116,7 @@ def admin_cierre(conv_id=None):
     )
 
 @admin_bp.route("/gdpr-panel", endpoint="gdpr", methods=["GET"])
+@require_role(["ADMIN", "SUPER_ADMIN"])
 def admin_gdpr():
     return render_template("admin/gdpr.html",
         current_user=MockUser(),
@@ -120,6 +125,7 @@ def admin_gdpr():
     )
 
 @admin_bp.route("/convocatorias-panel", endpoint="convocatorias", methods=["GET"])
+@require_role(["ADMIN", "SUPER_ADMIN"])
 def admin_convocatorias_ui():
     return render_template("admin/convocatorias.html",
         current_user=MockUser(),
@@ -128,6 +134,7 @@ def admin_convocatorias_ui():
     )
 
 @admin_bp.route("/usuarios-panel", endpoint="usuarios", methods=["GET"])
+@require_role(["ADMIN", "SUPER_ADMIN"])
 def admin_usuarios_ui():
     return render_template("admin/usuarios.html",
         current_user=MockUser(),

@@ -8,138 +8,113 @@
 {% block content %}
 
 {% if is_invalidated %}
-<div class="mgr-alert" style="background:#fee2e2; border:1px solid #fca5a5; color:#991b1b; padding:12px 16px; border-radius:8px; margin-bottom:16px; display:flex; align-items:center; gap:10px;">
-    <i class="ph ph-warning-octagon" style="font-size:20px;"></i>
-    <div>
-        <strong>Intento invalidado.</strong>
-        No cuenta para el ranking.
-        {% if invalidated_reason %}<br><small>Razón: {{ invalidated_reason }}</small>{% endif %}
+<div style="background:#fee2e2; border:1px solid #fca5a5; color:#991b1b; padding:10px 16px; border-radius:8px; margin-bottom:10px; display:flex; align-items:center; gap:10px;">
+    <i class="ph ph-warning-octagon" style="font-size:18px; flex-shrink:0;"></i>
+    <div style="font-size:13px;">
+        <strong>Intento invalidado.</strong> No cuenta para el ranking.
+        {% if invalidated_reason %} · <span>{{ invalidated_reason }}</span>{% endif %}
     </div>
 </div>
 {% endif %}
 
-<div class="mgr-back-bar">
+<!-- Compact header: back + breadcrumb + title + score en una sola línea -->
+<div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
     <a href="javascript:history.back()" class="mgr-btn-back">
         <i class="ph ph-arrow-left"></i> Volver
     </a>
     <a href="{{ url_for('manager.dashboard') }}" class="mgr-btn-back">
-        <i class="ph ph-house"></i> Inicio
+        <i class="ph ph-house"></i>
     </a>
-    <span class="mgr-breadcrumb">
+    <span class="mgr-breadcrumb" style="flex:1; min-width:0;">
         <span>Inicio</span>
         <span class="mgr-breadcrumb__sep">›</span>
         <span>{{ candidato.nombre.split()[0] }}</span>
         <span class="mgr-breadcrumb__sep">›</span>
-        <span>Detalle de recorrido</span>
+        <span style="font-weight:600; color:#1e293b;">{{ ruta.label if ruta else attempt_id }}</span>
     </span>
-</div>
-
-<div class="mgr-page-header">
-    <div>
-        <h1 class="mgr-page-title">
-            {{ candidato.nombre }}
-            <span style="font-weight:400; color:#64748b">·</span>
-            {{ ruta.label if ruta else attempt_id }}
-        </h1>
-        <p class="mgr-page-subtitle">
-            Intento {{ attempt_id }} · Versión criteria: <strong>v2.1</strong>
-        </p>
+    <div style="text-align:right; flex-shrink:0;">
+        <div style="font-size:13px; font-weight:700; color:#0f172a;">{{ candidato.nombre }}</div>
+        <div style="font-size:11px; color:#94a3b8;">Intento {{ attempt_id }} · v2.1</div>
     </div>
     {% if can_score %}
-    <span class="mgr-score-hero" style="background:#fef3c7; color:#92400e;">
-        EN CURSO
-    </span>
+    <span class="mgr-score-hero" style="background:#fef3c7; color:#92400e; font-size:16px; padding:4px 12px;">EN CURSO</span>
     {% else %}
-    <span class="mgr-score-hero
-        {% if nota_info.nota >= 5 %}mgr-score-hero--pass{% else %}mgr-score-hero--fail{% endif %}">
+    <span class="mgr-score-hero {% if nota_info.nota >= 5 %}mgr-score-hero--pass{% else %}mgr-score-hero--fail{% endif %}" style="font-size:20px; padding:4px 14px;">
         {{ "%.1f"|format(nota_info.nota) }}
     </span>
     {% endif %}
 </div>
 
-<!-- Layout dividido: Mapa Izquierda | Otros Derecha -->
-<div class="mgr-detail-grid">
+<!-- MAP HERO: recuadro con márgenes, altura de pantalla, scroll habilitado -->
+<div class="mgr-card mgr-card--map" style="margin-bottom:20px; overflow:hidden;">
+    <div class="mgr-card__header">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <i class="ph ph-map-pin-line" style="color:#3b82f6;"></i>
+            <h3 style="margin:0; font-size:14px;">Recorrido GPS</h3>
+        </div>
+        <div class="mgr-tag mgr-tag--blue">GPS ACTIVO</div>
+    </div>
+    <div class="mgr-map-container" id="mgr-map" style="height: calc(100vh - 180px); min-height: 420px;">
+        <div class="mgr-map-placeholder" id="mgr-map-placeholder">
+            <i class="ph ph-compass ph-spin"></i>
+            <span id="mgr-map-msg">Cargando recorrido…</span>
+        </div>
+    </div>
+</div>
 
-    <!-- COLUMNA IZQUIERDA: MAPA -->
-    <div class="mgr-left-col">
-        <div class="mgr-card mgr-card--map" style="height: 100%;">
-            <div class="mgr-card__header">
-                <div style="display:flex; align-items:center; gap:8px">
-                    <i class="ph ph-map-pin-line" style="color: #3b82f6;"></i>
-                    <h3 style="margin:0; font-size:15px">Recorrido GPS</h3>
-                </div>
-                <div class="mgr-tag mgr-tag--blue">GPS ACTIVO</div>
-            </div>
-            <div class="mgr-map-container" id="mgr-map" style="height: 600px;">
-                <div class="mgr-map-placeholder" id="mgr-map-placeholder">
-                    <i class="ph ph-compass ph-spin"></i>
-                    <span id="mgr-map-msg">Cargando recorrido…</span>
-                </div>
+<!-- DETALLES (scroll hacia abajo) -->
+<div style="margin-top:24px; padding-bottom:32px;">
+
+    {% if can_score %}
+    <!-- Intento abierto: formulario de carga -->
+    <div class="mgr-card" style="max-width:560px;">
+        <div class="mgr-card__header">
+            <h3><i class="ph ph-upload-simple"></i> Cargar datos del sensor</h3>
+        </div>
+        <div style="padding:8px 4px 4px;">
+            <p style="color:#475569; font-size:13px; margin:0 0 12px;">
+                Sube el <code>.txt</code> de <strong>estabilidad</strong> del Doback Elite.
+                GPS y rotativo se importarán desde Webfleet automáticamente.
+            </p>
+            <form method="POST"
+                  action="{{ url_for('manager.upload_sensor_data', attempt_id=attempt_id) }}"
+                  enctype="multipart/form-data"
+                  style="display:flex; flex-direction:column; gap:10px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label style="display:flex; flex-direction:column; gap:4px;">
+                    <span style="font-size:12px; font-weight:600; color:#334155;">
+                        <i class="ph ph-activity"></i> Archivo ESTABILIDAD <span style="color:#dc2626">*</span>
+                    </span>
+                    <input type="file" name="stability_file" accept=".txt" required
+                           style="padding:8px; border:1px dashed #cbd5e1; border-radius:8px; background:#f8fafc; font-size:13px;">
+                </label>
+                <button type="submit" class="mgr-action-btn mgr-action-btn--primary">
+                    <i class="ph ph-upload"></i> Subir y elegir sesión
+                </button>
+            </form>
+            <div style="margin-top:12px; padding-top:10px; border-top:1px solid #e2e8f0;">
+                <form method="POST"
+                      action="{{ url_for('manager.score_attempt', attempt_id=attempt_id) }}"
+                      onsubmit="return confirm('¿Recalcular score con las mediciones existentes? El intento quedará cerrado.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="mgr-action-btn mgr-action-btn--secondary">
+                        <i class="ph ph-arrows-clockwise"></i> Solo recalcular score
+                    </button>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- COLUMNA DERECHA: depende del estado del intento -->
-    <div class="mgr-right-col" style="display: flex; flex-direction: column; gap: 16px;">
+    {% else %}
+    <!-- Intento cerrado: grid compacto 3 columnas -->
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; align-items:start;">
 
-        {% if can_score %}
-        <!-- Intento ABIERTO: subir los 3 archivos del Doback Elite -->
-        <div class="mgr-card">
-            <div class="mgr-card__header">
-                <h3><i class="ph ph-upload-simple"></i> Cargar datos del sensor</h3>
-            </div>
-            <div style="padding:8px 4px 4px;">
-                <p style="color:#475569; font-size:14px; margin:0 0 14px;">
-                    Sube el archivo <code>.txt</code> de <strong>estabilidad</strong> generado por
-                    el Doback Elite. En el siguiente paso elegirás a qué <strong>sesión</strong> corresponde este intento.
-                </p>
-                <p style="color:#94a3b8; font-size:12px; margin:0 0 14px;">
-                    Los datos de GPS y rotativo se obtendrán automáticamente desde Webfleet
-                    cuando la integración esté disponible.
-                </p>
-
-                <form method="POST"
-                      action="{{ url_for('manager.upload_sensor_data', attempt_id=attempt_id) }}"
-                      enctype="multipart/form-data"
-                      style="display:flex; flex-direction:column; gap:12px;">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                    <label style="display:flex; flex-direction:column; gap:4px;">
-                        <span style="font-size:13px; font-weight:600; color:#334155;">
-                            <i class="ph ph-activity"></i> Archivo de ESTABILIDAD <span style="color:#dc2626">*</span>
-                        </span>
-                        <input type="file" name="stability_file" accept=".txt" required
-                               style="padding:10px; border:1px dashed #cbd5e1; border-radius:8px; background:#f8fafc;">
-                    </label>
-
-                    <button type="submit" class="mgr-action-btn mgr-action-btn--primary">
-                        <i class="ph ph-upload"></i> Subir y elegir sesión
-                    </button>
-                </form>
-
-                <div style="margin-top:18px; padding-top:14px; border-top:1px solid #e2e8f0;">
-                    <p style="color:#64748b; font-size:13px; margin:0 0 10px;">
-                        Si las mediciones ya se cargaron y solo quieres volver a correr la detección y el scoring:
-                    </p>
-                    <form method="POST"
-                          action="{{ url_for('manager.score_attempt', attempt_id=attempt_id) }}"
-                          onsubmit="return confirm('¿Recalcular score con las mediciones existentes? El intento quedará cerrado.');">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="mgr-action-btn mgr-action-btn--secondary">
-                            <i class="ph ph-arrows-clockwise"></i> Solo recalcular score
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        {% else %}
-        <!-- Intento CERRADO: Score Breakdown -->
+        <!-- Desglose de puntuación -->
         <div class="mgr-card">
             <div class="mgr-card__header">
                 <div style="display:flex; align-items:center; gap:8px">
-                    <i class="ph ph-chart-bar" style="color: #10b981;"></i>
-                    <h3 style="margin:0; font-size:15px">Desglose de puntuación</h3>
+                    <i class="ph ph-chart-bar" style="color:#10b981;"></i>
+                    <h3 style="margin:0; font-size:14px;">Desglose de puntuación</h3>
                 </div>
                 <div class="mgr-tag {% if nota_info.nota >= 5 %}mgr-tag--green{% else %}mgr-tag--red{% endif %}">
                     {{ "APTO" if nota_info.nota >= 5 else "NO APTO" }}
@@ -152,8 +127,7 @@
                     <div class="mgr-breakdown-bar-wrap">
                         <div class="mgr-breakdown-bar"
                              data-anim-width="{{ (item.obtenido / item.maximo * 100)|int }}%"
-                             style="width:0">
-                        </div>
+                             style="width:0"></div>
                     </div>
                     <span class="mgr-breakdown-row__valor">
                         <strong>{{ item.obtenido }}</strong> <span style="color:#94a3b8">/ {{ item.maximo }}</span>
@@ -163,25 +137,24 @@
                 <div class="mgr-breakdown-total">
                     <div style="display:flex; flex-direction:column">
                         <span style="font-size:11px; color:#64748b; font-weight:600">PUNTUACIÓN FINAL</span>
-                        <span style="font-size:12px; color:#94a3b8">v2.1 criteria</span>
+                        <span style="font-size:11px; color:#94a3b8">v2.1 criteria</span>
                     </div>
-                    <span class="mgr-score-hero {% if nota_info.nota >= 5 %}mgr-score-hero--pass{% else %}mgr-score-hero--fail{% endif %}" style="font-size: 32px; padding: 0 16px;">
+                    <span class="mgr-score-hero {% if nota_info.nota >= 5 %}mgr-score-hero--pass{% else %}mgr-score-hero--fail{% endif %}" style="font-size:28px; padding:0 12px;">
                         {{ "%.1f"|format(nota_info.nota) }}
                     </span>
                 </div>
             </div>
         </div>
 
-        <!-- Timeline de Eventos -->
+        <!-- Timeline de eventos -->
         <div class="mgr-card">
             <div class="mgr-card__header">
                 <div style="display:flex; align-items:center; gap:8px">
-                    <i class="ph ph-list-numbers" style="color: #f59e0b;"></i>
-                    <h3 style="margin:0; font-size:15px">Línea de tiempo de eventos</h3>
+                    <i class="ph ph-list-numbers" style="color:#f59e0b;"></i>
+                    <h3 style="margin:0; font-size:14px;">Línea de tiempo</h3>
                 </div>
-                <span style="font-size:12px; color:#64748b">{{ eventos|length }} eventos registrados</span>
+                <span style="font-size:12px; color:#64748b;">{{ eventos|length }} eventos</span>
             </div>
-
             <div class="mgr-timeline">
                 {% for ev in eventos %}
                 <div class="mgr-timeline-item" data-sev="{{ ev.severidad }}">
@@ -190,164 +163,115 @@
                     <div class="mgr-timeline-content">
                         <div class="mgr-timeline-header">
                             <span class="mgr-timeline-title">{{ ev.descripcion }}</span>
-                            <span class="mgr-tag mgr-tag--compact" style="background: rgba(0,0,0,0.05);">{{ ev.source }}</span>
+                            <span class="mgr-tag mgr-tag--compact" style="background:rgba(0,0,0,0.05);">{{ ev.source }}</span>
                         </div>
                         {% if ev.severidad > 0.6 %}
                         <div class="mgr-timeline-alert">
                             <i class="ph ph-warning-circle"></i>
-                            Severidad detectada: {{ (ev.severidad * 100)|int }}%
+                            Severidad: {{ (ev.severidad * 100)|int }}%
                         </div>
                         {% endif %}
                     </div>
                 </div>
                 {% endfor %}
-
                 {% if not eventos %}
                 <div class="mgr-empty-timeline">
-                    <i class="ph ph-check-circle" style="color: #10b981;"></i>
-                    <p>No se registraron anomalías durante el recorrido.</p>
+                    <i class="ph ph-check-circle" style="color:#10b981;"></i>
+                    <p>Sin anomalías registradas.</p>
                 </div>
                 {% endif %}
             </div>
         </div>
 
-        <!-- Información adicional -->
-        <div class="mgr-card">
-            <div class="mgr-card__header">
-                <div style="display:flex; align-items:center; gap:8px">
-                    <i class="ph ph-info" style="color: #6366f1;"></i>
-                    <h3 style="margin:0; font-size:15px">Información adicional</h3>
-                </div>
-            </div>
+        <!-- Fila inferior: Info + Estado datos + Acciones -->
+        <div class="mgr-card" style="grid-column: 1 / -1;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:24px; padding:16px;">
 
-            <div class="mgr-info-list">
-                <div class="mgr-info-item">
-                    <span class="mgr-info-label">Calidad de datos</span>
-                    <span class="mgr-tag {% if nota_info.data_quality == 'HIGH' %}mgr-tag--green{% else %}mgr-tag--yellow{% endif %}">
-                        {{ nota_info.data_quality }}
-                    </span>
-                </div>
-                <div class="mgr-info-item">
-                    <span class="mgr-info-label">ID de Intento</span>
-                    <code style="font-size:11px; background:#f1f5f9; padding:2px 6px; border-radius:4px">{{ attempt_id }}</code>
-                </div>
-                <div class="mgr-info-item">
-                    <span class="mgr-info-label">Sincronizado</span>
-                    <span style="font-size:13px; color:#1e293b"><i class="ph ph-cloud-check" style="color:#10b981"></i> Sí</span>
-                </div>
-            </div>
-
-
-            <!-- Estado de datos del intento -->
-            <div style="margin: 16px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
-                <h4 style="margin:0 0 10px; font-size:13px; color:#334155;">
-                    <i class="ph ph-database"></i> Estado de datos
-                </h4>
-                <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
-
-                    <!-- Estabilidad -->
-                    <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:6px; background:{% if data_status.has_stability %}#f0fdf4{% else %}#fef2f2{% endif %}; border:1px solid {% if data_status.has_stability %}#86efac{% else %}#fecaca{% endif %};">
-                        <span style="font-size:13px; font-weight:600; color:#334155;">
-                            <i class="ph ph-activity" style="color:{% if data_status.has_stability %}#16a34a{% else %}#dc2626{% endif %};"></i>
-                            Estabilidad (Doback)
-                        </span>
-                        {% if data_status.has_stability %}
-                        <span style="font-size:12px; color:#16a34a; font-weight:700;"><i class="ph ph-check-circle"></i> Listo</span>
-                        {% else %}
-                        <span style="font-size:12px; color:#dc2626; font-weight:700;"><i class="ph ph-x-circle"></i> Pendiente</span>
-                        {% endif %}
+                <!-- Info básica -->
+                <div>
+                    <h4 style="margin:0 0 10px; font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.5px;">Información</h4>
+                    <div class="mgr-info-list">
+                        <div class="mgr-info-item">
+                            <span class="mgr-info-label">Calidad de datos</span>
+                            <span class="mgr-tag {% if nota_info.data_quality == 'HIGH' %}mgr-tag--green{% else %}mgr-tag--yellow{% endif %}">{{ nota_info.data_quality }}</span>
+                        </div>
+                        <div class="mgr-info-item">
+                            <span class="mgr-info-label">ID Intento</span>
+                            <code style="font-size:10px; background:#f1f5f9; padding:2px 6px; border-radius:4px;">{{ attempt_id }}</code>
+                        </div>
+                        <div class="mgr-info-item">
+                            <span class="mgr-info-label">Sincronizado</span>
+                            <span style="font-size:13px;"><i class="ph ph-cloud-check" style="color:#10b981;"></i> Sí</span>
+                        </div>
                     </div>
-
-                    <!-- GPS Webfleet -->
-                    <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:6px; background:{% if data_status.has_gps %}#f0fdf4{% else %}#fef2f2{% endif %}; border:1px solid {% if data_status.has_gps %}#86efac{% else %}#fecaca{% endif %};">
-                        <span style="font-size:13px; font-weight:600; color:#334155;">
-                            <i class="ph ph-map-pin" style="color:{% if data_status.has_gps %}#16a34a{% else %}#dc2626{% endif %};"></i>
-                            GPS (Webfleet)
-                        </span>
-                        {% if data_status.has_gps %}
-                        <span style="font-size:12px; color:#16a34a; font-weight:700;"><i class="ph ph-check-circle"></i> Listo</span>
-                        {% else %}
-                        <span style="font-size:12px; color:#dc2626; font-weight:700;"><i class="ph ph-x-circle"></i> Pendiente</span>
-                        {% endif %}
-                    </div>
-
-                    <!-- Rotativo Webfleet -->
-                    <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:6px; background:{% if data_status.has_rotativo %}#f0fdf4{% else %}#fef2f2{% endif %}; border:1px solid {% if data_status.has_rotativo %}#86efac{% else %}#fecaca{% endif %};">
-                        <span style="font-size:13px; font-weight:600; color:#334155;">
-                            <i class="ph ph-lightbulb" style="color:{% if data_status.has_rotativo %}#16a34a{% else %}#dc2626{% endif %};"></i>
-                            Rotativo (Webfleet)
-                        </span>
-                        {% if data_status.has_rotativo %}
-                        <span style="font-size:12px; color:#16a34a; font-weight:700;"><i class="ph ph-check-circle"></i> Listo</span>
-                        {% else %}
-                        <span style="font-size:12px; color:#dc2626; font-weight:700;"><i class="ph ph-x-circle"></i> Pendiente</span>
-                        {% endif %}
-                    </div>
-
                 </div>
 
-                {% if not data_status.is_complete and not data_status.has_gps %}
-                <p style="color:#64748b; font-size:11px; margin:0 0 10px;">
-                    El worker sincroniza automáticamente cada 10 minutos.
-                    También puedes importar manualmente:
-                </p>
-                {% endif %}
-
-                <!-- Botones de sync manual -->
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    {% if not data_status.has_gps or webfleet_synced_at %}
-                    <form method="POST" action="{{ url_for('manager.import_webfleet', attempt_id=attempt_id) }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit"
-                                style="width:100%; padding:8px; border:1px solid #bfdbfe; background:#eff6ff; color:#1d4ed8; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">
-                            <i class="ph ph-cloud-arrow-down"></i>
-                            {% if data_status.has_gps %}Re-sincronizar GPS{% else %}Importar GPS desde Webfleet{% endif %}
-                            {% if webfleet_sync_source == 'mock' %}<span style="font-size:10px; opacity:.7;">(demo)</span>{% endif %}
-                        </button>
-                    </form>
-                    {% endif %}
-
-                    {% if not data_status.has_rotativo or data_status.has_gps %}
-                    <form method="POST" action="{{ url_for('manager.import_webfleet_rotativo', attempt_id=attempt_id) }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit"
-                                style="width:100%; padding:8px; border:1px solid #d8b4fe; background:#faf5ff; color:#7c3aed; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">
-                            <i class="ph ph-lightbulb"></i>
-                            {% if data_status.has_rotativo %}Re-sincronizar Rotativo{% else %}Importar Rotativo desde Webfleet{% endif %}
-                        </button>
-                    </form>
+                <!-- Estado de datos -->
+                <div>
+                    <h4 style="margin:0 0 10px; font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.5px;">Estado de datos</h4>
+                    <div style="display:flex; flex-direction:column; gap:5px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; padding:5px 10px; border-radius:6px; background:{% if data_status.has_stability %}#f0fdf4{% else %}#fef2f2{% endif %}; border:1px solid {% if data_status.has_stability %}#86efac{% else %}#fecaca{% endif %};">
+                            <span style="font-size:12px; font-weight:600; color:#334155;"><i class="ph ph-activity" style="color:{% if data_status.has_stability %}#16a34a{% else %}#dc2626{% endif %};"></i> Estabilidad</span>
+                            {% if data_status.has_stability %}<span style="font-size:11px; color:#16a34a; font-weight:700;">✓ Listo</span>{% else %}<span style="font-size:11px; color:#dc2626; font-weight:700;">✗ Pendiente</span>{% endif %}
+                        </div>
+                        <div style="display:flex; align-items:center; justify-content:space-between; padding:5px 10px; border-radius:6px; background:{% if data_status.has_gps %}#f0fdf4{% else %}#fef2f2{% endif %}; border:1px solid {% if data_status.has_gps %}#86efac{% else %}#fecaca{% endif %};">
+                            <span style="font-size:12px; font-weight:600; color:#334155;"><i class="ph ph-map-pin" style="color:{% if data_status.has_gps %}#16a34a{% else %}#dc2626{% endif %};"></i> GPS Webfleet</span>
+                            {% if data_status.has_gps %}<span style="font-size:11px; color:#16a34a; font-weight:700;">✓ Listo</span>{% else %}<span style="font-size:11px; color:#dc2626; font-weight:700;">✗ Pendiente</span>{% endif %}
+                        </div>
+                        <div style="display:flex; align-items:center; justify-content:space-between; padding:5px 10px; border-radius:6px; background:{% if data_status.has_rotativo %}#f0fdf4{% else %}#fef2f2{% endif %}; border:1px solid {% if data_status.has_rotativo %}#86efac{% else %}#fecaca{% endif %};">
+                            <span style="font-size:12px; font-weight:600; color:#334155;"><i class="ph ph-lightbulb" style="color:{% if data_status.has_rotativo %}#16a34a{% else %}#dc2626{% endif %};"></i> Rotativo</span>
+                            {% if data_status.has_rotativo %}<span style="font-size:11px; color:#16a34a; font-weight:700;">✓ Listo</span>{% else %}<span style="font-size:11px; color:#dc2626; font-weight:700;">✗ Pendiente</span>{% endif %}
+                        </div>
+                    </div>
+                    {% if webfleet_synced_at %}
+                    <p style="color:#94a3b8; font-size:10px; margin:6px 0 0;">
+                        Último sync: {{ webfleet_synced_at.strftime('%d/%m/%Y %H:%M') }}{% if webfleet_sync_source == 'mock' %} (demo){% endif %}
+                    </p>
                     {% endif %}
                 </div>
 
-                {% if webfleet_synced_at %}
-                <p style="color:#94a3b8; font-size:11px; margin:10px 0 0;">
-                    Último sync GPS: {{ webfleet_synced_at.strftime('%d/%m/%Y %H:%M') }}
-                    {% if webfleet_sync_source == 'mock' %}<span style="color:#92400e;">(modo demo)</span>{% endif %}
-                </p>
-                {% endif %}
-            </div>
+                <!-- Acciones -->
+                <div>
+                    <h4 style="margin:0 0 10px; font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.5px;">Acciones</h4>
+                    <div style="display:flex; flex-direction:column; gap:7px;">
+                        {% if not data_status.has_gps or webfleet_synced_at %}
+                        <form method="POST" action="{{ url_for('manager.import_webfleet', attempt_id=attempt_id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" style="width:100%; padding:7px 10px; border:1px solid #bfdbfe; background:#eff6ff; color:#1d4ed8; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">
+                                <i class="ph ph-cloud-arrow-down"></i>
+                                {% if data_status.has_gps %}Re-sync GPS{% else %}Importar GPS{% endif %}
+                                {% if webfleet_sync_source == 'mock' %}<span style="opacity:.6;">(demo)</span>{% endif %}
+                            </button>
+                        </form>
+                        {% endif %}
+                        {% if not data_status.has_rotativo or data_status.has_gps %}
+                        <form method="POST" action="{{ url_for('manager.import_webfleet_rotativo', attempt_id=attempt_id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" style="width:100%; padding:7px 10px; border:1px solid #d8b4fe; background:#faf5ff; color:#7c3aed; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">
+                                <i class="ph ph-lightbulb"></i>
+                                {% if data_status.has_rotativo %}Re-sync Rotativo{% else %}Importar Rotativo{% endif %}
+                            </button>
+                        </form>
+                        {% endif %}
+                        {% if not is_invalidated %}
+                        <form method="POST"
+                              action="{{ url_for('manager.invalidar_intento', attempt_id=attempt_id) }}"
+                              onsubmit="var r = prompt('Razón de invalidación (obligatoria):'); if (!r || !r.trim()) { return false; } this.querySelector('input[name=reason]').value = r; return confirm('¿Invalidar este intento? No se podrá deshacer.');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="reason" value="">
+                            <button type="submit" style="width:100%; padding:7px 10px; border:1px solid #fecaca; background:#fff; color:#dc2626; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">
+                                <i class="ph ph-x-circle"></i> Invalidar intento
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
 
-            {% if not is_invalidated %}
-            <div style="margin: 16px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
-                <p style="color:#64748b; font-size:12px; margin:0 0 8px;">
-                    ¿El intento se cargó con datos erróneos? Puedes invalidarlo — quedará registrado pero no contará para el ranking.
-                </p>
-                <form method="POST"
-                      action="{{ url_for('manager.invalidar_intento', attempt_id=attempt_id) }}"
-                      onsubmit="var r = prompt('Razón de invalidación (obligatoria):'); if (!r || !r.trim()) { return false; } this.querySelector('input[name=reason]').value = r; return confirm('¿Invalidar este intento? No se podrá deshacer.');">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="reason" value="">
-                    <button type="submit"
-                            style="width:100%; padding:8px; border:1px solid #fecaca; background:#fff; color:#dc2626; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">
-                        <i class="ph ph-x-circle"></i> Invalidar intento
-                    </button>
-                </form>
             </div>
-            {% endif %}
         </div>
-        {% endif %}
 
     </div>
+    {% endif %}
 
 </div>
 

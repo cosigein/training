@@ -10,5 +10,6 @@ from .training import (
     Ranking, RankingStatus,
     TrainingAuditLog, AuditAction,
     RfidCard, Route,
-    GdprDataExport, GdprForgetRequest
+    GdprDataExport, GdprForgetRequest,
+    AuditRequest, AuditStatus,
 )

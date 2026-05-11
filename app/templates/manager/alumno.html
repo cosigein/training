@@ -11,48 +11,70 @@
         <i class="ph ph-house" style="font-size: 14px;"></i> Inicio
     </a>
     <span class="mgr-breadcrumb" style="font-size: 11px; gap: 6px;">
-        <span>Inicio</span>
+        <span>Candidatos</span>
         <span class="mgr-breadcrumb__sep" style="font-size: 12px;">›</span>
         <span>Perfil Aspirante</span>
     </span>
 </div>
 
-<div class="mgr-page-header" style="margin-bottom: 12px;">
-    <div>
-        <h1 class="mgr-page-title" style="font-size: 18px;">Perfil de Aspirante</h1>
-        <p class="mgr-page-subtitle" style="font-size: 12px;">
-            {% if convocatoria %}Convocatoria {{ convocatoria.nombre }}{% else %}Sin convocatoria activa{% endif %}
-        </p>
-    </div>
-    {% if convocatoria %}
-    <span class="mgr-estado-badge {% if nota_media >= 5 %}mgr-estado-badge--final{% else %}mgr-estado-badge--provisional{% endif %}" style="padding: 4px 10px; font-size: 11px;">
-        {% if nota_media >= 5 %}<i class="ph ph-check-circle"></i> APTO{% else %}<i class="ph ph-x-circle"></i> NO APTO{% endif %}
-    </span>
-    {% endif %}
-</div>
+<!-- Hero del perfil -->
+{% set parts = candidato.nombre.split() %}
+{% set initials = (parts[0][0] ~ parts[-1][0]) | upper if parts|length > 1 else parts[0][0]|upper %}
+<div style="background:white; border:1px solid #e2e8f0; border-radius:16px; overflow:hidden; margin-bottom:20px; box-shadow:0 1px 4px rgba(0,0,0,.05);">
+    <div style="height:5px; background:linear-gradient(90deg,#0d47a1,#1976d2,#42a5f5);"></div>
+    <div style="padding:24px; display:flex; align-items:center; gap:24px; flex-wrap:wrap;">
 
-<div class="mgr-card mgr-card--compact mgr-mb-12">
-    <div class="mgr-grid-4">
-        <div>
-            <span class="mgr-label" style="font-size: 10px;">Nombre completo</span>
-            <div class="mgr-text-bold" style="font-size: 14px;">{{ candidato.nombre }}</div>
+        <!-- Avatar -->
+        <div style="width:72px; height:72px; border-radius:50%; background:linear-gradient(135deg,#eff6ff,#dbeafe); color:#1d4ed8; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:24px; flex-shrink:0; border:3px solid #bfdbfe;">
+            {{ initials }}
         </div>
-        <div>
-            <span class="mgr-label" style="font-size: 10px;">Número de Plaza</span>
-            <div class="mgr-text-bold" style="font-size: 14px;">#{{ candidato.plaza }}</div>
-        </div>
-        <div>
-            <span class="mgr-label" style="font-size: 10px;">Categoría</span>
-            <div style="margin-top: 2px;">
-                <span class="mgr-badge-cat" style="font-size: 9px; padding: 0 4px;">{{ candidato.categoria }}</span>
+
+        <!-- Nombre + tags -->
+        <div style="flex:1; min-width:200px;">
+            <h2 style="margin:0 0 6px; font-size:20px; font-weight:800; color:#0f172a;">{{ candidato.nombre }}</h2>
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                {% if candidato.email %}<span style="font-size:12px; color:#94a3b8; font-family:monospace;">{{ candidato.email }}</span>{% endif %}
+                <span class="mgr-tag mgr-tag--blue">Plaza #{{ candidato.plaza }}</span>
+                {% if candidato.categoria and candidato.categoria != '—' %}
+                <span class="mgr-badge-cat" style="font-size:10px;">{{ candidato.categoria }}</span>
+                {% endif %}
+                {% if convocatoria %}
+                <span style="font-size:12px; color:#64748b; display:flex; align-items:center; gap:4px;">
+                    <i class="ph ph-clipboard-text"></i> {{ convocatoria.nombre }}
+                </span>
+                {% else %}
+                <span style="font-size:12px; color:#f59e0b; display:flex; align-items:center; gap:4px;">
+                    <i class="ph ph-warning-circle"></i> Sin convocatoria activa
+                </span>
+                {% endif %}
             </div>
         </div>
-        <div>
-            <span class="mgr-label" style="font-size: 10px;">Nota Media</span>
-            <div class="mgr-text-bold {% if nota_media >= 5 %}mgr-color-success{% else %}mgr-color-danger{% endif %}" style="font-size: 18px; line-height: 1;">
-                {{ "%.2f"|format(nota_media) }}
+
+        <!-- KPIs -->
+        <div style="display:flex; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; flex-shrink:0;">
+            <div style="padding:14px 22px; text-align:center; border-right:1px solid #e2e8f0;">
+                <div style="font-size:26px; font-weight:800; line-height:1; color:{% if nota_media >= 5 %}#16a34a{% else %}#dc2626{% endif %};">
+                    {{ "%.2f"|format(nota_media) }}
+                </div>
+                <div style="font-size:10px; color:#94a3b8; text-transform:uppercase; letter-spacing:.5px; margin-top:4px;">Nota media</div>
+            </div>
+            <div style="padding:14px 22px; text-align:center; border-right:1px solid #e2e8f0;">
+                <div style="font-size:26px; font-weight:800; line-height:1; color:#0d47a1;">{{ candidato.rutas_completadas }}</div>
+                <div style="font-size:10px; color:#94a3b8; text-transform:uppercase; letter-spacing:.5px; margin-top:4px;">Completadas</div>
+            </div>
+            <div style="padding:14px 22px; text-align:center;">
+                <div style="font-size:26px; font-weight:800; line-height:1; color:#334155;">{{ candidato.rutas_total }}</div>
+                <div style="font-size:10px; color:#94a3b8; text-transform:uppercase; letter-spacing:.5px; margin-top:4px;">Total rutas</div>
             </div>
         </div>
+
+        <!-- Badge APTO / NO APTO -->
+        {% if convocatoria %}
+        <span class="mgr-estado-badge {% if nota_media >= 5 %}mgr-estado-badge--final{% else %}mgr-estado-badge--provisional{% endif %}" style="flex-shrink:0; font-size:12px;">
+            {% if nota_media >= 5 %}<i class="ph ph-check-circle"></i> APTO{% else %}<i class="ph ph-x-circle"></i> NO APTO{% endif %}
+        </span>
+        {% endif %}
+
     </div>
 </div>
 
@@ -114,79 +136,110 @@
 </div>
 
 <!-- Acciones del manager: ocultas por defecto -->
-<div id="panelAcciones" class="mgr-card mgr-mb-20" style="display: none; margin-top: 20px; border-color: var(--color-primary-200); background: #f8fafc;">
-    <div class="mgr-card__header" style="background: rgba(13, 71, 161, 0.05);">
-        <h3 style="color: var(--color-primary-700);"><i class="ph ph-lightning"></i> Acciones de gestión</h3>
-    </div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; padding:16px;">
+<div id="panelAcciones" style="display:none; margin-top:20px;">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
 
-        <!-- Inscribir en convocatoria -->
-        <div>
-            <h4 style="margin:0 0 12px; font-size:13px; font-weight:700; color:#475569; text-transform: uppercase; letter-spacing: 0.5px;">
-                <i class="ph ph-clipboard-text"></i> Inscribir en convocatoria
-            </h4>
-            {% if convocatorias_disponibles %}
-            <form method="POST"
-                  action="{{ url_for('manager.inscribir_alumno', student_id=candidato.id) }}"
-                  style="display:flex; flex-direction:column; gap:10px;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <select name="conv_id" required
-                        style="padding:10px; border:1px solid #cbd5e1; border-radius:8px; background: white;">
-                    <option value="">— elegir convocatoria —</option>
-                    {% for c in convocatorias_disponibles %}
-                    <option value="{{ c.id }}">{{ c.name }}</option>
-                    {% endfor %}
-                </select>
-                <small style="color:#64748b; font-size:12px; margin-bottom: 4px;">
-                    La ruta se elige al abrir cada intento.
-                </small>
-                <button type="submit" class="mgr-action-btn mgr-action-btn--secondary" style="width: fit-content;">
-                    <i class="ph ph-check"></i> Confirmar Inscripción
-                </button>
-            </form>
-            {% else %}
-            <p style="color:#64748b; font-size:13px;">
-                No hay convocatorias OPEN disponibles.
-                <a href="{{ url_for('manager.convocatoria_nueva') }}">Crear una</a>.
-            </p>
-            {% endif %}
+        <!-- ── Tarjeta: Inscribir en Convocatoria ── -->
+        <div style="background:white; border-radius:14px; border:1px solid #e2e8f0; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.05);">
+            <!-- Acento superior -->
+            <div style="height:4px; background:linear-gradient(90deg,#6366f1,#818cf8);"></div>
+            <div style="padding:20px;">
+                <!-- Ícono + título -->
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+                    <div style="width:40px; height:40px; border-radius:10px; background:#eef2ff; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <i class="ph ph-clipboard-text" style="font-size:20px; color:#6366f1;"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:14px; font-weight:700; color:#1e293b;">Inscribir en convocatoria</div>
+                        <div style="font-size:11px; color:#94a3b8; margin-top:1px;">La ruta se asigna al abrir cada intento</div>
+                    </div>
+                </div>
+
+                {% if convocatorias_disponibles %}
+                <form method="POST"
+                      action="{{ url_for('manager.inscribir_alumno', student_id=candidato.id) }}"
+                      style="display:flex; flex-direction:column; gap:10px;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div style="position:relative;">
+                        <select name="conv_id" required
+                                style="width:100%; padding:10px 36px 10px 12px; border:1.5px solid #e2e8f0; border-radius:8px; background:white; font-size:13px; color:#334155; appearance:none; cursor:pointer; outline:none;">
+                            <option value="">Seleccionar convocatoria…</option>
+                            {% for c in convocatorias_disponibles %}
+                            <option value="{{ c.id }}">{{ c.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <i class="ph ph-caret-down" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); color:#94a3b8; pointer-events:none; font-size:14px;"></i>
+                    </div>
+                    <button type="submit"
+                            style="display:flex; align-items:center; justify-content:center; gap:7px; padding:10px 16px; background:#6366f1; color:white; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:background .15s;"
+                            onmouseover="this.style.background='#4f46e5'" onmouseout="this.style.background='#6366f1'">
+                        <i class="ph ph-check-circle" style="font-size:16px;"></i> Confirmar inscripción
+                    </button>
+                </form>
+                {% else %}
+                <div style="padding:14px; background:#f8fafc; border-radius:8px; border:1px dashed #cbd5e1; text-align:center;">
+                    <i class="ph ph-info" style="font-size:20px; color:#94a3b8; display:block; margin-bottom:6px;"></i>
+                    <span style="font-size:12px; color:#64748b;">Sin convocatorias OPEN disponibles. </span>
+                    <a href="{{ url_for('manager.convocatoria_nueva') }}" style="font-size:12px; color:#6366f1; font-weight:600;">Crear una →</a>
+                </div>
+                {% endif %}
+            </div>
         </div>
 
-        <!-- Abrir nuevo intento -->
-        <div>
-            <h4 style="margin:0 0 12px; font-size:13px; font-weight:700; color:#475569; text-transform: uppercase; letter-spacing: 0.5px;">
-                <i class="ph ph-flag"></i> Abrir nuevo intento
-            </h4>
-            {% if enrollments_activos %}
-            <form method="POST"
-                  action="{{ url_for('manager.abrir_intento', student_id=candidato.id) }}"
-                  style="display:flex; flex-direction:column; gap:10px;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <select name="enrollment_id" required
-                        style="padding:10px; border:1px solid #cbd5e1; border-radius:8px; background: white;">
-                    <option value="">— elegir inscripción —</option>
-                    {% for e in enrollments_activos %}
-                    <option value="{{ e.id }}">
-                        {{ e.convocatoria.name if e.convocatoria else e.convocatoriaId }}
-                    </option>
-                    {% endfor %}
-                </select>
-                <select name="route_id"
-                        style="padding:10px; border:1px solid #cbd5e1; border-radius:8px; background: white;">
-                    <option value="">— ruta principal de la convocatoria —</option>
-                    {% for r in rutas_disponibles %}
-                    <option value="{{ r.code }}">{{ r.code }} · {{ r.name }}</option>
-                    {% endfor %}
-                </select>
-                <button type="submit" class="mgr-action-btn mgr-action-btn--primary" style="width: fit-content;">
-                    <i class="ph ph-play"></i> Abrir intento y subir TXT
-                </button>
-            </form>
-            {% else %}
-            <p style="color:#64748b; font-size:13px;">
-                El alumno no tiene inscripciones activas. Inscríbelo primero.
-            </p>
-            {% endif %}
+        <!-- ── Tarjeta: Abrir Nuevo Intento ── -->
+        <div style="background:white; border-radius:14px; border:1px solid #e2e8f0; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.05);">
+            <!-- Acento superior -->
+            <div style="height:4px; background:linear-gradient(90deg,#0d47a1,#1976d2);"></div>
+            <div style="padding:20px;">
+                <!-- Ícono + título -->
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+                    <div style="width:40px; height:40px; border-radius:10px; background:#eff6ff; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <i class="ph ph-flag-checkered" style="font-size:20px; color:#1976d2;"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:14px; font-weight:700; color:#1e293b;">Abrir nuevo intento</div>
+                        <div style="font-size:11px; color:#94a3b8; margin-top:1px;">Selecciona inscripción y ruta a evaluar</div>
+                    </div>
+                </div>
+
+                {% if enrollments_activos %}
+                <form method="POST"
+                      action="{{ url_for('manager.abrir_intento', student_id=candidato.id) }}"
+                      style="display:flex; flex-direction:column; gap:10px;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div style="position:relative;">
+                        <select name="enrollment_id" required
+                                style="width:100%; padding:10px 36px 10px 12px; border:1.5px solid #e2e8f0; border-radius:8px; background:white; font-size:13px; color:#334155; appearance:none; cursor:pointer; outline:none;">
+                            <option value="">Seleccionar inscripción…</option>
+                            {% for e in enrollments_activos %}
+                            <option value="{{ e.id }}">{{ e.convocatoria.name if e.convocatoria else e.convocatoriaId }}</option>
+                            {% endfor %}
+                        </select>
+                        <i class="ph ph-caret-down" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); color:#94a3b8; pointer-events:none; font-size:14px;"></i>
+                    </div>
+                    <div style="position:relative;">
+                        <select name="route_id"
+                                style="width:100%; padding:10px 36px 10px 12px; border:1.5px solid #e2e8f0; border-radius:8px; background:white; font-size:13px; color:#334155; appearance:none; cursor:pointer; outline:none;">
+                            <option value="">Ruta principal de la convocatoria…</option>
+                            {% for r in rutas_disponibles %}
+                            <option value="{{ r.code }}">{{ r.code }} · {{ r.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <i class="ph ph-caret-down" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); color:#94a3b8; pointer-events:none; font-size:14px;"></i>
+                    </div>
+                    <button type="submit"
+                            style="display:flex; align-items:center; justify-content:center; gap:7px; padding:10px 16px; background:#0d47a1; color:white; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:background .15s;"
+                            onmouseover="this.style.background='#1565c0'" onmouseout="this.style.background='#0d47a1'">
+                        <i class="ph ph-play" style="font-size:16px;"></i> Abrir intento y subir TXT
+                    </button>
+                </form>
+                {% else %}
+                <div style="padding:14px; background:#f8fafc; border-radius:8px; border:1px dashed #cbd5e1; text-align:center;">
+                    <i class="ph ph-warning-circle" style="font-size:20px; color:#f59e0b; display:block; margin-bottom:6px;"></i>
+                    <span style="font-size:12px; color:#64748b;">Sin inscripciones activas. Inscribe al candidato primero.</span>
+                </div>
+                {% endif %}
+            </div>
         </div>
 
     </div>
