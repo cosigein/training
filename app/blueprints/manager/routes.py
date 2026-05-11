@@ -815,12 +815,19 @@ def vehiculos_sync():
     from app.services.webfleet import sync_vehicles_from_webfleet
     org_id = _get_org_id()
     result = sync_vehicles_from_webfleet(org_id)
-    flash(
-        f"Webfleet: {result['updated']} actualizados · "
-        f"{result['created']} nuevos · "
-        f"{result['disappeared']} desaparecidos.",
-        "success",
-    )
+    if result.get("errors"):
+        flash(
+            f"Error al conectar con Webfleet. "
+            f"Revisá los logs del servidor para más detalle.",
+            "danger",
+        )
+    else:
+        flash(
+            f"Webfleet: {result['updated']} actualizados · "
+            f"{result['created']} nuevos · "
+            f"{result['disappeared']} desaparecidos.",
+            "success",
+        )
     return redirect(url_for("manager.vehiculos_list"))
 
 
