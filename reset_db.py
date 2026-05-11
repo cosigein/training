@@ -3,9 +3,10 @@
 Pasos:
   1. DROP DATABASE + CREATE DATABASE (conexión a 'postgres')
   2. CREATE EXTENSION pgcrypto, postgis (necesarias para gen_random_uuid() y geofences)
-  3. flask db upgrade  (aplica todas las migraciones Alembic)
-  4. setup_db seed     (org CMadrid + usuarios base)
-  5. seed_demo seed    (vehículo, convocatorias, alumnos, attempts)
+  3. db.create_all()  (crea tablas directamente desde los modelos SQLAlchemy)
+  4. flask db stamp head  (marca alembic_version al head para que migraciones futuras funcionen)
+  5. setup_db seed     (org CMadrid + usuarios base)
+  6. seed_demo seed    (vehículo, convocatorias, alumnos, attempts)
 
 Uso:
     python reset_db.py
@@ -13,7 +14,6 @@ Uso:
 """
 import argparse
 import os
-import subprocess
 import sys
 
 import psycopg2
@@ -81,18 +81,35 @@ def create_extensions(db_url: str):
     conn.close()
 
 
-# ─── Paso 3: migraciones ─────────────────────────────────────────────────────
+# ─── Paso 3: crear tablas desde modelos ──────────────────────────────────────
 
-def run_migrations():
-    print("\n[3/4] Aplicando migraciones Alembic (flask db upgrade)…")
-    result = subprocess.run(
-        [sys.executable, "-m", "flask", "db", "upgrade"],
-        env={**os.environ, "FLASK_APP": "wsgi.py"},
-    )
-    if result.returncode != 0:
-        print("ERROR: flask db upgrade falló. Abortando.")
-        sys.exit(result.returncode)
-    print("      Migraciones aplicadas.")
+def create_tables():
+    """Crea todas las tablas directamente desde los modelos SQLAlchemy.
+
+    Más robusto que `flask db upgrade` para un reset: no depende del estado
+    de la cadena de migraciones. Después stampeamos Alembic al head para que
+    `flask db migrate` funcione correctamente en el futuro.
+    """
+    print("\n[3/4] Creando tablas desde modelos SQLAlchemy (db.create_all)…")
+    from app import create_app
+    from app.extensions import db
+
+    # Importar todos los modelos para que SQLAlchemy los registre en metadata
+    import app.models.auth          # noqa: F401
+    import app.models.vehicle       # noqa: F401
+    import app.models.session       # noqa: F401
+    import app.models.training      # noqa: F401
+
+    app = create_app()
+    with app.app_context():
+        db.create_all()
+        print("      Tablas creadas.")
+
+        # Stampeamos al head para que alembic_version quede sincronizado
+        print("      Stampeando Alembic al head…")
+        from flask_migrate import stamp
+        stamp()
+        print("      ✓ alembic_version = head")
 
 
 # ─── Paso 4-5: seeds ─────────────────────────────────────────────────────────
@@ -137,7 +154,7 @@ def main():
 
     drop_and_create(db_url)
     create_extensions(db_url)
-    run_migrations()
+    create_tables()
     run_setup_seed()
 
     if not args.no_demo:
