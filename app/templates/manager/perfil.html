@@ -19,7 +19,7 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <div class="mgr-edit-profile-header">
         <h1 class="mgr-edit-profile-header-text"><i class="ph ph-user"></i>Edit profile</h1>
-        <button type="button" onclick="window.location.href=`{{ url_for('manager.dashboard') }}`" class="btn--ghost mgr-edit-profile-back-btn">Back</button>
+        <button type="button" onclick="window.location.href=`{{ url_for('manager.dashboard') }}`" class="btn--ghost mgr-edit-profile-back-btn">Back<i class="ph ph-arrow-u-down-left"></i></button>
       </div>
       <hr>
       <div class="mgr-edit-profile-picture-div">

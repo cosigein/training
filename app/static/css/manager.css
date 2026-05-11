@@ -1718,9 +1718,15 @@ a.mgr-kpi--link:hover {
   border: 1px solid #e3e8ef;
 }
 
+/* Edit profile header */
+
 .mgr-edit-profile-header {
   position: relative; 
   width: 100%;
+}
+
+.mgr-edit-profile-header-text {
+  color: #0d47a1;
 }
 
 .mgr-edit-profile-back-btn {
@@ -1730,6 +1736,8 @@ a.mgr-kpi--link:hover {
   z-index: 10;
   border-radius: 5px;
 }
+
+/* Edit profile inputs */
 
 .mgr-edit-profile-name-input {
   width: 200px;
@@ -1741,15 +1749,20 @@ a.mgr-kpi--link:hover {
   border-radius: 5px;
 }
 
+.mgr-edit-profile-picture-btn-div {
+  display: flex; 
+  flex-direction: row; 
+  align-items: center;
+
+}
+
 .mgr-edit-profile-picture-btn {
   padding-left: 20px;
   padding-right: 20px;
   border-radius: 5px;
 }
 
-.mgr-edit-profile-header-text {
-  color: #0d47a1;
-}
+/* Profile picture */
 
 .mgr-edit-profile-picture-div {
   position: relative; 
@@ -1786,12 +1799,7 @@ a.mgr-kpi--link:hover {
   color: #888;
 }
 
-.mgr-edit-profile-picture-btn-div {
-  display: flex; 
-  flex-direction: row; 
-  align-items: center;
-
-}/* ── Data Quality badge (matriz) ──────────────────────────────────────────── */
+/* ── Data Quality badge (matriz) ──────────────────────────────────────────── */
 .mgr-dq {
     display: inline-flex;
     align-items: center;
