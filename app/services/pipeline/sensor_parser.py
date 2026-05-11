@@ -79,6 +79,7 @@ class ParseResult:
     can_rows: int = 0
     gps_skipped_no_fix: int = 0
     errors: List[str] = field(default_factory=list)
+    session_end_time: Optional[datetime] = None  # último timestamp intermedio del archivo
 
     @property
     def total_rows(self):
@@ -369,12 +370,26 @@ def _parse_stability(header: str, lines: List[str], attempt_id: str, org_id: str
     Columnas: ax; ay; az; gx; gy; gz; roll; pitch; yaw; timeantwifi; usciclo1..5; si; accmag; microsds; k3
     Las filas no tienen timestamp — se reconstruye como base + row_idx * 100 ms.
     ax/ay/az en milli-g → se convierten a m/s² (* 0.00981).
+
+    Los timestamps intermedios (HH:MM:SS cada 5 filas) son el reloj real del
+    Doback. El último se guarda en r.session_end_time para usarlo como range_to
+    del sync de Webfleet — es el fin real de la sesión.
     """
     base_ts = _section_dt(header) or datetime.utcnow()
     row_idx = 0
 
     for line in lines:
         if _is_intermediate_timestamp(line):
+            # Combinar HH:MM:SS con la fecha del header para obtener datetime completo.
+            try:
+                hms = datetime.strptime(line.strip(), "%H:%M:%S")
+                ts = base_ts.replace(hour=hms.hour, minute=hms.minute, second=hms.second, microsecond=0)
+                # Si el timestamp cruzó medianoche respecto al header, sumar un día.
+                if ts < base_ts:
+                    ts = ts + timedelta(days=1)
+                r.session_end_time = ts
+            except ValueError:
+                pass
             continue
         if line.strip().lower().startswith("ax"):
             continue
@@ -528,6 +543,13 @@ def parse_sensor_files(
         raise ValueError(
             f"No se encontró ninguna 'Sesión:{session_number}' en los archivos provistos."
         )
+
+    # Actualizar endTime del attempt con el último timestamp real de la sesión.
+    # Esto es lo que usa sync_attempt_gps como range_to para pedir los GPS a Webfleet.
+    if result.session_end_time:
+        attempt = Attempt.query.get(attempt_id)
+        if attempt and not attempt.endTime:
+            attempt.endTime = result.session_end_time
 
     db.session.commit()
     return result
