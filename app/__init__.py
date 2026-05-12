@@ -6,7 +6,6 @@ warnings.filterwarnings("ignore", message="Eventlet is deprecated")
 warnings.filterwarnings("ignore", category=UserWarning, module="flask_limiter")
 
 from flask import Flask, g, request
-from loguru import logger
 from app.config import config
 from app.extensions import (
     db, migrate, jwt, socketio, login_manager,
@@ -146,18 +145,6 @@ def create_app(config_name=None):
     @app.before_request
     def _start_timer():
         g._t0 = time.time()
-
-    @app.after_request
-    def _log_request(response):
-        duration_ms = int((time.time() - getattr(g, "_t0", time.time())) * 1000)
-        logger.info(
-            "request_handled method={} path={} status={} duration_ms={}",
-            request.method,
-            request.path,
-            response.status_code,
-            duration_ms,
-        )
-        return response
 
     # Scheduler en proceso: cron de ranking y lock de convocatorias (T9)
     # No arrancar en testing para no interferir con los tests

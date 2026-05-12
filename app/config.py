@@ -16,6 +16,10 @@ class BaseConfig:
     JWT_COOKIE_SECURE = True
     JWT_COOKIE_SAMESITE = "Lax"
     JWT_COOKIE_CSRF_PROTECT = True
+    # Separar el campo CSRF de JWT del de Flask-WTF para evitar conflicto.
+    # Flask-WTF usa "csrf_token"; JWT-Extended usará "jwt_csrf_token".
+    # El valor se inyecta vía JS desde el cookie csrf_access_token (no-httponly).
+    JWT_ACCESS_CSRF_FIELD_NAME = "jwt_csrf_token"
     
     # Redis & Celery
     REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
