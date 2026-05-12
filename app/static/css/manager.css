@@ -1646,6 +1646,7 @@ a.mgr-kpi--link:hover {
     display: flex;
     align-items: center;
     justify-content: center;
+    object-fit: cover;
 }
 
 /* Animate opening and closing the modal */
