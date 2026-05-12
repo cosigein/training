@@ -85,12 +85,14 @@
         {% if visible %}
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:12px;">
             <div style="background:#f8fafc; border-radius:6px; padding:6px 8px;">
-                <div style="color:#64748b; font-size:11px;">Velocidad</div>
-                <div style="font-weight:700; color:#1e293b;">{{ wf.get('pos_speed', 0) }} km/h</div>
-            </div>
-            <div style="background:#f8fafc; border-radius:6px; padding:6px 8px;">
                 <div style="color:#64748b; font-size:11px;">Odómetro</div>
                 <div style="font-weight:700; color:#1e293b;">{{ "{:,.0f}".format(wf.get('odometer_value', 0) or 0) }} km</div>
+            </div>
+            <div style="background:#f8fafc; border-radius:6px; padding:6px 8px;">
+                <div style="color:#64748b; font-size:11px;">Motor</div>
+                <div style="font-weight:700; color:{% if wf.get('ignition_state') in [1, '1'] %}#16a34a{% else %}#64748b{% endif %};">
+                    {% if wf.get('ignition_state') in [1, '1'] %}Encendido{% else %}Apagado{% endif %}
+                </div>
             </div>
             <div style="background:#f8fafc; border-radius:6px; padding:6px 8px; grid-column:1/-1;">
                 <div style="color:#64748b; font-size:11px;">Ubicación</div>
@@ -176,25 +178,40 @@
 const VEHICLE_DATA = {
     {% for v in vehicles %}
     {% if v.webfleetObjectNo and v.webfleetVisible %}
+    {% set wfd = v.webfleetData or {} %}
+    {% set cfg = v.configuration %}
     "{{ v.id }}": {
-        name:        {{ (v.webfleetData.get('objectname') or v.name) | tojson }},
-        plate:       {{ v.licensePlate | tojson }},
-        objectno:    {{ (v.webfleetObjectNo or '') | tojson }},
-        objectclass: {{ (v.webfleetData.get('objectclassname') or v.type.value) | tojson }},
-        lat:         {{ v.webfleetData.get('pos_latitude') or 'null' }},
-        lon:         {{ v.webfleetData.get('pos_longitude') or 'null' }},
-        altitude:    {{ v.webfleetData.get('pos_altitude') or 'null' }},
-        speed:       {{ v.webfleetData.get('pos_speed') or 0 }},
-        course:      {{ v.webfleetData.get('pos_course') or 0 }},
-        location:    {{ (v.webfleetData.get('pos_text') or '—') | tojson }},
-        driver:      {{ (v.webfleetData.get('driver_name') or '—') | tojson }},
-        ignition:    {{ v.webfleetData.get('ignition_state') or 0 }},
-        state:       {{ (v.webfleetData.get('vehicle_state') or '—') | tojson }},
-        odometer:    {{ v.webfleetData.get('odometer_value') or 0 }},
-        pos_time:    {{ (v.webfleetData.get('pos_time') or '—') | tojson }},
-        msg_time:    {{ (v.webfleetData.get('msg_time') or '—') | tojson }},
-        last_seen:   {{ (v.webfleetLastSeen.strftime('%d/%m/%Y %H:%M') if v.webfleetLastSeen else '—') | tojson }},
-        is_mock:     {{ 'true' if v.webfleetData.get('_mock') else 'false' }},
+        name:             {{ (wfd.get('objectname') or v.name) | tojson }},
+        plate:            {{ v.licensePlate | tojson }},
+        brand:            {{ (v.brand or '—') | tojson }},
+        model_name:       {{ (v.model or '—') | tojson }},
+        vehicle_type:     {{ v.type.value | tojson }},
+        status:           {{ v.status.value | tojson }},
+        identifier:       {{ (v.identifier or '—') | tojson }},
+        doback:           {{ (v.dobackIdentifier or '—') | tojson }},
+        objectno:         {{ (v.webfleetObjectNo or '') | tojson }},
+        objectclass:      {{ (wfd.get('objectclassname') or v.type.value) | tojson }},
+        lat:              {{ wfd.get('pos_latitude') or 'null' }},
+        lon:              {{ wfd.get('pos_longitude') or 'null' }},
+        altitude:         {{ wfd.get('pos_altitude') or 'null' }},
+        course:           {{ wfd.get('pos_course') or 0 }},
+        location:         {{ (wfd.get('pos_text') or '—') | tojson }},
+        driver:           {{ (wfd.get('driver_name') or '—') | tojson }},
+        ignition:         {{ wfd.get('ignition_state') or 0 }},
+        state:            {{ (wfd.get('vehicle_state') or '—') | tojson }},
+        odometer:         {{ wfd.get('odometer_value') or 0 }},
+        pos_time:         {{ (wfd.get('pos_time') or '—') | tojson }},
+        msg_time:         {{ (wfd.get('msg_time') or '—') | tojson }},
+        last_seen:        {{ (v.webfleetLastSeen.strftime('%d/%m/%Y %H:%M') if v.webfleetLastSeen else '—') | tojson }},
+        is_mock:          {{ 'true' if wfd.get('_mock') else 'false' }},
+        attempts_count:   {{ v.attempts | length }},
+        cfg_mass:         {{ cfg.mass if cfg and cfg.mass else 'null' }},
+        cfg_max_speed:    {{ cfg.maxSpeed if cfg and cfg.maxSpeed else 'null' }},
+        cfg_cg_height:    {{ cfg.cgHeight if cfg and cfg.cgHeight else 'null' }},
+        cfg_track_width:  {{ cfg.trackWidth if cfg and cfg.trackWidth else 'null' }},
+        cfg_wheelbase:    {{ cfg.wheelbase if cfg and cfg.wheelbase else 'null' }},
+        cfg_firmware:     {{ (cfg.firmwareVersion or '—') | tojson if cfg else '"—"' }},
+        cfg_calibrated:   {{ (cfg.calibrationDate.strftime('%d/%m/%Y') if cfg and cfg.calibrationDate else '—') | tojson }},
     },
     {% endif %}
     {% endfor %}
@@ -209,25 +226,85 @@ function openVehicleModal(vehicleId) {
     const ignLabel = d.ignition ? '<span style="color:#16a34a;font-weight:700">Encendido</span>' : '<span style="color:#64748b;">Apagado</span>';
     const mockBadge = d.is_mock ? '<span style="font-size:11px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:4px;margin-left:6px;">demo</span>' : '';
 
+    const cfgSection = (d.cfg_mass !== null) ? `
+        <div style="grid-column:1/-1;border-top:1px solid #e2e8f0;padding-top:12px;margin-top:2px;">
+            <div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:8px;letter-spacing:.04em;">CONFIGURACIÓN TÉCNICA</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:12px;">
+                <div style="background:#f8fafc;border-radius:8px;padding:10px;">
+                    <div style="color:#64748b;font-size:10px;margin-bottom:3px;">Masa</div>
+                    <div style="font-weight:700;color:#1e293b;">${d.cfg_mass !== null ? d.cfg_mass.toLocaleString('es-ES') + ' kg' : '—'}</div>
+                </div>
+                <div style="background:#f8fafc;border-radius:8px;padding:10px;">
+                    <div style="color:#64748b;font-size:10px;margin-bottom:3px;">Vel. máx. config.</div>
+                    <div style="font-weight:700;color:#1e293b;">${d.cfg_max_speed !== null ? d.cfg_max_speed + ' km/h' : '—'}</div>
+                </div>
+                <div style="background:#f8fafc;border-radius:8px;padding:10px;">
+                    <div style="color:#64748b;font-size:10px;margin-bottom:3px;">Altura CG</div>
+                    <div style="font-weight:700;color:#1e293b;">${d.cfg_cg_height !== null ? d.cfg_cg_height + ' m' : '—'}</div>
+                </div>
+                <div style="background:#f8fafc;border-radius:8px;padding:10px;">
+                    <div style="color:#64748b;font-size:10px;margin-bottom:3px;">Ancho de vía</div>
+                    <div style="font-weight:700;color:#1e293b;">${d.cfg_track_width !== null ? d.cfg_track_width + ' m' : '—'}</div>
+                </div>
+                <div style="background:#f8fafc;border-radius:8px;padding:10px;">
+                    <div style="color:#64748b;font-size:10px;margin-bottom:3px;">Batalla</div>
+                    <div style="font-weight:700;color:#1e293b;">${d.cfg_wheelbase !== null ? d.cfg_wheelbase + ' m' : '—'}</div>
+                </div>
+                <div style="background:#f8fafc;border-radius:8px;padding:10px;">
+                    <div style="color:#64748b;font-size:10px;margin-bottom:3px;">Calibración</div>
+                    <div style="font-weight:700;color:#1e293b;">${d.cfg_calibrated}</div>
+                </div>
+            </div>
+            ${d.cfg_firmware !== '—' ? `<div style="margin-top:6px;font-size:11px;color:#64748b;">Firmware: <strong>${d.cfg_firmware}</strong></div>` : ''}
+        </div>` : '';
+
     document.getElementById('modal-body').innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
 
+            <!-- Identificación del vehículo -->
+            <div style="grid-column:1/-1;background:#f8fafc;border-radius:10px;padding:14px;">
+                <div style="font-size:11px;color:#64748b;font-weight:700;margin-bottom:8px;letter-spacing:.04em;">IDENTIFICACIÓN</div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:12px;">
+                    <div>
+                        <div style="color:#94a3b8;font-size:10px;">Marca</div>
+                        <div style="font-weight:600;color:#1e293b;">${d.brand}</div>
+                    </div>
+                    <div>
+                        <div style="color:#94a3b8;font-size:10px;">Modelo</div>
+                        <div style="font-weight:600;color:#1e293b;">${d.model_name}</div>
+                    </div>
+                    <div>
+                        <div style="color:#94a3b8;font-size:10px;">Tipo</div>
+                        <div style="font-weight:600;color:#1e293b;">${d.vehicle_type}</div>
+                    </div>
+                    <div>
+                        <div style="color:#94a3b8;font-size:10px;">Clase Webfleet</div>
+                        <div style="font-weight:600;color:#1e293b;">${d.objectclass}</div>
+                    </div>
+                    <div>
+                        <div style="color:#94a3b8;font-size:10px;">ID interno</div>
+                        <div style="font-weight:600;color:#1e293b;">${d.identifier}</div>
+                    </div>
+                    <div>
+                        <div style="color:#94a3b8;font-size:10px;">Doback</div>
+                        <div style="font-weight:600;color:${d.doback !== '—' ? '#0369a1' : '#94a3b8'};">${d.doback}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Posición actual -->
             <div style="grid-column:1/-1;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:14px;">
                 <div style="font-size:11px;color:#0369a1;font-weight:700;margin-bottom:6px;">
                     POSICIÓN ACTUAL ${mockBadge}
                 </div>
                 <div style="font-weight:600;color:#0c4a6e;margin-bottom:4px;">${d.location}</div>
-                ${d.lat ? `<div style="font-size:11px;color:#0369a1;">Lat ${d.lat.toFixed ? d.lat.toFixed(5) : d.lat} · Lon ${d.lon.toFixed ? d.lon.toFixed(5) : d.lon} · Alt ${d.altitude || '—'} m</div>` : ''}
+                ${d.lat ? `<div style="font-size:11px;color:#0369a1;">Lat ${d.lat.toFixed ? d.lat.toFixed(5) : d.lat} · Lon ${d.lon.toFixed ? d.lon.toFixed(5) : d.lon} · Alt ${d.altitude || '—'} m · Rumbo ${d.course}°</div>` : ''}
             </div>
 
+            <!-- Estado operativo -->
             <div style="background:#f8fafc;border-radius:8px;padding:12px;">
-                <div style="color:#64748b;font-size:11px;margin-bottom:4px;">Velocidad</div>
-                <div style="font-weight:700;font-size:20px;color:#1e293b;">${d.speed} <span style="font-size:13px;font-weight:400;color:#64748b;">km/h</span></div>
-            </div>
-
-            <div style="background:#f8fafc;border-radius:8px;padding:12px;">
-                <div style="color:#64748b;font-size:11px;margin-bottom:4px;">Rumbo</div>
-                <div style="font-weight:700;font-size:20px;color:#1e293b;">${d.course}°</div>
+                <div style="color:#64748b;font-size:11px;margin-bottom:4px;">Motor</div>
+                <div style="font-weight:600;">${ignLabel}</div>
             </div>
 
             <div style="background:#f8fafc;border-radius:8px;padding:12px;">
@@ -236,22 +313,21 @@ function openVehicleModal(vehicleId) {
             </div>
 
             <div style="background:#f8fafc;border-radius:8px;padding:12px;">
-                <div style="color:#64748b;font-size:11px;margin-bottom:4px;">Motor</div>
-                <div style="font-weight:600;">${ignLabel}</div>
-            </div>
-
-            <div style="background:#f8fafc;border-radius:8px;padding:12px;">
                 <div style="color:#64748b;font-size:11px;margin-bottom:4px;">Conductor</div>
                 <div style="font-weight:600;color:#1e293b;">${d.driver}</div>
             </div>
 
             <div style="background:#f8fafc;border-radius:8px;padding:12px;">
-                <div style="color:#64748b;font-size:11px;margin-bottom:4px;">Clase</div>
-                <div style="font-weight:600;color:#1e293b;">${d.objectclass}</div>
+                <div style="color:#64748b;font-size:11px;margin-bottom:4px;">Intentos registrados</div>
+                <div style="font-weight:700;font-size:18px;color:#1e293b;">${d.attempts_count}</div>
             </div>
 
+            <!-- Configuración técnica (si existe) -->
+            ${cfgSection}
+
+            <!-- Trazabilidad -->
             <div style="grid-column:1/-1;background:#f8fafc;border-radius:8px;padding:12px;">
-                <div style="color:#64748b;font-size:11px;margin-bottom:6px;">TRAZABILIDAD</div>
+                <div style="color:#64748b;font-size:11px;margin-bottom:6px;font-weight:700;letter-spacing:.04em;">TRAZABILIDAD</div>
                 <div style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#475569;">
                     <span><strong>Webfleet objectno:</strong> ${d.objectno}</span>
                     <span><strong>Última posición GPS:</strong> ${d.pos_time}</span>
