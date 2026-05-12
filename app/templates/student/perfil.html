@@ -1,9 +1,8 @@
-
-{% extends "manager/layout.html" %}
+{% extends "student/layout.html" %}
 
 {% block extra_css %}
   {{ super() }}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/manager.css') }}" >
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/student.css') }}" >
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/components/button.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/components/form.css') }}" >
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}" >
@@ -14,30 +13,30 @@
 {% block title %}Perfil — CMadrid Training{% endblock %}
 
 {% block content %}
-<div class="mgr-edit-profile-div">
-  <form method="POST" action="{{ url_for('manager.edit_profile') }}" enctype="multipart/form-data" class="mgr-card mgr-edit-profile-form">
+<div class="alu-edit-profile-div">
+  <form method="POST" action="{{ url_for('student.edit_profile') }}" enctype="multipart/form-data" class="alu-card alu-edit-profile-form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-      <div class="mgr-edit-profile-header">
-        <h1 class="mgr-edit-profile-header-text"><i class="ph ph-user"></i>Editar perfil</h1>
-        <button type="button" onclick="window.location.href=`{{ url_for('manager.dashboard') }}`" class="btn--ghost mgr-edit-profile-back-btn">Volver<i class="ph ph-arrow-u-down-left"></i></button>
+      <div class="alu-edit-profile-header">
+        <h1 class="alu-edit-profile-header-text"><i class="ph ph-user"></i>Editar perfil</h1>
+        <button type="button" onclick="window.location.href=`{{ url_for('student.dashboard') }}`" class="btn--ghost alu-edit-profile-back-btn">Volver<i class="ph ph-arrow-u-down-left"></i></button>
       </div>
       <hr>
-      <div class="mgr-edit-profile-picture-div">
-        <div class="mgr-edit-profile-picture-frame">
-          <img src="{{ url_for('static', filename='uploads/' ~ current_user.picture) if current_user.picture else '' }}" id="profile-preview" class="mgr-edit-profile-picture-preview" />
+      <div class="alu-edit-profile-picture-div">
+        <div class="alu-edit-profile-picture-frame">
+          <img src="{{ url_for('static', filename='uploads/' ~ current_user.picture) if current_user.picture else '' }}" id="profile-preview" class="alu-edit-profile-picture-preview" />
         </div>
-        <span class="mgr-edit-profile-picture-preview-text" id="profile-placeholder" style="display: {{ 'none' if current_user.picture else 'block' }};">sin foto de perfil</span>
+        <span class="alu-edit-profile-picture-preview-text" id="profile-placeholder" style="display: {{ 'none' if current_user.picture else 'block' }};">sin foto de perfil</span>
       </div>
-      <div class="mgr-edit-profile-picture-btn-div">
+      <div class="alu-edit-profile-picture-btn-div">
         <input style="display: none;" type="file" name="picture" id="picture" accept="image/*" />
-        <button type="button" id="change-picture-btn" class="btn--primary mgr-edit-profile-picture-btn">Cambiar foto de perfil</button>
+        <button type="button" id="change-picture-btn" class="btn--primary alu-edit-profile-picture-btn">Cambiar foto de perfil</button>
       </div>
       <div>
         <label for="name"><strong>Editar nombre:</strong></label>
-        <input class="field__input mgr-edit-profile-name-input" type="text" name="name" id="name" value="{{ current_user.name }}" />
+        <input class="field__input alu-edit-profile-name-input" type="text" name="name" id="name" value="{{ current_user.name }}" />
       </div>
       <p><strong>Email actual:</strong> {{ current_user.email }}</p>
-      <button type="submit" class="btn--primary mgr-edit-profile-submit-btn">Guardar cambios</button>
+      <button type="submit" class="btn--primary alu-edit-profile-submit-btn">Guardar cambios</button>
   </form>
 </div>
 {% endblock %}

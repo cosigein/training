@@ -85,6 +85,7 @@
     border-radius: 8px;
     background: #f8fafc;
     border: 1.5px solid #e2e8f0;
+    cursor: pointer;
 }
 
 .alu-user-chip__avatar {
@@ -1363,3 +1364,264 @@
 }
 
 .alu-alert--info i { color: #2563eb; }
+
+/* Student user modal div */
+
+.alu-modal {
+    display: none;
+    position: absolute;
+    top: 56px;
+    right: 24px;
+    z-index: 1000;
+}
+
+.alu-modal-div {
+    background: #fff;
+    margin: 0;
+    padding: 24px;
+    width: 320px;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    display: flex;
+    flex-direction: column;
+    font-size: 1rem;
+    gap: 16px;
+}
+
+.alu-user-chip-picture-frame {
+    width: 28px;
+    height: 28px;
+    object-fit: cover;
+    border-radius: 50%;
+    background: #e5e7eb;
+    display: block;
+}
+
+.alu-modal-picture-frame {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    object-fit: cover;
+}
+
+/* Animate opening and closing the modal */
+
+@keyframes alu-modal-slide-down {
+  0% {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes alu-modal-slide-up {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+}
+
+.alu-modal-div--open {
+  animation: alu-modal-slide-down 0.35s cubic-bezier(.4, 0, .2, 1) forwards;
+}
+
+.alu-modal-div--close {
+  animation: alu-modal-slide-up 0.35s cubic-bezier(.4, 0, .2, 1) forwards;
+}
+
+/* Modal options */
+
+.alu-modal-profile,
+.alu-modal-settings {
+    color: var(--color-muted, rgba(0,0,0,0.4));
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 100ms;
+}
+
+.alu-modal-profile:hover,
+.alu-modal-settings:hover {
+    color: var(--color-text, #1e293b);
+    background-color: #f5f5f5;
+}
+
+.alu-modal-log-out {
+    color: rgba(220,38,38,0.7);
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 100ms;
+}
+
+.alu-modal-log-out:hover {
+    color: #dc2626;
+    background-color: #fee2e2;
+}
+
+.alu-modal-username {
+    padding: 5px 0 0 0;
+    font-size: 1.1em;
+    font-weight: 700;
+    color: #1e293b;
+    text-align: left;
+}
+
+/* Student edit profile view */
+
+.alu-edit-profile-div {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 70vh;
+    width: 100%;
+}
+
+.alu-edit-profile-form {
+    min-width: 600px;
+    min-height: 420px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 20px;
+    padding: 32px 28px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
+}
+
+/* Edit profile header */
+
+.alu-edit-profile-header {
+    position: relative;
+    width: 100%;
+    margin-bottom: 18px;
+}
+
+.alu-edit-profile-header-text {
+    color: #0d47a1;
+    font-size: 1.2em;
+    font-weight: 700;
+}
+
+.alu-edit-profile-back-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 10;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #0d47a1;
+    border: none;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 120ms;
+}
+
+.mgr-edit-profile-back-btn:hover {
+    background: #e3e8ef;
+}
+
+/* Edit profile inputs */
+
+.alu-edit-profile-name-input {
+    width: 220px;
+    margin-left: 10px;
+    padding: 7px 12px;
+    border-radius: 6px;
+    border: 1.5px solid #e2e8f0;
+    font-size: 15px;
+}
+
+.alu-edit-profile-submit-btn {
+    width: 160px;
+    border-radius: 6px;
+    background: #0d47a1;
+    color: #fff;
+    border: none;
+    padding: 10px 0;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 120ms;
+}
+
+.mgr-edit-profile-submit-btn:hover {
+    background: #1565c0;
+}
+
+.alu-edit-profile-picture-btn-div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+}
+
+.alu-edit-profile-picture-btn {
+    padding: 7px 18px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #0d47a1;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 120ms;
+}
+
+.mgr-edit-profile-picture-btn:hover {
+    background: #e3e8ef;
+}
+
+/* Profile picture */
+
+.alu-edit-profile-picture-div {
+    position: relative;
+    width: 150px;
+    height: 150px;
+}
+
+.alu-edit-profile-picture-frame {
+    width: 158px;
+    height: 158px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0d47a1;
+}
+
+.alu-edit-profile-picture-preview {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 50%;
+    background: #e5e7eb;
+    display: block;
+}
+
+.alu-edit-profile-picture-preview-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #888;
+    font-size: 13px;
+}
