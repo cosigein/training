@@ -1,4 +1,4 @@
-"""reset_db.py — Borra la BD, la recrea desde cero y repobla con datos demo.
+"""reset_db.py — Borra la BD, la recrea desde cero y repobla con datos base.
 
 Pasos:
   1. DROP DATABASE + CREATE DATABASE (conexión a 'postgres')
@@ -6,11 +6,9 @@ Pasos:
   3. db.create_all()  (crea tablas directamente desde los modelos SQLAlchemy)
   4. flask db stamp head  (marca alembic_version al head para que migraciones futuras funcionen)
   5. setup_db seed     (org CMadrid + usuarios base)
-  6. seed_demo seed    (vehículo, convocatorias, alumnos, attempts)
 
 Uso:
     python reset_db.py
-    python reset_db.py --no-demo    # solo estructura + usuarios base
 """
 import argparse
 import os
@@ -171,21 +169,10 @@ def run_setup_seed():
     setup_database()
 
 
-def run_demo_seed():
-    print("\n[4b/4] Seed demo (vehículo, convocatorias, alumnos, attempts)…")
-    from seed_demo import seed_demo_data
-    seed_demo_data()
-
-
 # ─── Main ────────────────────────────────────────────────────────────────────
 
 def main():
     parser = argparse.ArgumentParser(description="Reset completo de la base de datos.")
-    parser.add_argument(
-        "--no-demo",
-        action="store_true",
-        help="Omite el seed demo (solo crea estructura + usuarios base).",
-    )
     args = parser.parse_args()
 
     db_url = os.environ.get(
@@ -207,9 +194,6 @@ def main():
     create_extensions(db_url)
     create_tables(db_url)
     run_setup_seed()
-
-    if not args.no_demo:
-        run_demo_seed()
 
     print("\n" + "=" * 60)
     print("  Reset completo. BD lista.")
